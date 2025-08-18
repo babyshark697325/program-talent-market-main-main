@@ -1,14 +1,24 @@
 
-import React, { useState } from "react";
+import React, { useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { mockJobs, JobPosting } from "@/data/mockJobs";
 import JobCard from "@/components/JobCard";
 import { Button } from "@/components/ui/button";
+import { useSavedJobs } from "@/contexts/SavedJobsContext";
 
 const SavedJobs = () => {
   const navigate = useNavigate();
-  // For demo purposes, we'll show first 3 jobs as "saved"
-  const [savedJobs] = useState<JobPosting[]>(mockJobs.slice(0, 3));
+  const { savedJobIds } = useSavedJobs();
+  
+  // Get saved jobs from mockJobs based on savedJobIds
+  const savedJobs = useMemo(() => {
+    return mockJobs.filter(job => savedJobIds.includes(job.id));
+  }, [savedJobIds]);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   const handleJobView = (id: number) => {
     navigate(`/job/${id}`);

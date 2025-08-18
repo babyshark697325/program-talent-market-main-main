@@ -14,6 +14,11 @@ const BrowseJobs = () => {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [budgetRange, setBudgetRange] = useState<[number, number]>([0, 1000]);
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   // Get all unique skills from jobs
   const allSkills = Array.from(
     new Set(mockJobs.flatMap(job => job.skills))

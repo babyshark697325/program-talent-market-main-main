@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import { AuthProvider } from "./contexts/AuthContext";
 import { RoleProvider } from "./contexts/RoleContext";
+import { SavedJobsProvider } from "./contexts/SavedJobsContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useRole } from "./contexts/RoleContext";
 
@@ -92,7 +93,8 @@ const App: React.FC = () => {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <AuthProvider>
         <RoleProvider>
-          <Router>
+          <SavedJobsProvider>
+            <Router>
             <Routes>
               {/* ---------- PUBLIC ---------- */}
               <Route path="/auth" element={<Auth />} />
@@ -308,10 +310,11 @@ const App: React.FC = () => {
               {/* ---------- 404 ---------- */}
               <Route path="*" element={<Layout><NotFound /></Layout>} />
             </Routes>
-          </Router>
+            </Router>
 
-          {/* shadcn toasts host */}
-          <Toaster />
+            {/* shadcn toasts host */}
+            <Toaster />
+          </SavedJobsProvider>
         </RoleProvider>
       </AuthProvider>
     </ThemeProvider>
@@ -319,4 +322,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-

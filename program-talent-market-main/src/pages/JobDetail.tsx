@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,11 @@ import { mockJobs } from '@/data/mockJobs';
 const JobDetail = () => {
   const { id } = useParams();
   const job = mockJobs.find(j => j.id === parseInt(id || '0'));
+
+  // Scroll to top when component mounts or job ID changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [id]);
 
   if (!job) {
     return (

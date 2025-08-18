@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { JobPosting } from "@/data/mockJobs";
 import { Building, Calendar, Mail, DollarSign } from "lucide-react";
+import BookmarkButton from "./BookmarkButton";
 
 interface JobCardProps {
   job: JobPosting;
@@ -13,7 +14,7 @@ interface JobCardProps {
 
 const JobCard: React.FC<JobCardProps> = ({ job, onView }) => {
   return (
-    <Card className="h-full flex flex-col hover:shadow-lg transition-shadow duration-200 bg-background text-foreground border-border">
+    <Card className="h-full flex flex-col hover:shadow-lg card-hover bg-background text-foreground border-border">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -23,6 +24,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onView }) => {
               <span>{job.company}</span>
             </div>
           </div>
+          <BookmarkButton jobId={job.id} className="ml-2" />
         </div>
         <div className="flex flex-wrap gap-2">
           {job.skills.slice(0, 3).map((skill) => (

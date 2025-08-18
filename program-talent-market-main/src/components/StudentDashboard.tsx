@@ -7,6 +7,7 @@ import JobCard from "@/components/JobCard";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { mockStudents } from "@/data/mockStudents";
+import BackToTop from "./BackToTop";
 
 interface StudentDashboardProps {
   jobs: JobPosting[];
@@ -43,7 +44,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
   const recommendedJobs = getRecommendedJobs();
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <div className="min-h-screen bg-background relative overflow-hidden page-transition">
       {/* Animated background elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 left-1/4 w-72 h-72 bg-gradient-to-br from-primary/10 to-accent/20 rounded-full blur-3xl animate-pulse opacity-60"></div>
@@ -106,7 +107,15 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
 
         {/* Browse Jobs Section */}
         <div className="bg-gradient-to-r from-secondary/60 to-primary/10 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-primary/10 mb-12">
-          <h2 className="text-3xl font-bold mb-6 text-primary">Reccommended Opportunities</h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold text-primary">Recommended Opportunities</h2>
+            <Button 
+              onClick={() => navigate("/browse-jobs")} 
+              variant="outline"
+            >
+              View All Jobs
+            </Button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {recommendedJobs.length > 0 ? (
               recommendedJobs.slice(0, 6).map((job) => (
@@ -128,13 +137,9 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
               </div>
             )}
           </div>
-          <div className="text-center mt-6">
-            <Button onClick={() => setActiveTab("jobs")} className="bg-gradient-to-r from-primary to-primary/80">
-              View All Jobs
-            </Button>
-          </div>
         </div>
       </div>
+      <BackToTop />
     </div>
   );
 };

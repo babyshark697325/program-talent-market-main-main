@@ -17,6 +17,8 @@ import {
 import { mockStudents } from "@/data/mockStudents";
 import { JobPosting } from "@/data/mockJobs";
 import { Link } from "react-router-dom";
+import RecentActivity from "./RecentActivity";
+import { mockAdminActivities } from "@/adminActivityMockData";
 
 interface AdminDashboardProps {
   jobs: JobPosting[];
@@ -34,13 +36,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
     reportedIssues: 3
   };
 
-  const recentActivity = [
-    { type: "user", message: "New student registered: Alex Johnson", time: "2 hours ago", status: "success" },
-    { type: "job", message: "Job posted: Web Developer at TechCorp", time: "4 hours ago", status: "success" },
-    { type: "report", message: "User reported inappropriate content", time: "6 hours ago", status: "warning" },
-    { type: "verification", message: "Student profile pending verification", time: "8 hours ago", status: "pending" },
-    { type: "payment", message: "Payment processed: $250", time: "1 day ago", status: "success" }
-  ];
+  const handleActivityClick = (activityId: number) => {
+    console.log('Activity clicked:', activityId);
+    // In a real app, this would navigate to activity details or perform an action
+  };
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -169,29 +168,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
             </div>
           </Card>
 
-          <Card className="p-8 bg-gradient-to-r from-secondary/60 to-accent/10 backdrop-blur-sm border border-accent/10">
-            <h2 className="text-2xl font-bold mb-6 text-accent flex items-center gap-3">
-              <TrendingUp size={28} />
-              Recent Activity
-            </h2>
-            <div className="space-y-4 max-h-64 overflow-y-auto">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/40">
-                  <div className={`w-2 h-2 rounded-full mt-2 ${
-                    activity.status === 'success' ? 'bg-green-500' :
-                    activity.status === 'warning' ? 'bg-orange-500' :
-                    'bg-blue-500'
-                  }`}></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{activity.message}</p>
-                    <p className="text-xs text-muted-foreground">{activity.time}</p>
-                  </div>
-                  {activity.status === 'success' && <CheckCircle size={16} className="text-green-500 mt-1" />}
-                  {activity.status === 'warning' && <AlertTriangle size={16} className="text-orange-500 mt-1" />}
-                </div>
-              ))}
-            </div>
-          </Card>
+          <RecentActivity 
+            activities={mockAdminActivities}
+            onActivityClick={handleActivityClick}
+            maxItems={8}
+          />
         </div>
 
         {/* Quick Stats Overview */}

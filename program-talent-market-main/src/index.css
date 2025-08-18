@@ -76,7 +76,8 @@
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 217.2 32.6% 17.5%;
+    /* Reduced emerald/lime accent for better contrast in dark mode */
+    --accent: 217.2 20% 15%; /* Reduced from 32.6% to 20% saturation and 17.5% to 15% lightness */
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
@@ -94,8 +95,8 @@
     --sidebar-border: 210 35% 12%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Dark mode tokens for chips/tags and glow */
-    --tag-bg: 0 0% 18%; /* ~#2d2d2d */
+    /* Dark mode tokens for chips/tags and glow - reduced emerald/lime wash */
+    --tag-bg: 0 0% 16%; /* Reduced from 18% to 16% for less wash */
     --tag-foreground: 0 0% 81%; /* ~#cfcfcf */
   }
 }
@@ -107,5 +108,48 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Subtle page transitions */
+@layer utilities {
+  .page-transition {
+    animation: subtleFadeIn 0.15s ease-out;
+  }
+  
+  @keyframes subtleFadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+    opacity: 0;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Smooth transitions for interactive elements */
+  button, a, [role="button"] {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  /* Card hover transitions */
+  .card-hover {
+    transition: transform 0.2s ease-in-out, 
+                box-shadow 0.2s ease-in-out;
   }
 }
