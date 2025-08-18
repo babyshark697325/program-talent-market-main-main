@@ -40,6 +40,7 @@ import ClientProfile from "./pages/ClientProfile";
 import StudentResources from "./pages/StudentResources";
 import BrowseStudents from "./pages/BrowseStudents";
 import StudentProfile from "./pages/StudentProfile";
+import AllResources from "./pages/AllResources";
 
 import AdminStats from "./pages/AdminStats";
 import AdminUsers from "./pages/AdminUsers";
@@ -202,6 +203,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute>
                     <Layout><StudentResources /></Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/all-resources"
+                element={
+                  <ProtectedRoute>
+                    <Layout><AllResources /></Layout>
                   </ProtectedRoute>
                 }
               />

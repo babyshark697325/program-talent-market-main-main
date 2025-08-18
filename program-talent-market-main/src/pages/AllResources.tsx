@@ -1,9 +1,8 @@
-
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Video, FileText, Users, Award, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const LS_KEY = "student.resources";
 
@@ -62,8 +61,9 @@ function loadResources() {
   ];
 }
 
-const StudentResources = () => {
+const AllResources = () => {
   const [resources, setResources] = React.useState(loadResources());
+  const [filter, setFilter] = React.useState('all');
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -80,57 +80,65 @@ const StudentResources = () => {
     }
   };
 
+  const handleStartLearning = (resource) => {
+    // Track recently viewed
+    const viewed = localStorage.getItem('recentlyViewedResources');
+    const viewedIds = viewed ? JSON.parse(viewed) : [];
+    const newViewed = [resource.id, ...viewedIds.filter(id => id !== resource.id)].slice(0, 5);
+    localStorage.setItem('recentlyViewedResources', JSON.stringify(newViewed));
+    
+    // Navigate to resource detail or start learning
+    console.log('Starting learning:', resource.title);
+  };
+
+  const filteredResources = filter === 'all' 
+    ? resources 
+    : resources.filter(r => r.type === filter);
+
   return (
-      <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-6">Learning Resources</h1>
-          <p className="text-muted-foreground">Enhance your skills with our curated learning materials</p>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-6">
+          <div className="flex items-center justify-between mb-8 space-x-4">
+          <div>
+            <h1 className="text-5xl font-bold text-foreground leading-tight mb-2">All Learning Resources</h1>
+            <p className="text-muted-foreground text-lg">Explore our complete collection of learning materials</p>
+          </div>
+          <Button onClick={() => navigate('/student/resources')}>
+            <BookOpen className="mr-2 h-4 w-4" />
+            Back to Student Resources
+          </Button>
         </div>
-        <Button onClick={() => navigate('/all-resources')}>
-          <BookOpen className="mr-2 h-4 w-4" />
-          Browse All
-        </Button>
-      </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Courses</CardTitle>
-            <Award className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">8</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Hours Learned</CardTitle>
-            <Clock className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">32</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Certificates</CardTitle>
-            <Award className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">5</div>
-          </CardContent>
-        </Card>
-      </div>
+        <div className="space-y-6">
+          <div className="flex gap-2">
+            <Button 
+              variant={filter === 'all' ? 'default' : 'outline'}
+              onClick={() => setFilter('all')}
+            >
+              All Resources
+            </Button>
+            <Button 
+              variant={filter === 'workshop' ? 'default' : 'outline'}
+              onClick={() => setFilter('workshop')}
+            >
+              Workshops
+            </Button>
+            <Button 
+              variant={filter === 'video' ? 'default' : 'outline'}
+              onClick={() => setFilter('video')}
+            >
+              Videos
+            </Button>
+            <Button 
+              variant={filter === 'guide' ? 'default' : 'outline'}
+              onClick={() => setFilter('guide')}
+            >
+              Guides
+            </Button>
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-3xl font-bold">Available Resources</CardTitle>
-          <CardDescription>Choose from our collection of learning materials</CardDescription>
-        </CardHeader>
-        <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
-            {resources.map((resource) => {
+            {filteredResources.map((resource) => {
               const IconComponent = getIconForType(resource.type);
               return (
                 <Card key={resource.id} className="hover:shadow-lg transition-shadow flex flex-col relative">
@@ -160,6 +168,7 @@ const StudentResources = () => {
                     <Button 
                       className="w-full h-8 text-xs"
                       disabled={resource.status === 'coming-soon'}
+                      onClick={() => handleStartLearning(resource)}
                     >
                       {resource.status === 'coming-soon' ? 'Notify Me' : 'Start Learning'}
                     </Button>
@@ -168,10 +177,10 @@ const StudentResources = () => {
               );
             })}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default StudentResources;
+export default AllResources;
