@@ -5,6 +5,8 @@ import { Award, Briefcase, TrendingUp } from "lucide-react";
 import { JobPosting } from "@/data/mockJobs";
 import JobCard from "@/components/JobCard";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { mockStudents } from "@/data/mockStudents";
 
 interface StudentDashboardProps {
   jobs: JobPosting[];
@@ -13,6 +15,32 @@ interface StudentDashboardProps {
 
 const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Get recommended jobs based on student skills
+  const getRecommendedJobs = () => {
+    // For demo purposes, we'll use the first student as current user
+    // In a real app, this would be based on the logged-in user's profile
+    const currentStudent = mockStudents[0]; // Alex Rivera - Full-Stack Web Developer
+    
+    // Filter jobs that match student skills
+    const recommended = jobs.filter(job => {
+      const jobSkills = job.skills.map(skill => skill.toLowerCase());
+      const studentSkills = currentStudent.skills.map(skill => skill.toLowerCase());
+      
+      // Check for overlapping skills
+      const overlappingSkills = jobSkills.filter(skill => 
+        studentSkills.includes(skill)
+      );
+      
+      // Return jobs with at least one matching skill
+      return overlappingSkills.length > 0;
+    });
+    
+    return recommended;
+  };
+
+  const recommendedJobs = getRecommendedJobs();
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -78,15 +106,27 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
 
         {/* Browse Jobs Section */}
         <div className="bg-gradient-to-r from-secondary/60 to-primary/10 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-primary/10 mb-12">
-          <h2 className="text-3xl font-bold mb-6 text-primary">Available Opportunities</h2>
+          <h2 className="text-3xl font-bold mb-6 text-primary">Reccommended Opportunities</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {jobs.slice(0, 6).map((job) => (
-              <JobCard
-                key={job.id}
-                job={job}
-                onView={() => navigate(`/job/${job.id}`)}
-              />
-            ))}
+            {recommendedJobs.length > 0 ? (
+              recommendedJobs.slice(0, 6).map((job) => (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  onView={() => navigate(`/job/${job.id}`)}
+                />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-8">
+                <p className="text-muted-foreground text-lg">No recommended opportunities found based on your skills.</p>
+                <Button 
+                  onClick={() => setActiveTab("jobs")} 
+                  className="mt-4 bg-gradient-to-r from-primary to-primary/80"
+                >
+                  Browse All Jobs
+                </Button>
+              </div>
+            )}
           </div>
           <div className="text-center mt-6">
             <Button onClick={() => setActiveTab("jobs")} className="bg-gradient-to-r from-primary to-primary/80">

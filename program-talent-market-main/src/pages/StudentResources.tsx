@@ -84,7 +84,7 @@ const StudentResources = () => {
       <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-6">Learning Resources</h1>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-4">Learning Resources</h1>
           <p className="text-muted-foreground">Enhance your skills with our curated learning materials</p>
         </div>
         <Button onClick={() => navigate('/all-resources')}>
@@ -133,7 +133,7 @@ const StudentResources = () => {
             {resources.map((resource) => {
               const IconComponent = getIconForType(resource.type);
               return (
-                <Card key={resource.id} className="hover:shadow-lg transition-shadow flex flex-col relative">
+                <Card key={resource.id} className="rounded-2xl shadow-[0_6px_24px_rgba(0,0,0,0.08)] flex flex-col relative">
                   <CardHeader className="flex-1 pt-3 pb-2">
                     <div className="absolute top-3 right-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(resource.status)}`}>
