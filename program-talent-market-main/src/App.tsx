@@ -51,6 +51,10 @@ import AdminSettings from "./pages/AdminSettings";
 import AdminReviewJobs from "./pages/AdminReviewJobs";
 import AdminSpotlightSuccess from "./pages/AdminSpotlightSuccess";
 import AdminLearningResources from "./pages/AdminLearningResources";
+import AdminLearningResourcesList from "./pages/AdminLearningResourcesList";
+import AdminLearningResourceEdit from "./pages/AdminLearningResourceEdit";
+import AdminUsersList from "./pages/AdminUsersList";
+import AdminWaitlist from "./pages/AdminWaitlist";
 
 // New dashboard pages
 import { AdminDashboardPage, StudentDashboardPage, ClientDashboardPage } from "./pages/Dashboards";
@@ -303,6 +307,38 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute requiredRole="admin">
                     <Layout><AdminLearningResources /></Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/learning-resources/list"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <Layout><AdminLearningResourcesList /></Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/learning-resources/edit/:id"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <Layout><AdminLearningResourceEdit /></Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/users/list"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <Layout><AdminUsersList /></Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/waitlist"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <Layout><AdminWaitlist /></Layout>
                   </ProtectedRoute>
                 }
               />

@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Eye } from "lucide-react";
+import { Link } from "react-router-dom";
 
 // Types
 export type ResourceStatus = "available" | "coming-soon";
@@ -100,9 +101,7 @@ const AdminLearningResources: React.FC = () => {
     setResources(resources.filter((r) => r.id !== id));
   };
 
-  const updateResource = (id: number, patch: Partial<LearningResource>) => {
-    setResources((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-  };
+
 
   const saveAll = () => {
     saveResources(resources);
@@ -119,14 +118,14 @@ const AdminLearningResources: React.FC = () => {
           <Button onClick={saveAll}>Save Changes</Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Add new resource */}
-          <Card className="bg-secondary/40 border border-primary/10">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><BookOpen size={18} /> Add Resource</CardTitle>
-              <CardDescription>Create a new learning resource</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        {/* Add new resource form */}
+        <Card className="bg-secondary/40 border border-primary/10 mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><BookOpen size={18} /> Add New Resource</CardTitle>
+            <CardDescription>Create a new learning resource</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm">Title</Label>
                 <Input
@@ -136,123 +135,136 @@ const AdminLearningResources: React.FC = () => {
                 />
               </div>
               <div>
-                <Label className="text-sm">Description</Label>
-                <Textarea
-                  rows={3}
-                  placeholder="Short description"
-                  value={newRes.description}
-                  onChange={(e) => setNewRes({ ...newRes, description: e.target.value })}
+                <Label className="text-sm">Duration</Label>
+                <Input
+                  placeholder="e.g., 1 hour"
+                  value={newRes.duration}
+                  onChange={(e) => setNewRes({ ...newRes, duration: e.target.value })}
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label className="text-sm">Type</Label>
-                  <Select value={newRes.type} onValueChange={(v) => setNewRes({ ...newRes, type: v as ResourceType })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="workshop">Workshop</SelectItem>
-                      <SelectItem value="video">Video</SelectItem>
-                      <SelectItem value="guide">Guide</SelectItem>
-                      <SelectItem value="networking">Networking</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-sm">Duration</Label>
-                  <Input
-                    placeholder="e.g., 1 hour"
-                    value={newRes.duration}
-                    onChange={(e) => setNewRes({ ...newRes, duration: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm">Status</Label>
-                  <Select value={newRes.status} onValueChange={(v) => setNewRes({ ...newRes, status: v as ResourceStatus })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="available">Available</SelectItem>
-                      <SelectItem value="coming-soon">Coming Soon</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            </div>
+            <div>
+              <Label className="text-sm">Description</Label>
+              <Textarea
+                rows={3}
+                placeholder="Short description"
+                value={newRes.description}
+                onChange={(e) => setNewRes({ ...newRes, description: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm">Type</Label>
+                <Select value={newRes.type} onValueChange={(v) => setNewRes({ ...newRes, type: v as ResourceType })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="workshop">Workshop</SelectItem>
+                    <SelectItem value="video">Video</SelectItem>
+                    <SelectItem value="guide">Guide</SelectItem>
+                    <SelectItem value="networking">Networking</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="text-right">
-                <Button variant="outline" onClick={addResource}>Add Resource</Button>
+              <div>
+                <Label className="text-sm">Status</Label>
+                <Select value={newRes.status} onValueChange={(v) => setNewRes({ ...newRes, status: v as ResourceStatus })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="available">Available</SelectItem>
+                    <SelectItem value="coming-soon">Coming Soon</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="text-right">
+              <Button variant="outline" onClick={addResource}>Add Resource</Button>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Edit existing resources */}
-          <Card className="bg-secondary/40 border border-primary/10">
-            <CardHeader>
-              <CardTitle>Existing Resources</CardTitle>
-              <CardDescription>Inline edit and remove resources</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {resources.length === 0 && (
-                <p className="text-sm text-muted-foreground">No resources yet. Add one on the left.</p>
-              )}
+        {/* Resources Grid */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-semibold">Existing Resources</h2>
+            <div className="flex gap-3">
+              <Button variant="outline" asChild>
+                <Link to="/admin/learning-resources/list">
+                  <Eye className="mr-2 h-4 w-4" />
+                  See All in List View
+                </Link>
+              </Button>
+              <Button onClick={saveAll}>Save All Changes</Button>
+            </div>
+          </div>
+          
+          {resources.length === 0 ? (
+            <Card className="text-center py-12">
+              <CardContent>
+                <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No resources yet. Add one above to get started.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {resources.map((r) => (
-                <div key={r.id} className="border rounded-lg p-3 space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-sm">Title</Label>
-                      <Input value={r.title} onChange={(e) => updateResource(r.id, { title: e.target.value })} />
+                <Card key={r.id} className="h-full flex flex-col">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-lg leading-tight mb-2">{r.title}</CardTitle>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-sm text-muted-foreground capitalize">{r.type}</span>
+                          <span className="text-muted-foreground">•</span>
+                          <span className="text-sm text-muted-foreground">{r.duration}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            r.status === 'available' 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                          }`}>
+                            {r.status === 'available' ? 'Available' : 'Coming Soon'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <Label className="text-sm">Duration</Label>
-                      <Input value={r.duration} onChange={(e) => updateResource(r.id, { duration: e.target.value })} />
+                  </CardHeader>
+                  
+                  <CardContent className="flex-1 flex flex-col">
+                    <p className="text-sm text-muted-foreground mb-4 flex-1">{r.description}</p>
+                    
+                    <div className="flex items-center justify-between pt-3 border-t">
+                      <span className="text-xs text-muted-foreground">ID: {r.id}</span>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          asChild
+                          className="h-8 px-3"
+                        >
+                          <Link to={`/admin/learning-resources/edit/${r.id}`}>
+                            Edit
+                          </Link>
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm" 
+                          onClick={() => removeResource(r.id)}
+                          className="h-8 px-3"
+                        >
+                          Remove
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm">Description</Label>
-                    <Textarea rows={3} value={r.description} onChange={(e) => updateResource(r.id, { description: e.target.value })} />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-sm">Type</Label>
-                      <Select value={r.type} onValueChange={(v) => updateResource(r.id, { type: v as ResourceType })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="workshop">Workshop</SelectItem>
-                          <SelectItem value="video">Video</SelectItem>
-                          <SelectItem value="guide">Guide</SelectItem>
-                          <SelectItem value="networking">Networking</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label className="text-sm">Status</Label>
-                      <Select value={r.status} onValueChange={(v) => updateResource(r.id, { status: v as ResourceStatus })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="available">Available</SelectItem>
-                          <SelectItem value="coming-soon">Coming Soon</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">ID: {r.id}</span>
-                    <Button variant="destructive" size="sm" onClick={() => removeResource(r.id)}>Remove</Button>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
-              {resources.length > 0 && (
-                <div className="text-right">
-                  <Button onClick={saveAll}>Save Changes</Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -3,43 +3,56 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Flag, MessageSquare, User } from 'lucide-react';
+import { supabase } from '../integrations/supabase/client';
+
+interface Report {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  reporter_name: string | null;
+  reported_name: string | null;
+  status: string;
+  priority: string;
+  created_at: string;
+  resolved_at: string | null;
+}
 
 const AdminReports = () => {
-  const reports = [
-    {
-      id: 1,
-      type: 'user',
-      title: 'Inappropriate Profile Content',
-      description: 'User has uploaded inappropriate content to their profile',
-      reporter: 'Sarah Johnson',
-      reported: 'Mike Wilson',
-      status: 'pending',
-      priority: 'high',
-      date: '2024-06-24',
-    },
-    {
-      id: 2,
-      type: 'job',
-      title: 'Suspicious Job Posting',
-      description: 'Job posting seems to be a scam or fraudulent',
-      reporter: 'Alex Rivera',
-      reported: 'Quick Money LLC',
-      status: 'investigating',
-      priority: 'medium',
-      date: '2024-06-23',
-    },
-    {
-      id: 3,
-      type: 'payment',
-      title: 'Payment Dispute',
-      description: 'Client claims work was not delivered as agreed',
-      reporter: 'Tech Startup Inc',
-      reported: 'Emma Davis',
-      status: 'resolved',
-      priority: 'high',
-      date: '2024-06-22',
-    },
-  ];
+  const [reports, setReports] = React.useState<Report[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('reports')
+          .select('id,type,title,description,reporter_name,reported_name,status,priority,created_at,resolved_at')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        setReports((data || []) as any);
+      } catch (e) {
+        console.warn('Reports fetch error', e);
+        setReports([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReports();
+  }, []);
+
+  const openReports = React.useMemo(() => reports.filter(r => r.status !== 'resolved').length, [reports]);
+  const investigatingCount = React.useMemo(() => reports.filter(r => r.status === 'investigating').length, [reports]);
+  const resolvedToday = React.useMemo(() => {
+    const today = new Date().toDateString();
+    return reports.filter(r => r.status === 'resolved' && r.resolved_at && new Date(r.resolved_at).toDateString() === today).length;
+  }, [reports]);
+  const avgResolutionDays = React.useMemo(() => {
+    const resolved = reports.filter(r => r.status === 'resolved' && r.resolved_at);
+    if (!resolved.length) return null;
+    const sumDays = resolved.reduce((acc, r) => acc + (new Date(r.resolved_at!).getTime() - new Date(r.created_at).getTime()) / (1000 * 60 * 60 * 24), 0);
+    return (sumDays / resolved.length).toFixed(1);
+  }, [reports]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -89,7 +102,7 @@ const AdminReports = () => {
               <AlertTriangle className="h-4 w-4 text-red-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12</div>
+              <div className="text-2xl font-bold">{openReports}</div>
             </CardContent>
           </Card>
           <Card>
@@ -98,7 +111,7 @@ const AdminReports = () => {
               <Flag className="h-4 w-4 text-yellow-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">5</div>
+              <div className="text-2xl font-bold">{investigatingCount}</div>
             </CardContent>
           </Card>
           <Card>
@@ -107,7 +120,7 @@ const AdminReports = () => {
               <MessageSquare className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">8</div>
+              <div className="text-2xl font-bold">{resolvedToday}</div>
             </CardContent>
           </Card>
           <Card>
@@ -115,7 +128,7 @@ const AdminReports = () => {
               <CardTitle className="text-sm font-medium">Avg Resolution Time</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">2.4 days</div>
+              <div className="text-2xl font-bold">{avgResolutionDays ? `${avgResolutionDays} days` : '—'}</div>
             </CardContent>
           </Card>
         </div>
@@ -139,7 +152,7 @@ const AdminReports = () => {
                         <p className="font-medium">{report.title}</p>
                         <p className="text-sm text-muted-foreground">{report.description}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Reported by: {report.reporter} • Against: {report.reported}
+                          Reported by: {report.reporter_name || '—'} • Against: {report.reported_name || '—'}
                         </p>
                       </div>
                     </div>
@@ -150,7 +163,7 @@ const AdminReports = () => {
                       <Badge variant={getStatusColor(report.status)}>
                         {report.status}
                       </Badge>
-                      <span className="text-sm text-muted-foreground">{report.date}</span>
+                      <span className="text-sm text-muted-foreground">{new Date(report.created_at).toLocaleDateString()}</span>
                       <Button variant="outline" size="sm">
                         Review
                       </Button>

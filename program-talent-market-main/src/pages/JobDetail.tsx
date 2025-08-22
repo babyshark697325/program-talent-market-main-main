@@ -1,16 +1,31 @@
 
 import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Building, MapPin, Clock, DollarSign, Calendar, Users, Mail, Bookmark } from 'lucide-react';
 import { mockJobs } from '@/data/mockJobs';
+import { useAuth } from "@/contexts/AuthContext";
 
 const JobDetail = () => {
   const { id } = useParams();
   const job = mockJobs.find(j => j.id === parseInt(id || '0'));
+  const { userRole } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isClientRole = userRole === 'client';
+  const isClientContext = isClientRole || Boolean((location.state as any)?.clientView);
+
+  const handleClientEdit = () => {
+    if (job) navigate('/manage-jobs', { state: { editId: job.id } });
+  };
+  const handleClientRemove = () => {
+    if (job && confirm('Are you sure you want to remove this job?')) {
+      navigate('/manage-jobs', { state: { removeId: job.id } });
+    }
+  };
 
   // Scroll to top when component mounts or job ID changes
   useEffect(() => {
@@ -82,16 +97,27 @@ const JobDetail = () => {
               </div>
               <div className="text-muted-foreground mb-4">Budget</div>
               
-              <div className="flex flex-col gap-2">
-                <Button size="lg" className="bg-gradient-to-r from-primary to-primary/80">
-                  <Mail className="mr-2 h-4 w-4" />
-                  Apply Now
-                </Button>
-                <Button variant="outline" size="lg">
-                  <Bookmark className="mr-2 h-4 w-4" />
-                  Save Job
-                </Button>
-              </div>
+              {isClientContext ? (
+                <div className="flex flex-col gap-2">
+                  <Button variant="outline" size="lg" onClick={handleClientEdit}>
+                    Edit Job
+                  </Button>
+                  <Button variant="destructive" size="lg" onClick={handleClientRemove}>
+                    Remove Job
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <Button size="lg" className="bg-gradient-to-r from-primary to-primary/80">
+                    <Mail className="mr-2 h-4 w-4" />
+                    Apply Now
+                  </Button>
+                  <Button variant="outline" size="lg">
+                    <Bookmark className="mr-2 h-4 w-4" />
+                    Save Job
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

@@ -28,7 +28,7 @@ const Auth: React.FC = () => {
   const location = useLocation();
   const { toast } = useToast();
 
-  const [tab, setTab] = React.useState<"signin" | "signup">("signin");
+  const [tab, setTab] = React.useState<"signin" | "signup" | "waitlist">("signin");
   const [signInData, setSignInData] = React.useState({ email: "", password: "" });
   const [signUpData, setSignUpData] = React.useState({
     email: "",
@@ -37,7 +37,14 @@ const Auth: React.FC = () => {
     lastName: "",
     role: "student",
   });
-  const [submitting, setSubmitting] = React.useState<"in" | "up" | "reset" | "resend" | null>(null);
+  const [waitlistData, setWaitlistData] = React.useState({
+    email: "",
+    firstName: "",
+    lastName: "",
+    role: "student",
+    city: "",
+  });
+  const [submitting, setSubmitting] = React.useState<"in" | "up" | "reset" | "resend" | "waitlist" | null>(null);
 
   React.useEffect(() => {
     if (!loading && user) {
@@ -201,6 +208,62 @@ const Auth: React.FC = () => {
     }
   };
 
+  const handleWaitlist = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting("waitlist");
+
+    const email = waitlistData.email.trim().toLowerCase();
+    const { firstName, lastName, role, city } = waitlistData;
+
+    try {
+              const { error } = await supabase
+          .from('waitlist')
+          .insert({
+            email,
+            first_name: firstName || null,
+            last_name: lastName || null,
+            role: role,
+            city: city || null,
+          });
+
+      if (error) {
+        if (error.code === '23505') { // Unique constraint violation
+          toast({
+            title: "Already on waitlist",
+            description: "This email is already on our waitlist.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Couldn't join waitlist",
+            description: error.message || "Please try again.",
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
+      toast({
+        title: "Welcome to the waitlist!",
+        description: "We'll notify you when we're ready to onboard new users.",
+      });
+
+      // Reset form
+      setWaitlistData({
+        email: "",
+        firstName: "",
+        lastName: "",
+        role: "student",
+        city: "",
+      });
+
+      // Switch to signin tab
+      setTab("signin");
+    } finally {
+      setSubmitting(null);
+    }
+  };
+
   const handleGuest = () => {
     continueAsGuest();
     navigate("/", { replace: true });
@@ -215,9 +278,10 @@ const Auth: React.FC = () => {
         </CardHeader>
         <CardContent className="pt-0">
           <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
-            <TabsList className="grid grid-cols-2 w-full">
+            <TabsList className="grid grid-cols-3 w-full">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
             </TabsList>
 
             {/* Sign In */}
@@ -326,6 +390,74 @@ const Auth: React.FC = () => {
                 <Button type="submit" className="w-full" disabled={submitting === "up"}>
                   {submitting === "up" ? "Creating account..." : "Create Account"}
                 </Button>
+              </form>
+            </TabsContent>
+
+            {/* Waitlist */}
+            <TabsContent value="waitlist" className="mt-6">
+              <form onSubmit={handleWaitlist} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="first-waitlist">First name</Label>
+                    <Input
+                      id="first-waitlist"
+                      placeholder="First name"
+                      value={waitlistData.firstName}
+                      onChange={(e) => setWaitlistData({ ...waitlistData, firstName: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="last-waitlist">Last name</Label>
+                    <Input
+                      id="last-waitlist"
+                      placeholder="Last name"
+                      value={waitlistData.lastName}
+                      onChange={(e) => setWaitlistData({ ...waitlistData, lastName: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email-waitlist">Email *</Label>
+                  <Input
+                    id="email-waitlist"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={waitlistData.email}
+                    onChange={(e) => setWaitlistData({ ...waitlistData, email: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Role</Label>
+                  <Select
+                    value={waitlistData.role}
+                    onValueChange={(v) => setWaitlistData({ ...waitlistData, role: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="student">Student</SelectItem>
+                      <SelectItem value="client">Client</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city-waitlist">City</Label>
+                  <Input
+                    id="city-waitlist"
+                    placeholder="e.g., Jacksonville, Orlando, Tampa"
+                    value={waitlistData.city}
+                    onChange={(e) => setWaitlistData({ ...waitlistData, city: e.target.value })}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={submitting === "waitlist"}>
+                  {submitting === "waitlist" ? "Joining waitlist..." : "Join Waitlist"}
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  We'll notify you when we're ready to onboard new users.
+                </p>
               </form>
             </TabsContent>
           </Tabs>

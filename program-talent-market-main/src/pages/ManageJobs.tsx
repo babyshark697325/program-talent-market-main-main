@@ -15,7 +15,7 @@ const ManageJobs = () => {
   const [isPostJobOpen, setIsPostJobOpen] = useState(false);
 
   const handleJobView = (id: number) => {
-    navigate(`/job/${id}`);
+    navigate(`/job/${id}`, { state: { clientView: true } });
   };
 
   const handlePostJob = (formData: any) => {
@@ -137,6 +137,7 @@ const ManageJobs = () => {
                   <JobCard
                     job={job}
                     onView={() => handleJobView(job.id)}
+                    hideBookmark
                   />
                 </div>
               </div>

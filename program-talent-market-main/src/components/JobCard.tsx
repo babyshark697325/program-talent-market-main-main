@@ -6,13 +6,17 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { JobPosting } from "@/data/mockJobs";
 import { Building, Calendar, Mail, DollarSign } from "lucide-react";
 import BookmarkButton from "./BookmarkButton";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface JobCardProps {
   job: JobPosting;
   onView: () => void;
+  hideBookmark?: boolean;
 }
 
-const JobCard: React.FC<JobCardProps> = ({ job, onView }) => {
+const JobCard: React.FC<JobCardProps> = ({ job, onView, hideBookmark = false }) => {
+  const { userRole } = useAuth();
+  const isClient = userRole === 'client';
   return (
     <Card className="h-full flex flex-col hover:shadow-lg card-hover bg-background text-foreground border-border">
       <CardHeader className="pb-3">
@@ -24,7 +28,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onView }) => {
               <span>{job.company}</span>
             </div>
           </div>
-          <BookmarkButton jobId={job.id} className="ml-2" />
+          {!isClient && !hideBookmark && <BookmarkButton jobId={job.id} className="ml-2" />}
         </div>
         <div className="flex flex-wrap gap-2">
           {job.skills.slice(0, 3).map((skill) => (

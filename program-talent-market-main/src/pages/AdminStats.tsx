@@ -1,30 +1,163 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { supabase } from '../integrations/supabase/client';
 
 const AdminStats = () => {
-  const platformStats = [
-    { label: 'Total Users', value: 1247, change: '+12%', period: 'vs last month' },
-    { label: 'Active Projects', value: 89, change: '+23%', period: 'vs last month' },
-    { label: 'Total Revenue', value: '$45,230', change: '+18%', period: 'vs last month' },
-    { label: 'Success Rate', value: '94.2%', change: '+2.1%', period: 'vs last month' },
-  ];
+  const [platformStats, setPlatformStats] = React.useState<{
+    label: string;
+    value: string | number;
+    change?: string;
+    period?: string;
+  }[]>([]);
+  const [skillDemand, setSkillDemand] = React.useState<{ skill: string; demand: number }[]>([]);
+  const [recentActivity, setRecentActivity] = React.useState<{ action: string; user: string; time: string }[]>([]);
+  const [financial, setFinancial] = React.useState({ revenue: 0, fees: 0, processing: 0, net: 0 });
 
-  const skillDemand = [
-    { skill: 'Web Development', demand: 85 },
-    { skill: 'Graphic Design', demand: 72 },
-    { skill: 'Content Writing', demand: 68 },
-    { skill: 'Data Analysis', demand: 55 },
-    { skill: 'Social Media', demand: 45 },
-  ];
+  React.useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Total users (profiles)
+        const { count: totalUsers } = await supabase
+          .from('profiles')
+          .select('user_id', { count: 'exact', head: true });
 
-  const recentActivity = [
-    { action: 'New user registered', user: 'Alex Johnson', time: '2 minutes ago' },
-    { action: 'Job posted', user: 'Tech Corp', time: '15 minutes ago' },
-    { action: 'Project completed', user: 'Sarah Davis', time: '1 hour ago' },
-    { action: 'Payment processed', user: 'Design Studio', time: '2 hours ago' },
-    { action: 'New review submitted', user: 'Mike Wilson', time: '3 hours ago' },
-  ];
+        // Admins count
+        const { count: admins } = await supabase
+          .from('user_roles')
+          .select('user_id', { count: 'exact', head: true })
+          .eq('role', 'admin');
+
+        // Pending waitlist
+        const { count: pendingWaitlist } = await supabase
+          .from('waitlist')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending');
+
+        // Active projects
+        let activeProjects = 0;
+        try {
+          const { count: activeCount } = await supabase
+            .from('jobs')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'active');
+          activeProjects = activeCount ?? 0;
+        } catch {}
+
+        // Monthly revenue (this month, completed payments)
+        let monthlyRevenue = 0;
+        let paymentsRowsAny: any[] | null = null;
+        try {
+          const firstOfMonth = new Date();
+          firstOfMonth.setDate(1);
+          firstOfMonth.setHours(0, 0, 0, 0);
+          const { data: paymentsRows } = await supabase
+            .from('payments')
+            .select('amount, status, created_at')
+            .gte('created_at', firstOfMonth.toISOString())
+            .eq('status', 'completed');
+          paymentsRowsAny = paymentsRows as any[] | null;
+          monthlyRevenue = (paymentsRowsAny || []).reduce((sum: number, r: any) => sum + Number(r.amount || 0), 0);
+        } catch {}
+
+        // Derive fees and costs
+        const txCount = (paymentsRowsAny || []).length;
+        const platformFees = monthlyRevenue * 0.10; // 10% platform fee (adjust as needed)
+        const processingCosts = monthlyRevenue * 0.029 + txCount * 0.30; // 2.9% + $0.30/txn
+        const netProfit = Math.max(0, monthlyRevenue - platformFees - processingCosts);
+        setFinancial({ revenue: monthlyRevenue, fees: platformFees, processing: processingCosts, net: netProfit });
+
+        setPlatformStats([
+          { label: 'Total Users', value: totalUsers ?? 0 },
+          { label: 'Admins', value: admins ?? 0 },
+          { label: 'Pending Waitlist', value: pendingWaitlist ?? 0 },
+          { label: 'Active Projects', value: activeProjects },
+          { label: 'Monthly Revenue', value: `${monthlyRevenue.toLocaleString()}` },
+        ]);
+      } catch (e) {
+        console.error('Error loading admin stats', e);
+        setPlatformStats([
+          { label: 'Total Users', value: 0 },
+          { label: 'Admins', value: 0 },
+          { label: 'Pending Waitlist', value: 0 },
+          { label: 'Active Projects', value: 0 },
+        ]);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  // Load skill demand (top 5 job skills by frequency)
+  React.useEffect(() => {
+    const fetchSkillDemand = async () => {
+      try {
+        const { data, error } = await supabase.from('jobs').select('skills');
+        if (error) throw error;
+        const counts = new Map<string, number>();
+        (data || []).forEach((row: any) => {
+          const arr: string[] = Array.isArray(row.skills) ? row.skills : [];
+          arr.forEach((s) => {
+            const key = String(s || '').trim();
+            if (!key) return;
+            counts.set(key, (counts.get(key) || 0) + 1);
+          });
+        });
+        const top = Array.from(counts.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([skill, demand]) => ({ skill, demand }));
+        setSkillDemand(top);
+      } catch (e) {
+        setSkillDemand([]);
+      }
+    };
+
+    const fetchRecentActivity = async () => {
+      try {
+        const since = new Date();
+        since.setDate(since.getDate() - 7);
+        const sinceIso = since.toISOString();
+
+        const [profilesRes, jobsRes, reportsRes, paymentsRes] = await Promise.allSettled([
+          supabase.from('profiles').select('display_name, first_name, last_name, email, created_at').gte('created_at', sinceIso).order('created_at', { ascending: false }).limit(10),
+          supabase.from('jobs').select('title, company, posted_at').gte('posted_at', sinceIso).order('posted_at', { ascending: false }).limit(10),
+          supabase.from('reports').select('title, status, created_at').gte('created_at', sinceIso).order('created_at', { ascending: false }).limit(10),
+          supabase.from('payments').select('amount, status, created_at').gte('created_at', sinceIso).order('created_at', { ascending: false }).limit(10),
+        ]);
+
+        const events: { action: string; user: string; time: string }[] = [];
+        const push = (action: string, user: string, ts: string | Date) => {
+          events.push({ action, user, time: new Date(ts).toLocaleString() });
+        };
+
+        if (profilesRes.status === 'fulfilled' && !profilesRes.value.error) {
+          (profilesRes.value.data || []).forEach((p: any) => {
+            const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.display_name || (p.email ? p.email.split('@')[0] : 'User');
+            push('New user registered', name, p.created_at);
+          });
+        }
+        if (jobsRes.status === 'fulfilled' && !jobsRes.value.error) {
+          (jobsRes.value.data || []).forEach((j: any) => push('Job posted', `${j.title}${j.company ? ' @ ' + j.company : ''}`, j.posted_at));
+        }
+        if (reportsRes.status === 'fulfilled' && !reportsRes.value.error) {
+          (reportsRes.value.data || []).forEach((r: any) => push('Report submitted', r.title || 'Report', r.created_at));
+        }
+        if (paymentsRes.status === 'fulfilled' && !paymentsRes.value.error) {
+          (paymentsRes.value.data || []).forEach((pay: any) => {
+            if (pay.status === 'completed') push('Payment processed', `${Number(pay.amount || 0).toLocaleString()}`, pay.created_at);
+          });
+        }
+
+        setRecentActivity(events.slice(0, 10));
+      } catch (e) {
+        setRecentActivity([]);
+      }
+    };
+
+    fetchSkillDemand();
+    fetchRecentActivity();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,7 +170,7 @@ const AdminStats = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
             {platformStats.map((stat, index) => (
               <Card key={index}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -151,19 +284,19 @@ const AdminStats = () => {
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-sm">Monthly Revenue</span>
-                  <span className="font-medium">$12,450</span>
+                  <span className="font-medium">${financial.revenue.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Platform Fees</span>
-                  <span className="font-medium">$2,890</span>
+                  <span className="font-medium">${financial.fees.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Processing Costs</span>
-                  <span className="font-medium">$340</span>
+                  <span className="font-medium">${financial.processing.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between font-medium border-t pt-2">
                   <span>Net Profit</span>
-                  <span>$9,220</span>
+                  <span>${financial.net.toLocaleString()}</span>
                 </div>
               </CardContent>
             </Card>

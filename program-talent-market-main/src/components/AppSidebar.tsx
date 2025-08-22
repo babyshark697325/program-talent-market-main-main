@@ -188,13 +188,37 @@ export function AppSidebar() {
     }
   }
 
+  const getDashboardPath = () => {
+    switch (role) {
+      case 'admin':
+        return '/admin-dashboard'
+      case 'student':
+        return '/student-dashboard'
+      default:
+        return '/'
+    }
+  }
+
+  const handleHomeClick = () => {
+    if (isGuest) {
+      navigate('/')
+      return
+    }
+    navigate(getDashboardPath())
+  }
+
   return (
     <Sidebar className="border-r border-primary/10">
       <SidebarHeader className="p-6">
         <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 bg-gradient-to-br ${getRoleColor()} rounded-lg flex items-center justify-center`}>
-            <span className="text-primary-foreground font-bold text-sm">MV</span>
-          </div>
+          <button
+            onClick={handleHomeClick}
+            className={`w-8 h-8 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center cursor-pointer`}
+            aria-label="Go to home"
+            title="Home"
+          >
+            <Home className="text-primary-foreground h-4 w-4" />
+          </button>
           <div>
             <h2 className="font-bold text-lg bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               MyVillage
