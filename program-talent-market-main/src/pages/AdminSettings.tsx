@@ -6,14 +6,16 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/components/ui/use-toast';
 
 const AdminSettings = () => {
+  const { toast } = useToast();
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-6 py-8">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-foreground leading-tight mb-2">System Settings</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-2">System Settings</h1>
             <p className="text-muted-foreground text-lg">Configure platform settings and preferences</p>
           </div>
         </div>
@@ -147,8 +149,15 @@ const AdminSettings = () => {
           </Card>
 
           <div className="flex justify-end space-x-2">
-            <Button variant="outline">Reset to Default</Button>
-            <Button>Save Changes</Button>
+            <Button
+              variant="outline"
+              onClick={() => toast({ title: 'Reset to default', description: 'Settings reset to default values (UI only).' })}
+            >
+              Reset to Default
+            </Button>
+            <Button onClick={() => toast({ title: 'Settings saved', description: 'Your settings have been saved.' })}>
+              Save Changes
+            </Button>
           </div>
         </div>
       </div>

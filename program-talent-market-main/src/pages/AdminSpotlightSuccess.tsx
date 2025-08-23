@@ -161,7 +161,7 @@ const AdminSpotlightSuccess: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <div>
-            <h1 className="text-4xl font-bold leading-tight mb-2">Spotlight Success Settings</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-2">Spotlight Success Settings</h1>
             <p className="text-muted-foreground">Pick a featured student and configure the quote and action button</p>
           </div>
         </div>

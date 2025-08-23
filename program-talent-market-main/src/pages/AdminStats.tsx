@@ -119,11 +119,12 @@ const AdminStats = () => {
         since.setDate(since.getDate() - 7);
         const sinceIso = since.toISOString();
 
-        const [profilesRes, jobsRes, reportsRes, paymentsRes] = await Promise.allSettled([
+        const [profilesRes, jobsRes, reportsRes, paymentsRes, waitlistRes] = await Promise.allSettled([
           supabase.from('profiles').select('display_name, first_name, last_name, email, created_at').gte('created_at', sinceIso).order('created_at', { ascending: false }).limit(10),
           supabase.from('jobs').select('title, company, posted_at').gte('posted_at', sinceIso).order('posted_at', { ascending: false }).limit(10),
           supabase.from('reports').select('title, status, created_at').gte('created_at', sinceIso).order('created_at', { ascending: false }).limit(10),
           supabase.from('payments').select('amount, status, created_at').gte('created_at', sinceIso).order('created_at', { ascending: false }).limit(10),
+          supabase.from('waitlist').select('id, email, first_name, last_name, role, city, created_at, status').order('created_at', { ascending: false }).limit(10),
         ]);
 
         const events: { action: string; user: string; time: string }[] = [];
@@ -149,6 +150,16 @@ const AdminStats = () => {
           });
         }
 
+        if (waitlistRes.status === 'fulfilled' && !waitlistRes.value.error) {
+          (waitlistRes.value.data || []).forEach((w: any) => {
+            const name = [w.first_name, w.last_name].filter(Boolean).join(' ') || (w.email ? w.email.split('@')[0] : 'Guest');
+            const details: string[] = [];
+            if (w.role) details.push(w.role);
+            if (w.city) details.push(w.city);
+            push('Joined waitlist', `${name}${details.length ? ` (${details.join(', ')})` : ''}`, w.created_at);
+          });
+        }
+
         setRecentActivity(events.slice(0, 10));
       } catch (e) {
         setRecentActivity([]);
@@ -164,7 +175,7 @@ const AdminStats = () => {
       <div className="container mx-auto px-6 py-8">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-foreground leading-tight mb-2">Platform Statistics</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-2">Platform Statistics</h1>
             <p className="text-muted-foreground text-lg">Comprehensive platform performance overview</p>
           </div>
         </div>

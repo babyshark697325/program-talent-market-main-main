@@ -1,53 +1,41 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { User, Mail, Phone, MapPin, Edit, Save, X, Plus, Image, ExternalLink, Trash2, Users, Linkedin, Github, Link } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+// Brand icons for platform links
+const UpworkIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <span className={`inline-flex items-center justify-center rounded-full bg-[#14A800] text-white font-semibold ${className ?? ''}`} style={{ fontSize: '0.6rem', lineHeight: 1 }}>
+    U
+  </span>
+);
+
+const FiverrIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <span className={`inline-flex items-center justify-center rounded-full bg-[#1DBF73] text-white font-semibold ${className ?? ''}`} style={{ fontSize: '0.6rem', lineHeight: 1 }}>
+    F
+  </span>
+);
 
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState({
-    name: 'Alex Rivera',
-    email: 'alex.rivera@email.com',
-    phone: '+1 (555) 123-4567',
-    location: 'San Francisco, CA',
-    bio: 'Passionate full-stack web developer with expertise in creating modern, responsive websites and web applications. I love bringing creative ideas to life through clean code and beautiful design.',
-    skills: ['Web Development', 'Programming', 'UI/UX Design', 'Graphic Design', 'Logo Design', 'Animation'],
-    experience: [
-      {
-        title: 'Full-Stack Web Developer',
-        company: 'Creative Digital Agency',
-        duration: '2023 - Present',
-        description: 'Built responsive e-commerce websites and web applications using modern frameworks and design principles'
-      },
-      {
-        title: 'Frontend Developer & Designer',
-        company: 'Local Business Solutions',
-        duration: '2022 - 2023',
-        description: 'Designed and developed custom websites with focus on user experience and brand identity'
-      }
-    ],
-    portfolio: [
-      {
-        id: 1,
-        imageUrl: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=400&h=280&q=80',
-        title: 'E-commerce Website',
-        description: 'Full-stack online store with payment integration',
-        link: 'https://example.com'
-      },
-      {
-        id: 2,
-        imageUrl: 'https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?auto=format&fit=crop&w=400&h=280&q=80',
-        title: 'Portfolio Website',
-        description: 'Modern responsive portfolio for creative agency',
-        link: 'https://example.com'
-      }
-    ],
+    name: '',
+    email: '',
+    phone: '',
+    location: '',
+    avatarUrl: '',
+    bio: '',
+    skills: [] as string[],
+    experience: [] as any[],
+    portfolio: [] as any[],
     platformLinks: {
       linkedin: '',
       upwork: '',
@@ -57,6 +45,7 @@ const Profile = () => {
   });
 
   const [editedProfile, setEditedProfile] = useState(profile);
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const [newSkill, setNewSkill] = useState("");
   const [newExp, setNewExp] = useState({ title: "", company: "", duration: "", description: "" });
   const [showEmailSettings, setShowEmailSettings] = useState(false);
@@ -65,6 +54,86 @@ const Profile = () => {
   const [twoFAEnabled, setTwoFAEnabled] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [pwd, setPwd] = useState({ current: "", next: "", confirm: "" });
+  const [showPortfolioForm, setShowPortfolioForm] = useState(false);
+  const [newPortfolio, setNewPortfolio] = useState({ title: "", description: "", link: "", imageUrl: "" });
+  const portfolioFormRef = useRef<HTMLDivElement>(null);
+  const portfolioTitleInputRef = useRef<HTMLInputElement>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const triggerAvatarPick = () => fileInputRef.current?.click();
+  const handleAvatarChange = (file?: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = () => setEditedProfile({ ...editedProfile, avatarUrl: String(reader.result || '') });
+    reader.readAsDataURL(file);
+  };
+  const removeAvatar = () => setEditedProfile({ ...editedProfile, avatarUrl: '' });
+
+  const addPortfolioItem = () => {
+    const title = newPortfolio.title.trim();
+    if (!title) return;
+    const nextId = (editedProfile.portfolio?.length ? Math.max(...editedProfile.portfolio.map((p: any) => p.id)) + 1 : 1);
+    const item = {
+      id: nextId,
+      title,
+      description: newPortfolio.description.trim(),
+      link: newPortfolio.link.trim(),
+      imageUrl: newPortfolio.imageUrl || '',
+    } as any;
+    setEditedProfile(prev => ({ ...prev, portfolio: [...(prev.portfolio || []), item] }));
+    setNewPortfolio({ title: '', description: '', link: '', imageUrl: '' });
+    setShowPortfolioForm(false);
+  };
+
+  const removePortfolioItem = (id: any) => {
+    setEditedProfile(prev => ({ ...prev, portfolio: (prev.portfolio || []).filter((p: any) => p.id !== id) }));
+  };
+
+  useEffect(() => {
+    if (showPortfolioForm) {
+      setTimeout(() => {
+        portfolioFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        portfolioTitleInputRef.current?.focus();
+      }, 0);
+    }
+  }, [showPortfolioForm]);
+
+  // Load current user's profile from Supabase
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data: userRes } = await supabase.auth.getUser();
+        const user = userRes?.user;
+        if (!user) { setLoadingProfile(false); return; }
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('first_name,last_name,display_name,email,avatar_url,bio')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (error) throw error;
+        if (data) {
+          const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || data.display_name || (data.email ? data.email.split('@')[0] : '');
+          const loaded = {
+            name,
+            email: data.email || '',
+            phone: '',
+            location: '',
+            avatarUrl: data.avatar_url || '',
+            bio: data.bio || '',
+            skills: [] as string[],
+            experience: [] as any[],
+            portfolio: [] as any[],
+            platformLinks: { linkedin: '', upwork: '', fiverr: '', github: '' },
+          };
+          setProfile(loaded);
+          setEditedProfile(loaded);
+        }
+      } catch {}
+      finally { setLoadingProfile(false); }
+    };
+    load();
+  }, []);
 
   const handleSave = () => {
     setProfile(editedProfile);
@@ -116,6 +185,7 @@ const Profile = () => {
         <div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-6">My Profile</h1>
           <p className="text-muted-foreground">Manage your profile information and settings</p>
+          {loadingProfile && <p className="text-xs text-muted-foreground">Loading profile...</p>}
         </div>
         {!isEditing ? (
           <Button onClick={() => setIsEditing(true)}>
@@ -153,8 +223,44 @@ const Profile = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-4">
-                <div className="w-20 h-20 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
-                  <User className="text-white" size={32} />
+                <div className="relative">
+                  {editedProfile.avatarUrl ? (
+                    <Avatar className="h-20 w-20">
+                      <AvatarImage src={editedProfile.avatarUrl} alt={editedProfile.name} />
+                    </Avatar>
+                  ) : (
+                    <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                      <User className="text-white" size={32} />
+                    </div>
+                  )}
+                  {isEditing && (
+                    <>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleAvatarChange(e.target.files?.[0] || null)}
+                      />
+                      <button
+                        type="button"
+                        onClick={triggerAvatarPick}
+                        aria-label="Change photo"
+                        className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full border bg-background shadow hover:bg-secondary flex items-center justify-center"
+                      >
+                        <Image className="h-4 w-4" />
+                      </button>
+                      {editedProfile.avatarUrl && (
+                        <button
+                          type="button"
+                          onClick={removeAvatar}
+                          className="mt-2 block text-xs text-muted-foreground hover:text-red-600"
+                        >
+                          Remove photo
+                        </button>
+                      )}
+                    </>
+                  )}
                 </div>
                 <div className="flex-1 space-y-2">
                   <div>
@@ -162,10 +268,10 @@ const Profile = () => {
                     {isEditing ? (
                       <Input
                         value={editedProfile.name}
-                        onChange={(e) => setEditedProfile({...editedProfile, name: e.target.value})}
+                        onChange={(e) => setEditedProfile({ ...editedProfile, name: e.target.value })}
                       />
                     ) : (
-                      <p className="text-lg font-medium">{profile.name}</p>
+                      <p className="text-lg font-medium">{profile.name || '—'}</p>
                     )}
                   </div>
                 </div>
@@ -341,11 +447,72 @@ const Profile = () => {
 
         <TabsContent value="portfolio">
           <Card>
-            <CardHeader>
-              <CardTitle>Portfolio</CardTitle>
-              <CardDescription>Showcase your best work and projects</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Portfolio</CardTitle>
+                <CardDescription>Showcase your best work and projects</CardDescription>
+              </div>
+              {isEditing && !showPortfolioForm && (
+                <Button variant="outline" size="sm" onClick={() => setShowPortfolioForm(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
+              {isEditing && showPortfolioForm && (
+                <div ref={portfolioFormRef} className="border rounded-md p-4 mb-4 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Input
+                      ref={portfolioTitleInputRef as any}
+                      placeholder="Title *"
+                      value={newPortfolio.title}
+                      onChange={(e) => setNewPortfolio({ ...newPortfolio, title: e.target.value })}
+                    />
+                    <Input
+                      placeholder="Project Link (optional)"
+                      value={newPortfolio.link}
+                      onChange={(e) => setNewPortfolio({ ...newPortfolio, link: e.target.value })}
+                    />
+                    <Textarea
+                      placeholder="Description (optional)"
+                      className="md:col-span-2"
+                      rows={3}
+                      value={newPortfolio.description}
+                      onChange={(e) => setNewPortfolio({ ...newPortfolio, description: e.target.value })}
+                    />
+                    <div className="md:col-span-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (!f) return;
+                          const r = new FileReader();
+                          r.onload = () => setNewPortfolio({ ...newPortfolio, imageUrl: String(r.result || '') });
+                          r.readAsDataURL(f);
+                        }}
+                      />
+                      {newPortfolio.imageUrl && (
+                        <img src={newPortfolio.imageUrl} alt="Preview" className="mt-2 h-32 w-full object-cover rounded-md border" />
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowPortfolioForm(false);
+                        setNewPortfolio({ title: '', description: '', link: '', imageUrl: '' });
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button size="sm" onClick={addPortfolioItem}>Add Item</Button>
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {profile.portfolio?.map((item) => (
                   <div key={item.id} className="border rounded-lg overflow-hidden">
@@ -358,7 +525,12 @@ const Profile = () => {
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="font-semibold">{item.title}</h3>
                         {isEditing && (
-                          <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700"
+                            onClick={() => removePortfolioItem(item.id)}
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         )}
@@ -378,13 +550,7 @@ const Profile = () => {
                   </div>
                 ))}
               </div>
-              {isEditing && (
-                <Button variant="outline">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Portfolio Item
-                </Button>
-              )}
-            </CardContent>
+                          </CardContent>
           </Card>
         </TabsContent>
 
@@ -558,7 +724,7 @@ const Profile = () => {
                 
                 <div>
                   <label className="text-sm font-medium flex items-center gap-2 mb-2">
-                    <Link className="h-4 w-4 text-[#6FDA44]" />
+                    <UpworkIcon className="h-4 w-4" />
                     Upwork
                   </label>
                   {isEditing ? (
@@ -574,7 +740,7 @@ const Profile = () => {
                     profile.platformLinks.upwork ? (
                       <Button variant="outline" size="sm" asChild>
                         <a href={profile.platformLinks.upwork} target="_blank" rel="noopener noreferrer">
-                          <Link className="mr-2 h-3 w-3" />
+                          <UpworkIcon className="mr-2 h-3 w-3" />
                           View Upwork
                         </a>
                       </Button>
@@ -586,7 +752,7 @@ const Profile = () => {
                 
                 <div>
                   <label className="text-sm font-medium flex items-center gap-2 mb-2">
-                    <Link className="h-4 w-4 text-[#1DBF73]" />
+                    <FiverrIcon className="h-4 w-4" />
                     Fiverr
                   </label>
                   {isEditing ? (
@@ -602,7 +768,7 @@ const Profile = () => {
                     profile.platformLinks.fiverr ? (
                       <Button variant="outline" size="sm" asChild>
                         <a href={profile.platformLinks.fiverr} target="_blank" rel="noopener noreferrer">
-                          <Link className="mr-2 h-3 w-3" />
+                          <FiverrIcon className="mr-2 h-3 w-3" />
                           View Fiverr
                         </a>
                       </Button>

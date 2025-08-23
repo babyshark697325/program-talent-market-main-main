@@ -1,18 +1,31 @@
 
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { mockJobs, JobPosting } from "@/data/mockJobs";
 import JobCard from "@/components/JobCard";
 import { Button } from "@/components/ui/button";
 import { useSavedJobs } from "@/contexts/SavedJobsContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const SavedJobs = () => {
   const navigate = useNavigate();
   const { savedJobIds } = useSavedJobs();
-  
-  // Get saved jobs from mockJobs based on savedJobIds
-  const savedJobs = useMemo(() => {
-    return mockJobs.filter(job => savedJobIds.includes(job.id));
+  const [savedJobs, setSavedJobs] = useState<any[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        if (!savedJobIds.length) { setSavedJobs([]); return; }
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('id,title,company,description,skills,budget,duration,status')
+          .in('id', savedJobIds);
+        if (error) throw error;
+        setSavedJobs(data || []);
+      } catch {
+        setSavedJobs([]);
+      }
+    };
+    load();
   }, [savedJobIds]);
 
   // Scroll to top when component mounts

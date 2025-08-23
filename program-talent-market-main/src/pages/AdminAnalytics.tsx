@@ -167,12 +167,31 @@ const AdminAnalytics = () => {
     return null;
   };
 
+  const UserTypeTooltip = ({ active, payload, total }: any) => {
+    if (active && payload && payload.length) {
+      const p = payload[0];
+      const name = p.name || p.payload?.name;
+      const value = p.value;
+      const pct = total ? Math.round((value / total) * 100) : null;
+      return (
+        <div className="rounded-md border bg-popover px-3 py-2 text-sm shadow-sm">
+          <div className="font-medium">{name}</div>
+          <div className="text-muted-foreground">
+            Users: <span className="font-semibold text-foreground">{value}</span>
+            {pct !== null ? <span> • {pct}%</span> : null}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-6 py-8">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-foreground leading-tight mb-2">System Analytics</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-2">System Analytics</h1>
             <p className="text-muted-foreground text-lg">Platform performance metrics and insights</p>
           </div>
         </div>
@@ -288,7 +307,10 @@ const AdminAnalytics = () => {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip 
+                    content={<UserTypeTooltip total={userTypeData.reduce((sum, d) => sum + d.value, 0)} />} 
+                    wrapperStyle={{ outline: 'none' }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>

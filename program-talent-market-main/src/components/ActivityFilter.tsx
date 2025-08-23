@@ -37,11 +37,10 @@ const ActivityFilter: React.FC<ActivityFilterProps> = ({
         <SelectContent>
           <SelectItem value="all">All Types</SelectItem>
           <SelectItem value={ActivityType.USER_REGISTRATION}>User Registration</SelectItem>
+          <SelectItem value={ActivityType.WAITLIST_JOINED}>Waitlist Joined</SelectItem>
           <SelectItem value={ActivityType.JOB_POSTED}>Job Posted</SelectItem>
-          <SelectItem value={ActivityType.REPORT_GENERATED}>Report Generated</SelectItem>
           <SelectItem value={ActivityType.PAYMENT_PROCESSED}>Payment Processed</SelectItem>
-          <SelectItem value={ActivityType.USER_REPORTS}>Reports</SelectItem>
-          <SelectItem value={ActivityType.USER_ISSUES}>User Issues</SelectItem>
+          <SelectItem value={ActivityType.USER_REPORTS}>Reports & Issues</SelectItem>
         </SelectContent>
       </Select>
 

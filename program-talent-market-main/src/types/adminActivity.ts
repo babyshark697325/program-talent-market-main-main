@@ -1,5 +1,6 @@
 export enum ActivityType {
   USER_REGISTRATION = "user_registration",
+  WAITLIST_JOINED = "waitlist_joined",
   JOB_POSTED = "job_posted", 
   REPORT_GENERATED = "report_generated",
   PAYMENT_PROCESSED = "payment_processed",

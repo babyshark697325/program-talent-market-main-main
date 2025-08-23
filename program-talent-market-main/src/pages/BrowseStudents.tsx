@@ -6,6 +6,10 @@ import StudentServiceCard from "@/components/StudentServiceCard";
 
 const BrowseStudents = () => {
   const navigate = useNavigate();
+  // Ensure we start at the top when navigating to this page
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
   const [filteredStudents, setFilteredStudents] = useState<StudentService[]>(mockStudents);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);

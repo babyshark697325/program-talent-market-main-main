@@ -6,7 +6,6 @@ import { JobPosting } from "@/data/mockJobs";
 import JobCard from "@/components/JobCard";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { mockStudents } from "@/data/mockStudents";
 import BackToTop from "./BackToTop";
 
 interface StudentDashboardProps {
@@ -18,30 +17,34 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Get recommended jobs based on student skills
-  const getRecommendedJobs = () => {
-    // For demo purposes, we'll use the first student as current user
-    // In a real app, this would be based on the logged-in user's profile
-    const currentStudent = mockStudents[0]; // Alex Rivera - Full-Stack Web Developer
-    
-    // Filter jobs that match student skills
-    const recommended = jobs.filter(job => {
-      const jobSkills = job.skills.map(skill => skill.toLowerCase());
-      const studentSkills = currentStudent.skills.map(skill => skill.toLowerCase());
-      
-      // Check for overlapping skills
-      const overlappingSkills = jobSkills.filter(skill => 
-        studentSkills.includes(skill)
-      );
-      
-      // Return jobs with at least one matching skill
-      return overlappingSkills.length > 0;
-    });
-    
-    return recommended;
-  };
+  // Quick stats from local storage or backend (placeholder keys)
+  const [stats, setStats] = React.useState({ skills: 0, projects: 0, earnings: 0 });
+  React.useEffect(() => {
+    const load = () => {
+      const skills = Number(localStorage.getItem('skillsMastered') || '0');
+      const projects = Number(localStorage.getItem('projectsCompleted') || '0');
+      const earnings = Number(localStorage.getItem('earningsThisMonth') || '0');
+      setStats({
+        skills: isNaN(skills) ? 0 : skills,
+        projects: isNaN(projects) ? 0 : projects,
+        earnings: isNaN(earnings) ? 0 : earnings,
+      });
+    };
+    load();
+    const handler = () => load();
+    window.addEventListener('storage', handler);
+    window.addEventListener('progress:updated', handler);
+    return () => {
+      window.removeEventListener('storage', handler);
+      window.removeEventListener('progress:updated', handler);
+    };
+  }, []);
 
-  const recommendedJobs = getRecommendedJobs();
+  // Recommended jobs: pick active or recent as a simple heuristic
+  const recommendedJobs = React.useMemo(() => {
+    const active = jobs.filter((j) => (j.status ? String(j.status).toLowerCase() === 'active' : true));
+    return active.slice(0, 6);
+  }, [jobs]);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden page-transition">
@@ -76,7 +79,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
                 <Award className="text-primary-foreground" size={24} />
               </div>
               <div>
-                <h3 className="font-bold text-2xl text-primary">12</h3>
+                <h3 className="font-bold text-2xl text-primary">{stats.skills}</h3>
                 <p className="text-muted-foreground">Skills Mastered</p>
               </div>
             </div>
@@ -87,7 +90,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
                 <Briefcase className="text-primary-foreground" size={24} />
               </div>
               <div>
-                <h3 className="font-bold text-2xl text-accent">8</h3>
+                <h3 className="font-bold text-2xl text-accent">{stats.projects}</h3>
                 <p className="text-muted-foreground">Projects Completed</p>
               </div>
             </div>
@@ -98,7 +101,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
                 <TrendingUp className="text-primary-foreground" size={24} />
               </div>
               <div>
-                <h3 className="font-bold text-2xl text-green-600">$2,450</h3>
+                <h3 className="font-bold text-2xl text-green-600">${stats.earnings.toLocaleString()}</h3>
                 <p className="text-muted-foreground">Earnings This Month</p>
               </div>
             </div>

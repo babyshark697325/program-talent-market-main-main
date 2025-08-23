@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 interface SavedJobsContextType {
   savedJobIds: number[];
@@ -11,8 +11,20 @@ interface SavedJobsContextType {
 const SavedJobsContext = createContext<SavedJobsContextType | undefined>(undefined);
 
 export const SavedJobsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Initialize with some mock saved jobs
-  const [savedJobIds, setSavedJobIds] = useState<number[]>([1, 3]);
+  const [savedJobIds, setSavedJobIds] = useState<number[]>(() => {
+    try {
+      const raw = localStorage.getItem('savedJobIds');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return [];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('savedJobIds', JSON.stringify(savedJobIds));
+      window.dispatchEvent(new Event('savedjobs:updated'));
+    } catch {}
+  }, [savedJobIds]);
 
   const addSavedJob = useCallback((jobId: number) => {
     setSavedJobIds(prev => {

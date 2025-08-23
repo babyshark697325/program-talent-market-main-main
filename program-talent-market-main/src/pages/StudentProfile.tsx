@@ -5,12 +5,69 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, MapPin, Clock, Mail, Phone, Award, Users, Linkedin, Github, Link } from 'lucide-react';
-import { mockStudents } from '@/data/mockStudents';
+import { Mail, Phone, Linkedin, Github, Link } from 'lucide-react';
+import { supabase } from '../integrations/supabase/client';
+
+const UpworkIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <img src="https://cdn.simpleicons.org/upwork/FFFFFF" alt="Upwork" className={className ?? ''} />
+);
+
+const FiverrIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <img src="https://cdn.simpleicons.org/fiverr/FFFFFF" alt="Fiverr" className={className ?? ''} />
+);
 
 const StudentProfile = () => {
   const { id } = useParams();
-  const student = mockStudents.find(s => s.id === parseInt(id || '0'));
+  const [student, setStudent] = React.useState<any | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const load = async () => {
+      try {
+        if (!id) { setStudent(null); setLoading(false); return; }
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('first_name,last_name,display_name,email,avatar_url,bio,user_id')
+          .eq('user_id', id)
+          .maybeSingle();
+        if (error) throw error;
+        if (!data) { setStudent(null); }
+        else {
+          const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || data.display_name || (data.email ? data.email.split('@')[0] : 'Student');
+          setStudent({
+            name,
+            title: data.display_name || 'Student',
+            email: data.email,
+            avatarUrl: data.avatar_url,
+            aboutMe: data.bio,
+            description: data.bio,
+            price: null,
+            skills: [],
+            contact: undefined,
+            portfolio: [],
+            affiliation: undefined,
+          });
+        }
+      } catch (e) {
+        setStudent(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="text-center py-12">
+            <h2 className="text-2xl font-bold">Loading profile...</h2>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!student) {
     return (
@@ -52,21 +109,7 @@ const StudentProfile = () => {
               </div>
               <p className="text-xl text-muted-foreground mb-4">{student.title}</p>
               
-              <div className="flex flex-wrap items-center gap-4 mb-4">
-                <div className="flex items-center gap-1">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span className="font-medium">4.9</span>
-                  <span className="text-muted-foreground">(124 reviews)</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">San Francisco, CA</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Usually responds within 2 hours</span>
-                </div>
-              </div>
+              {/* Mock rating/location/response removed to avoid fake data */}
 
               <div className="flex flex-wrap gap-2 mb-6">
                 {student.skills.map((skill) => (
@@ -115,9 +158,10 @@ const StudentProfile = () => {
                       href={student.contact.upworkUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="p-2 rounded-lg bg-[#6FDA44] hover:bg-[#5bc434] transition-colors"
+                      className="p-2 rounded-lg bg-[#14A800] hover:brightness-95 transition-colors"
+                      title="Upwork"
                     >
-                      <Link className="h-5 w-5 text-white" />
+                      <UpworkIcon className="h-5 w-5" />
                     </a>
                   )}
                   {student.contact?.fiverrUrl && (
@@ -125,9 +169,10 @@ const StudentProfile = () => {
                       href={student.contact.fiverrUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="p-2 rounded-lg bg-[#1DBF73] hover:bg-[#19a463] transition-colors"
+                      className="p-2 rounded-lg bg-[#1DBF73] hover:brightness-95 transition-colors"
+                      title="Fiverr"
                     >
-                      <Link className="h-5 w-5 text-white" />
+                      <FiverrIcon className="h-5 w-5" />
                     </a>
                   )}
                 </div>
@@ -135,7 +180,7 @@ const StudentProfile = () => {
             </div>
 
             <div className="text-right">
-              <div className="text-3xl font-bold text-primary mb-1">{student.price}</div>
+              <div className="text-3xl font-bold text-primary mb-1">{student.price || '—'}</div>
               <div className="text-muted-foreground">per hour</div>
             </div>
           </div>
@@ -211,123 +256,12 @@ const StudentProfile = () => {
             </Card>
           )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Reviews</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[
-                  { 
-                    name: "Sarah Johnson", 
-                    days: 2,
-                    text: `Amazing experience working with ${student.name.split(' ')[0]}! Their expertise in ${student.skills[0].toLowerCase()} really showed. The project was completed ahead of schedule and exceeded my expectations.`
-                  },
-                  { 
-                    name: "Mike Chen", 
-                    days: 5,
-                    text: `${student.name.split(' ')[0]} is incredibly talented and professional. The ${student.title.toLowerCase()} work was top-notch and communication was excellent throughout the entire process.`
-                  },
-                  { 
-                    name: "Emily Rodriguez", 
-                    days: 8,
-                    text: `Highly recommend ${student.name.split(' ')[0]}! Very knowledgeable about ${student.skills[1] ? student.skills[1].toLowerCase() : student.skills[0].toLowerCase()} and delivered exactly what I needed. Will definitely work together again!`
-                  }
-                ].map((review, index) => (
-                  <div key={index} className="border-b pb-4 last:border-b-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="flex">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star key={star} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        ))}
-                      </div>
-                      <span className="font-medium">{review.name}</span>
-                      <span className="text-muted-foreground text-sm">{review.days} days ago</span>
-                    </div>
-                    <p className="text-muted-foreground text-sm">
-                      "{review.text}"
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Reviews hidden until real data source is wired */}
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Stats</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Projects Completed</span>
-                </div>
-                <span className="font-semibold">47</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Award className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Success Rate</span>
-                </div>
-                <span className="font-semibold">98%</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Response Time</span>
-                </div>
-                <span className="font-semibold">2 hours</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Availability</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm">Monday - Friday</span>
-                  <span className="text-sm font-medium">9AM - 6PM</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Weekend</span>
-                  <span className="text-sm font-medium">10AM - 4PM</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Timezone</span>
-                  <span className="text-sm font-medium">PST (UTC-8)</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Certifications</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Award className="h-4 w-4 text-primary" />
-                  <span className="text-sm">AWS Cloud Practitioner</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Award className="h-4 w-4 text-primary" />
-                  <span className="text-sm">React Developer Certification</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Award className="h-4 w-4 text-primary" />
-                  <span className="text-sm">Google Analytics Certified</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Sidebar sections hidden until backed by real data */}
         </div>
       </div>
     </div>

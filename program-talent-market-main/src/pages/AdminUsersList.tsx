@@ -27,7 +27,7 @@ const AdminUsersList = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
 
-  // Mock data - replace with actual API call
+  // Fetch live users from Supabase
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -62,8 +62,8 @@ const AdminUsersList = () => {
 
         const mapped: User[] = (profileRows || []).map((row: any) => {
           const name =
-            row.display_name ||
             [row.first_name, row.last_name].filter(Boolean).join(' ') ||
+            row.display_name ||
             (row.email ? row.email.split('@')[0] : '—');
 
           return {

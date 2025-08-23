@@ -86,7 +86,7 @@ const AdminReports = () => {
       <div className="container mx-auto px-6 py-8">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-foreground leading-tight mb-2">Reports & Issues</h1>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-2">Reports & Issues</h1>
             <p className="text-muted-foreground text-lg">Monitor and resolve platform issues</p>
           </div>
           <Button>

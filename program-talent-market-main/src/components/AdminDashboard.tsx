@@ -106,11 +106,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
         const sinceIso = since.toISOString();
 
         // Fetch recent items from multiple sources
-        const [profilesRes, jobsRes, paymentsRes, reportsRes] = await Promise.allSettled([
+        const [profilesRes, jobsRes, paymentsRes, reportsRes, waitlistRes] = await Promise.allSettled([
           supabase.from('profiles').select('user_id, display_name, first_name, last_name, email, created_at').gte('created_at', sinceIso).order('created_at', { ascending: false }).limit(20),
           supabase.from('jobs').select('id, title, company, posted_at').gte('posted_at', sinceIso).order('posted_at', { ascending: false }).limit(20),
           supabase.from('payments').select('id, amount, status, created_at').gte('created_at', sinceIso).order('created_at', { ascending: false }).limit(20),
           supabase.from('reports').select('id, title, status, created_at').gte('created_at', sinceIso).order('created_at', { ascending: false }).limit(20),
+          supabase.from('waitlist').select('id, email, first_name, last_name, role, city, created_at, status').order('created_at', { ascending: false }).limit(50),
         ]);
 
         let id = 1;
@@ -176,6 +177,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
               timestamp: new Date(r.created_at),
               status: map[st] ?? ActivityStatus.INFO,
               data: { report_id: r.id, status: r.status },
+            });
+          }
+        }
+
+        // Waitlist → joined
+        if (waitlistRes.status === 'fulfilled' && !waitlistRes.value.error && waitlistRes.value.data) {
+          for (const w of waitlistRes.value.data as any[]) {
+            const name = [w.first_name, w.last_name].filter(Boolean).join(' ') || (w.email ? w.email.split('@')[0] : 'Guest');
+            const details: string[] = [];
+            if (w.role) details.push(w.role);
+            if (w.city) details.push(w.city);
+            const suffix = details.length ? ` (${details.join(', ')})` : '';
+            events.push({
+              id: id++,
+              type: ActivityType.WAITLIST_JOINED,
+              message: `Joined waitlist: ${name}${suffix}`,
+              timestamp: new Date(w.created_at),
+              status: ActivityStatus.INFO,
+              data: { id: w.id, email: w.email, status: w.status },
             });
           }
         }

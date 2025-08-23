@@ -91,7 +91,9 @@ const AdminLearningResourcesList: React.FC = () => {
   });
 
   const removeResource = (id: number) => {
-    setResources(resources.filter((r) => r.id !== id));
+    const next = resources.filter((r) => r.id !== id);
+    setResources(next);
+    saveResources(next);
   };
 
   const saveAll = () => {
@@ -99,13 +101,7 @@ const AdminLearningResourcesList: React.FC = () => {
   };
 
   const getTypeIcon = (type: ResourceType) => {
-    switch (type) {
-      case "workshop": return "W";
-      case "video": return "V";
-      case "guide": return "G";
-      case "networking": return "N";
-      default: return "R";
-    }
+    return <BookOpen className="h-4 w-4 text-primary" />;
   };
 
   const getStatusBadge = (status: ResourceStatus) => {
@@ -123,7 +119,7 @@ const AdminLearningResourcesList: React.FC = () => {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-2">
-              Learning Resources - List View
+              Learning Resources Settings
             </h1>
             <p className="text-muted-foreground text-lg">Manage all learning resources in a comprehensive list format</p>
           </div>

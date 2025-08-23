@@ -22,54 +22,34 @@ function loadResources() {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  return [
-    {
-      id: 1,
-      title: 'Resume Writing Workshop',
-      description: 'Learn how to create compelling resumes that get noticed',
-      type: 'workshop',
-      duration: '2 hours',
-      icon: FileText,
-      status: 'available'
-    },
-    {
-      id: 2,
-      title: 'Interview Skills Masterclass',
-      description: 'Master the art of interviewing with practice sessions',
-      type: 'video',
-      duration: '1.5 hours',
-      icon: Video,
-      status: 'available'
-    },
-    {
-      id: 3,
-      title: 'Portfolio Development Guide',
-      description: 'Build a portfolio that showcases your best work',
-      type: 'guide',
-      duration: '3 hours',
-      icon: Award,
-      status: 'coming-soon'
-    },
-    {
-      id: 4,
-      title: 'Networking for Students',
-      description: 'Connect with industry professionals and peers',
-      type: 'workshop',
-      duration: '1 hour',
-      icon: Users,
-      status: 'available'
-    }
-  ];
+  return [];
 }
 
 const StudentResources = () => {
   const [resources, setResources] = React.useState(loadResources());
+  const [stats, setStats] = React.useState({ completed: 0, hours: 0, certs: 0 });
   const navigate = useNavigate();
 
   React.useEffect(() => {
+    const loadStats = () => {
+      const completed = Number(localStorage.getItem('completedResourcesCount') || '0');
+      const hours = Number(localStorage.getItem('hoursLearned') || '0');
+      const certs = Number(localStorage.getItem('certificatesEarned') || '0');
+      setStats({ completed: isNaN(completed) ? 0 : completed, hours: isNaN(hours) ? 0 : hours, certs: isNaN(certs) ? 0 : certs });
+    };
+
     const handler = () => setResources(loadResources());
+    const storageHandler = () => { loadStats(); };
+
+    loadStats();
     window.addEventListener('resources:updated', handler);
-    return () => window.removeEventListener('resources:updated', handler);
+    window.addEventListener('storage', storageHandler);
+    window.addEventListener('progress:updated', storageHandler);
+    return () => {
+      window.removeEventListener('resources:updated', handler);
+      window.removeEventListener('storage', storageHandler);
+      window.removeEventListener('progress:updated', storageHandler);
+    };
   }, []);
 
   const getStatusColor = (status: string) => {
@@ -100,7 +80,7 @@ const StudentResources = () => {
             <Award className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8</div>
+          <div className="text-2xl font-bold">{stats.completed}</div>
           </CardContent>
         </Card>
         <Card>
@@ -109,7 +89,7 @@ const StudentResources = () => {
             <Clock className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">32</div>
+          <div className="text-2xl font-bold">{stats.hours}</div>
           </CardContent>
         </Card>
         <Card>
@@ -118,7 +98,7 @@ const StudentResources = () => {
             <Award className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
+          <div className="text-2xl font-bold">{stats.certs}</div>
           </CardContent>
         </Card>
       </div>

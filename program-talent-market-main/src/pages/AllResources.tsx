@@ -21,44 +21,7 @@ function loadResources() {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  return [
-    {
-      id: 1,
-      title: 'Resume Writing Workshop',
-      description: 'Learn how to create compelling resumes that get noticed',
-      type: 'workshop',
-      duration: '2 hours',
-      icon: FileText,
-      status: 'available'
-    },
-    {
-      id: 2,
-      title: 'Interview Skills Masterclass',
-      description: 'Master the art of interviewing with practice sessions',
-      type: 'video',
-      duration: '1.5 hours',
-      icon: Video,
-      status: 'available'
-    },
-    {
-      id: 3,
-      title: 'Portfolio Development Guide',
-      description: 'Build a portfolio that showcases your best work',
-      type: 'guide',
-      duration: '3 hours',
-      icon: Award,
-      status: 'coming-soon'
-    },
-    {
-      id: 4,
-      title: 'Networking for Students',
-      description: 'Connect with industry professionals and peers',
-      type: 'workshop',
-      duration: '1 hour',
-      icon: Users,
-      status: 'available'
-    }
-  ];
+  return [];
 }
 
 const AllResources = () => {
