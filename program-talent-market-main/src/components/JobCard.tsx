@@ -7,7 +7,7 @@ import { JobPosting } from "@/data/mockJobs";
 import { Building, Calendar, Mail, DollarSign } from "lucide-react";
 import BookmarkButton from "./BookmarkButton";
 import { useAuth } from "@/contexts/AuthContext";
-import Link from "next/link";
+import { Link } from "react-router-dom";
 
 interface JobCardProps {
   job: JobPosting;
@@ -17,6 +17,7 @@ interface JobCardProps {
 
 const JobCard: React.FC<JobCardProps> = ({ job, onView, hideBookmark = false }) => {
   const { userRole } = useAuth();
+  // Handle case when userRole is null
   const isClient = userRole === 'client';
   return (
     <Card className="h-[420px] w-[350px] flex flex-col hover:shadow-lg card-hover bg-background text-foreground border-border">
@@ -64,7 +65,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onView, hideBookmark = false }) 
       
       <CardFooter className="p-6 pt-4 h-[70px] flex items-center">
         <Button asChild variant="default" className="w-full !bg-[#2E7D32] !text-white shadow-none hover:brightness-95 text-center">
-          <Link href={`/jobs/${job.id}`} onClick={onView}>
+          <Link to={`/jobs/${job.id}`} onClick={onView}>
             View Details
           </Link>
         </Button>
