@@ -24,7 +24,6 @@ const ManageJobs = () => {
       title: formData.title,
       company: formData.company || "Your Company",
       description: formData.description,
-      requirements: formData.skills ? formData.skills.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
       skills: formData.skills ? formData.skills.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
       budget: formData.budget,
       duration: formData.duration || "To be discussed",

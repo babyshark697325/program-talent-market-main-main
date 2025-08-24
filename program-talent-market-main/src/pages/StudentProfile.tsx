@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Mail, Phone, Linkedin, Github, Link } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
+// Remove unused import since PageHeader component is not found
 
 const UpworkIcon: React.FC<{ className?: string }> = ({ className }) => (
   <img src="https://cdn.simpleicons.org/upwork/FFFFFF" alt="Upwork" className={className ?? ''} />
@@ -97,7 +98,7 @@ const StudentProfile = () => {
             
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-6">{student.name}</h1>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight">{student.name}</h1>
                 {student.affiliation && (
                   <Badge
                     variant={student.affiliation === 'alumni' ? 'secondary' : 'default'}

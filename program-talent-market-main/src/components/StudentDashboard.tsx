@@ -42,7 +42,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
 
   // Recommended jobs: pick active or recent as a simple heuristic
   const recommendedJobs = React.useMemo(() => {
-    const active = jobs.filter((j) => (j.status ? String(j.status).toLowerCase() === 'active' : true));
+    const active = jobs.filter((j) => true);
     return active.slice(0, 6);
   }, [jobs]);
 

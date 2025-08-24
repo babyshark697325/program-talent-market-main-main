@@ -140,7 +140,6 @@ const AllResources = () => {
             })}
           </div>
         </div>
-      </div>
     </div>
   );
 };

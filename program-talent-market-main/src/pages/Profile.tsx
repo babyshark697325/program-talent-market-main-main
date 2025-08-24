@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { User, Mail, Phone, MapPin, Edit, Save, X, Plus, Image, ExternalLink, Trash2, Users, Linkedin, Github, Link } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import PageHeader from '../components/PageHeader';
 
 // Brand icons for platform links
 const UpworkIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -103,15 +104,32 @@ const Profile = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const { data: userRes } = await supabase.auth.getUser();
+        const { data: userRes, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          console.error('Error getting user:', userError);
+          setLoadingProfile(false);
+          return;
+        }
+        
         const user = userRes?.user;
-        if (!user) { setLoadingProfile(false); return; }
+        if (!user) { 
+          console.log('No authenticated user found');
+          setLoadingProfile(false); 
+          return; 
+        }
+        
         const { data, error } = await supabase
           .from('profiles')
           .select('first_name,last_name,display_name,email,avatar_url,bio')
           .eq('user_id', user.id)
           .maybeSingle();
-        if (error) throw error;
+          
+        if (error) {
+          console.error('Error fetching profile:', error);
+          setLoadingProfile(false);
+          return;
+        }
+        
         if (data) {
           const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || data.display_name || (data.email ? data.email.split('@')[0] : '');
           const loaded = {
@@ -128,9 +146,14 @@ const Profile = () => {
           };
           setProfile(loaded);
           setEditedProfile(loaded);
+        } else {
+          console.log('No profile data found for user');
         }
-      } catch {}
-      finally { setLoadingProfile(false); }
+      } catch (error) {
+        console.error('Unexpected error loading profile:', error);
+      } finally { 
+        setLoadingProfile(false); 
+      }
     };
     load();
   }, []);
@@ -181,11 +204,33 @@ const Profile = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <PageHeader 
+        title="My Profile" 
+        description="Manage your profile information and settings"
+      >
+        {!isEditing ? (
+          <Button onClick={() => setIsEditing(true)}>
+            <Edit className="mr-2 h-4 w-4" />
+            Edit Profile
+          </Button>
+        ) : (
+          <>
+            <Button onClick={handleSave}>
+              <Save className="mr-2 h-4 w-4" />
+              Save
+            </Button>
+            <Button variant="outline" onClick={handleCancel}>
+              <X className="mr-2 h-4 w-4" />
+              Cancel
+            </Button>
+          </>
+        )}
+      </PageHeader>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-6">My Profile</h1>
           <p className="text-muted-foreground">Manage your profile information and settings</p>
-          {loadingProfile && <p className="text-xs text-muted-foreground">Loading profile...</p>}
         </div>
         {!isEditing ? (
           <Button onClick={() => setIsEditing(true)}>
