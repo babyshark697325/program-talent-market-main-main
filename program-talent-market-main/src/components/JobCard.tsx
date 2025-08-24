@@ -7,6 +7,7 @@ import { JobPosting } from "@/data/mockJobs";
 import { Building, Calendar, Mail, DollarSign } from "lucide-react";
 import BookmarkButton from "./BookmarkButton";
 import { useAuth } from "@/contexts/AuthContext";
+import Link from "next/link";
 
 interface JobCardProps {
   job: JobPosting;
@@ -18,7 +19,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onView, hideBookmark = false }) 
   const { userRole } = useAuth();
   const isClient = userRole === 'client';
   return (
-    <Card className="h-full flex flex-col hover:shadow-lg card-hover bg-background text-foreground border-border">
+    <Card className="h-[420px] w-[350px] flex flex-col hover:shadow-lg card-hover bg-background text-foreground border-border">
       <CardHeader className="p-6 pb-4 h-[200px] flex flex-col">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0">
@@ -62,12 +63,10 @@ const JobCard: React.FC<JobCardProps> = ({ job, onView, hideBookmark = false }) 
       </CardContent>
       
       <CardFooter className="p-6 pt-4 h-[70px] flex items-center">
-        <Button
-          onClick={onView}
-          variant="default"
-          className="w-full !bg-[#2E7D32] !text-white shadow-none hover:brightness-95 text-center"
-        >
-          View Details
+        <Button asChild variant="default" className="w-full !bg-[#2E7D32] !text-white shadow-none hover:brightness-95 text-center">
+          <Link href={`/jobs/${job.id}`} onClick={onView}>
+            View Details
+          </Link>
         </Button>
       </CardFooter>
     </Card>
