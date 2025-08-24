@@ -24,14 +24,12 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
   const handleStudentsClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("Students tab clicked, current activeTab:", activeTab);
     setActiveTab("students");
   };
 
   const handleJobsClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("Jobs tab clicked, current activeTab:", activeTab);
     setActiveTab("jobs");
   };
 

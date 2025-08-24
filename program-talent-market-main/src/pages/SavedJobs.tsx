@@ -5,11 +5,12 @@ import JobCard from "@/components/JobCard";
 import { Button } from "@/components/ui/button";
 import { useSavedJobs } from "@/contexts/SavedJobsContext";
 import { supabase } from "@/integrations/supabase/client";
+import { JobPosting } from "@/data/mockJobs";
 
 const SavedJobs = () => {
   const navigate = useNavigate();
   const { savedJobIds } = useSavedJobs();
-  const [savedJobs, setSavedJobs] = useState<any[]>([]);
+  const [savedJobs, setSavedJobs] = useState<JobPosting[]>([]);
 
   useEffect(() => {
     const load = async () => {

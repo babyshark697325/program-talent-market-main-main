@@ -17,8 +17,8 @@ type AuthContextType = {
     firstName: string,
     lastName: string,
     role: string
-  ) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  ) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   continueAsGuest: () => void;
 };
@@ -33,7 +33,7 @@ export const useAuth = () => {
 
 type Props = { children: ReactNode };
 
-function normalizeRole(value: any): Role {
+function normalizeRole(value: unknown): Role {
   return value === "student" || value === "client" || value === "admin" ? value : "client";
 }
 
@@ -44,7 +44,7 @@ async function ensureProfile(u: User) {
   try {
     const email = (u.email || "").trim().toLowerCase();
     // prefer display_name from metadata; fallback to first_name, then email local-part
-    const md: any = u.user_metadata || {};
+    const md: Record<string, unknown> = u.user_metadata || {};
     const displayName: string =
       (md.display_name as string) ||
       (md.first_name as string) ||
@@ -53,7 +53,7 @@ async function ensureProfile(u: User) {
     await supabase
       .from("profiles")
       // no generics to avoid versioned type conflicts; onConflict by user_id (PK)
-      .upsert([{ user_id: u.id, email, display_name: displayName }] as any, {
+      .upsert([{ user_id: u.id, email, display_name: displayName }], {
         onConflict: "user_id",
       });
   } catch (e) {
@@ -89,22 +89,22 @@ async function ensureUserRoleRow(u: User) {
       .eq("user_id", u.id)
       .maybeSingle();
 
-    const md: any = u.user_metadata || {};
+    const md: Record<string, unknown> = u.user_metadata || {};
     const desiredRole: Role = normalizeRole(md.role);
 
     if (!existing) {
       // No row yet → create with desired role (metadata or default client)
       await supabase
         .from("user_roles")
-        .upsert([{ user_id: u.id, role: desiredRole }] as any, { onConflict: "user_id" });
+        .upsert([{ user_id: u.id, role: desiredRole }], { onConflict: "user_id" });
       return;
     }
 
     // Row exists: if role is null/invalid, repair it to desiredRole
-    const r: any = existing.role;
+    const r: unknown = existing.role;
     const valid = r === "student" || r === "client" || r === "admin";
     if (!valid) {
-      await supabase.from("user_roles").update({ role: desiredRole } as any).eq("user_id", u.id);
+      await supabase.from("user_roles").update({ role: desiredRole }).eq("user_id", u.id);
     }
   } catch (e) {
     console.warn("[Auth] ensureUserRoleRow error:", e);
@@ -131,7 +131,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
         setIsGuest(false);
 
         // Set a preliminary role from metadata immediately for fast UI routing
-        const md: any = u.user_metadata || {};
+        const md: Record<string, unknown> = u.user_metadata || {};
         const prelimRole: Role = normalizeRole(md.role);
         setUserRole(prelimRole);
 
@@ -146,7 +146,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
               try {
                 await supabase
                   .from("user_roles")
-                  .upsert([{ user_id: u.id, role: prelimRole }] as any, { onConflict: "user_id" });
+                  .upsert([{ user_id: u.id, role: prelimRole }], { onConflict: "user_id" });
               } catch (e) {
                 console.warn("[Auth] upsert fallback role error:", e);
               }

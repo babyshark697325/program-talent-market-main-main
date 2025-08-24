@@ -4,8 +4,8 @@ export const mockSavedJobIds = [1, 3] as const;
 // Props data for JobCard component
 export const mockRootProps = {
   savedJobIds: [1, 3],
-  onSaveJob: (jobId: number) => console.log('Save job:', jobId),
-  onUnsaveJob: (jobId: number) => console.log('Unsave job:', jobId)
+  onSaveJob: (jobId: number) => { /* Handle save job logic */ },
+  onUnsaveJob: (jobId: number) => { /* Handle unsave job logic */ }
 };
 
 // Mock data for admin activities

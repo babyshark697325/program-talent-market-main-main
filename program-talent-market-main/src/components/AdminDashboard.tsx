@@ -21,6 +21,48 @@ import RecentActivity from "./RecentActivity";
 import { supabase } from "../integrations/supabase/client";
 import { AdminActivity, ActivityType, ActivityStatus } from "@/types/adminActivity";
 
+// Database row interfaces
+interface PaymentRow {
+  id: string;
+  amount: number | string | null;
+  status: string;
+  created_at: string;
+}
+
+interface ProfileRow {
+  user_id: string;
+  display_name?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  created_at: string;
+}
+
+interface JobRow {
+  id: string;
+  title: string;
+  company?: string;
+  posted_at: string;
+}
+
+interface ReportRow {
+  id: string;
+  title: string;
+  status: string;
+  created_at: string;
+}
+
+interface WaitlistRow {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  role?: string;
+  city?: string;
+  created_at: string;
+  status: string;
+}
+
 interface AdminDashboardProps {
   jobs: JobPosting[];
 }
@@ -59,9 +101,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
             .from('payments')
             .select('amount, status');
           if (!paymentsError && paymentsRows) {
-            const sum = paymentsRows
-              .filter((r: any) => r.status === 'completed')
-              .reduce((acc: number, r: any) => acc + Number(r.amount || 0), 0);
+            const sum = (paymentsRows as PaymentRow[])
+              .filter((r) => r.status === 'completed')
+              .reduce((acc: number, r) => acc + Number(r.amount || 0), 0);
             if (!cancelled) setTotalRevenue(sum);
           } else if (!paymentsRows && !cancelled) {
             setTotalRevenue(0);
@@ -119,7 +161,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
 
         // Profiles → user registration
         if (profilesRes.status === 'fulfilled' && !profilesRes.value.error && profilesRes.value.data) {
-          for (const p of profilesRes.value.data as any[]) {
+          for (const p of profilesRes.value.data as ProfileRow[]) {
             events.push({
               id: id++,
               type: ActivityType.USER_REGISTRATION,
@@ -133,7 +175,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
 
         // Jobs → job posted
         if (jobsRes.status === 'fulfilled' && !jobsRes.value.error && jobsRes.value.data) {
-          for (const j of jobsRes.value.data as any[]) {
+          for (const j of jobsRes.value.data as JobRow[]) {
             events.push({
               id: id++,
               type: ActivityType.JOB_POSTED,
@@ -147,7 +189,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
 
         // Payments → payment processed
         if (paymentsRes.status === 'fulfilled' && !paymentsRes.value.error && paymentsRes.value.data) {
-          for (const pay of paymentsRes.value.data as any[]) {
+          for (const pay of paymentsRes.value.data as PaymentRow[]) {
             if (pay.status === 'completed') {
               events.push({
                 id: id++,
@@ -163,7 +205,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
 
         // Reports → user reports
         if (reportsRes.status === 'fulfilled' && !reportsRes.value.error && reportsRes.value.data) {
-          for (const r of reportsRes.value.data as any[]) {
+          for (const r of reportsRes.value.data as ReportRow[]) {
             const st = String(r.status || '').toLowerCase();
             const map: Record<string, ActivityStatus> = {
               pending: ActivityStatus.WARNING,
@@ -183,7 +225,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
 
         // Waitlist → joined
         if (waitlistRes.status === 'fulfilled' && !waitlistRes.value.error && waitlistRes.value.data) {
-          for (const w of waitlistRes.value.data as any[]) {
+          for (const w of waitlistRes.value.data as WaitlistRow[]) {
             const name = [w.first_name, w.last_name].filter(Boolean).join(' ') || (w.email ? w.email.split('@')[0] : 'Guest');
             const details: string[] = [];
             if (w.role) details.push(w.role);

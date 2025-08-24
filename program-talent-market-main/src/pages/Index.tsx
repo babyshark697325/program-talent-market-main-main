@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import FeaturedStudent from "@/components/FeaturedStudent";
 import StudentDashboard from "@/components/StudentDashboard";
 import AdminDashboard from "@/components/AdminDashboard";
@@ -10,17 +10,19 @@ import ContentGrid from "@/components/ContentGrid";
 import { mockStudents } from "@/data/mockStudents";
 import { mockJobs, JobPosting } from "@/data/mockJobs";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
 import { useRole } from "@/contexts/RoleContext";
 
-const ALL_SKILLS = Array.from(
-  new Set([...mockStudents.flatMap((s) => s.skills), ...mockJobs.flatMap((j) => j.skills)])
-);
 
-// Spotlight settings pulled from localStorage; fallback to default
+// Spotlight settings constants
 const LS_QUOTE_KEY = "spotlight.quote";
 const LS_STUDENT_ID_KEY = "spotlight.studentId";
 const LS_SHOWCASE_IMAGE_KEY = "spotlight.showcaseImage";
+const DEFAULT_QUOTE = "Building amazing web experiences is my passion. Every line of code I write aims to create something that users will love and businesses will thrive with!";
+const DEFAULT_CLIENT_REVIEW = {
+  text: "Alex built our entire e-commerce platform from scratch and it's been a game-changer for our business. The site is fast, beautiful, and user-friendly. Sales increased by 40% in the first month!",
+  clientName: "Sarah Johnson, Store Owner",
+  rating: 5
+};
 
 function getSpotlightFromStorage() {
   try {
@@ -29,25 +31,19 @@ function getSpotlightFromStorage() {
     const img = localStorage.getItem(LS_SHOWCASE_IMAGE_KEY) || "";
     const id = sid ? Number(sid) : 1;
     const s = mockStudents.find((m) => m.id === id) || mockStudents[0];
+    
+    const orientation = localStorage.getItem('spotlight.orientation');
+    
     return {
       id: s.id,
       name: s.name,
       title: s.title,
       avatarUrl: s.avatarUrl,
       skills: s.skills,
-      quote: q || "Building amazing web experiences is my passion. Every line of code I write aims to create something that users will love and businesses will thrive with!",
+      quote: q || DEFAULT_QUOTE,
       showcaseImage: img || undefined,
-      showcaseOrientation: (function() {
-        // Infer orientation from recommended AR: if height/width >= 1.1, portrait; else landscape
-        // We can't read pixels here, so store a hint in localStorage optionally later.
-        const hint = localStorage.getItem('spotlight.orientation');
-        return hint === 'portrait' ? 'portrait' : 'landscape';
-      })(),
-      clientReview: {
-        text: "Alex built our entire e-commerce platform from scratch and it's been a game-changer for our business. The site is fast, beautiful, and user-friendly. Sales increased by 40% in the first month!",
-        clientName: "Sarah Johnson, Store Owner",
-        rating: 5
-      }
+      showcaseOrientation: orientation === 'portrait' ? 'portrait' : 'landscape',
+      clientReview: DEFAULT_CLIENT_REVIEW
     };
   } catch {
     const s = mockStudents[0];
@@ -57,12 +53,8 @@ function getSpotlightFromStorage() {
       title: s.title,
       avatarUrl: s.avatarUrl,
       skills: s.skills,
-      quote: "Building amazing web experiences is my passion. Every line of code I write aims to create something that users will love and businesses will thrive with!",
-      clientReview: {
-        text: "Alex built our entire e-commerce platform from scratch and it's been a game-changer for our business. The site is fast, beautiful, and user-friendly. Sales increased by 40% in the first month!",
-        clientName: "Sarah Johnson, Store Owner",
-        rating: 5
-      }
+      quote: DEFAULT_QUOTE,
+      clientReview: DEFAULT_CLIENT_REVIEW
     };
   }
 }
@@ -76,12 +68,18 @@ const Index: React.FC = () => {
   const [sortBy, setSortBy] = useState<"name" | "price" | "rating">("name");
   const navigate = useNavigate();
   const location = useLocation();
-  const { toast } = useToast();
   const { role } = useRole();
+
+  // Memoized skills calculation
+  const allSkills = useMemo(() => 
+    Array.from(
+      new Set([...mockStudents.flatMap((s) => s.skills), ...mockJobs.flatMap((j) => j.skills)])
+    ), []
+  );
 
   // Handle tab switching from sidebar navigation
   useEffect(() => {
-    const st: any = location.state;
+    const st = location.state as { activeTab?: string; scrollTo?: string } | null;
     if (st?.activeTab) {
       setActiveTab(st.activeTab);
       // scroll target handling after a tick to allow render
@@ -108,55 +106,50 @@ const Index: React.FC = () => {
     };
   }, []);
 
-  console.log("Current activeTab:", activeTab);
-  console.log("Filtered students count:", mockStudents.length);
-  console.log("User role:", role);
+  const filteredStudents = useMemo(() => {
+    const searchLower = search.toLowerCase();
+    
+    return mockStudents.filter((student) => {
+      const matchSearch =
+        student.name.toLowerCase().includes(searchLower) ||
+        student.title.toLowerCase().includes(searchLower) ||
+        student.skills.some((skill) => skill.toLowerCase().includes(searchLower));
+      const matchSkill = !selectedSkill || student.skills.includes(selectedSkill);
+      return matchSearch && matchSkill;
+    }).sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "price":
+          const priceA = parseInt(a.price.replace(/[^\d]/g, ''));
+          const priceB = parseInt(b.price.replace(/[^\d]/g, ''));
+          return priceA - priceB;
+        case "rating":
+          return 0; // Could be implemented with actual rating data
+        default:
+          return 0;
+      }
+    });
+  }, [search, selectedSkill, sortBy]);
 
-  const filteredStudents = mockStudents.filter((student) => {
-    const matchSearch =
-      student.name.toLowerCase().includes(search.toLowerCase()) ||
-      student.title.toLowerCase().includes(search.toLowerCase()) ||
-      student.skills.some((skill) =>
-        skill.toLowerCase().includes(search.toLowerCase())
-      );
-    const matchSkill =
-      !selectedSkill || student.skills.includes(selectedSkill);
-    return matchSearch && matchSkill;
-  }).sort((a, b) => {
-    switch (sortBy) {
-      case "name":
-        return a.name.localeCompare(b.name);
-      case "price":
-        const priceA = parseInt(a.price.replace(/[^\d]/g, ''));
-        const priceB = parseInt(b.price.replace(/[^\d]/g, ''));
-        return priceA - priceB;
-      case "rating":
-        return 0; // Could be implemented with actual rating data
-      default:
-        return 0;
-    }
-  });
-
-  const filteredJobs = jobs.filter((job) => {
-    const matchSearch =
-      job.title.toLowerCase().includes(search.toLowerCase()) ||
-      job.company.toLowerCase().includes(search.toLowerCase()) ||
-      job.description.toLowerCase().includes(search.toLowerCase()) ||
-      job.skills.some((skill) =>
-        skill.toLowerCase().includes(search.toLowerCase())
-      );
-    const matchSkill =
-      !selectedSkill || job.skills.includes(selectedSkill);
-    return matchSearch && matchSkill;
-  });
-
+  const filteredJobs = useMemo(() => {
+    const searchLower = search.toLowerCase();
+    
+    return jobs.filter((job) => {
+      const matchSearch =
+        job.title.toLowerCase().includes(searchLower) ||
+        job.company.toLowerCase().includes(searchLower) ||
+        job.description.toLowerCase().includes(searchLower) ||
+        job.skills.some((skill) => skill.toLowerCase().includes(searchLower));
+      const matchSkill = !selectedSkill || job.skills.includes(selectedSkill);
+      return matchSearch && matchSkill;
+    });
+  }, [jobs, search, selectedSkill]);
 
   const handleClearFilters = () => {
     setSearch("");
     setSelectedSkill(null);
   };
-
-  console.log("Rendering cards grid, activeTab:", activeTab, "filteredStudents:", filteredStudents.length);
 
   if (role === 'student') {
     return (
@@ -195,13 +188,11 @@ const Index: React.FC = () => {
           />
         </div>
 
-        {/* Browse Students Hero Section */}
-        {activeTab === "students" && (
-          <StatsGrid 
-            studentsCount={mockStudents.length}
-            skillsCount={ALL_SKILLS.length}
-          />
-        )}
+        {/* Browse Students/Jobs Hero Section */}
+        <StatsGrid 
+          studentsCount={mockStudents.length}
+          skillsCount={allSkills.length}
+        />
 
         <TabNavigation
           activeTab={activeTab}
@@ -219,7 +210,7 @@ const Index: React.FC = () => {
           selectedSkill={selectedSkill}
           setSelectedSkill={setSelectedSkill}
           activeTab={activeTab}
-          allSkills={ALL_SKILLS}
+          allSkills={allSkills}
           sortBy={sortBy}
           setSortBy={setSortBy}
           resultsCount={activeTab === "students" ? filteredStudents.length : filteredJobs.length}

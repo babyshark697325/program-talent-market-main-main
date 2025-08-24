@@ -19,12 +19,56 @@ export enum ActivityStatus {
   ERROR = "error"
 }
 
+// Activity data types for different activity types
+export interface UserRegistrationData {
+  userName: string;
+  userId?: string;
+}
+
+export interface JobPostedData {
+  jobTitle: string;
+  company: string;
+  jobId?: string;
+}
+
+export interface ReportGeneratedData {
+  reportType: string;
+  reportId?: string;
+}
+
+export interface UserReportsData {
+  reportedBy: string;
+  reportType: string;
+  reason: string;
+  reportedUserId?: string;
+}
+
+export interface UserIssuesData {
+  reportedBy: string;
+  issueType: string;
+  description: string;
+  issueId?: string;
+}
+
+export interface GenericActivityData {
+  message: string;
+  [key: string]: unknown;
+}
+
+export type ActivityData = 
+  | UserRegistrationData
+  | JobPostedData
+  | ReportGeneratedData
+  | UserReportsData
+  | UserIssuesData
+  | GenericActivityData;
+
 export interface AdminActivity {
   id: number;
   type: ActivityType;
   message: string;
   timestamp: Date;
   status: ActivityStatus;
-  data: Record<string, any>;
+  data: ActivityData;
   isRead?: boolean;
 }

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import StudentServiceCard from "@/components/StudentServiceCard";
 import JobCard from "@/components/JobCard";
@@ -24,6 +24,16 @@ const ContentGrid: React.FC<ContentGridProps> = ({
   onJobView,
   onClearFilters
 }) => {
+  const [hasAnimated, setHasAnimated] = useState(false);
+  
+  useEffect(() => {
+    // Mark as animated after a short delay to prevent re-animations on tab switches
+    const timer = setTimeout(() => {
+      setHasAnimated(true);
+    }, 1000); // Allow time for initial animations to complete
+    
+    return () => clearTimeout(timer);
+  }, []);
   const renderEmptyState = (type: "students" | "jobs") => (
     <div className="text-center py-20">
       <div className="bg-card/70 backdrop-blur-sm rounded-3xl p-16 shadow-xl border border-primary/20 max-w-lg mx-auto">
@@ -59,8 +69,15 @@ const ContentGrid: React.FC<ContentGridProps> = ({
             {filteredStudents.map((student, index) => (
               <div 
                 key={student.id} 
-                className="animate-fade-in hover:scale-105 transition-transform duration-300"
-                style={{ animationDelay: `${0.1 * index}s` }}
+                className="hover:scale-105 transition-transform duration-300"
+                style={hasAnimated ? 
+                  { opacity: 1 } : 
+                  { 
+                    animation: `fadeIn 0.5s ease-out forwards`,
+                    animationDelay: `${Math.min(0.1 * index, 0.8)}s`,
+                    opacity: 0
+                  }
+                }
               >
                 <StudentServiceCard
                   student={student}
@@ -78,8 +95,15 @@ const ContentGrid: React.FC<ContentGridProps> = ({
             {filteredJobs.map((job, index) => (
               <div 
                 key={job.id} 
-                className="animate-fade-in hover:scale-105 transition-transform duration-300"
-                style={{ animationDelay: `${0.1 * index}s` }}
+                className="hover:scale-105 transition-transform duration-300"
+                style={hasAnimated ? 
+                  { opacity: 1 } : 
+                  { 
+                    animation: `fadeIn 0.5s ease-out forwards`,
+                    animationDelay: `${Math.min(0.1 * index, 0.8)}s`,
+                    opacity: 0
+                  }
+                }
               >
                 <JobCard
                   job={job}

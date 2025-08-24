@@ -1,19 +1,31 @@
-
-import React, { useState, useEffect } from "react";
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Search, Star, MapPin, Clock, DollarSign, SortAsc } from 'lucide-react';
+import { supabase } from '../integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { mockStudents, StudentService } from "@/data/mockStudents";
 import StudentServiceCard from "@/components/StudentServiceCard";
 
 const BrowseStudents = () => {
   const navigate = useNavigate();
-  // Ensure we start at the top when navigating to this page
+  
+  // Scroll to top when component mounts
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ 
+      top: 0, 
+      behavior: 'smooth' 
+    });
   }, []);
   const [filteredStudents, setFilteredStudents] = useState<StudentService[]>(mockStudents);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200]);
+  const [sortBy, setSortBy] = useState<"name" | "price" | "rating">("name");
 
   // Get all unique skills from students
   const allSkills = Array.from(
@@ -45,8 +57,24 @@ const BrowseStudents = () => {
       return price >= minPrice && price <= maxPrice;
     });
 
+    // Apply sorting
+    filtered = filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "price":
+          const priceA = parseInt(a.price.replace(/[^\d]/g, ''));
+          const priceB = parseInt(b.price.replace(/[^\d]/g, ''));
+          return priceA - priceB;
+        case "rating":
+          return 0; // Could be implemented with actual rating data
+        default:
+          return 0;
+      }
+    });
+
     setFilteredStudents(filtered);
-  }, [searchQuery, selectedSkills, priceRange]);
+  }, [searchQuery, selectedSkills, priceRange, sortBy]);
 
   const handleStudentView = (id: number) => {
     navigate(`/student/${id}`);
@@ -91,6 +119,31 @@ const BrowseStudents = () => {
             </div>
           </div>
 
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground whitespace-nowrap">
+              Sort by:
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { value: "name", label: "Name" },
+                { value: "price", label: "Price" },
+                { value: "rating", label: "Rating" }
+              ].map((sort) => (
+                <button
+                  key={sort.value}
+                  onClick={() => setSortBy(sort.value as any)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
+                    sortBy === sort.value 
+                      ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
+                      : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
+                  }`}
+                >
+                  {sort.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-2">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground whitespace-nowrap">
               Filter by skill:
@@ -101,7 +154,7 @@ const BrowseStudents = () => {
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
                   selectedSkills.length === 0 
                     ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
-                    : "bg-white/90 dark:bg-[#040b17] text-primary border border-primary/30 dark:border-white/10 hover:bg-primary/5 dark:hover:bg-white/5"
+                    : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
                 }`}
               >
                 All Skills
@@ -119,7 +172,7 @@ const BrowseStudents = () => {
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
                     selectedSkills.includes(skill)
                       ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
-                      : "bg-white/90 dark:bg-[#040b17] text-primary border border-primary/30 dark:border-white/10 hover:bg-primary/5 dark:hover:bg-white/5"
+                      : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
                   }`}
                 >
                   {skill}

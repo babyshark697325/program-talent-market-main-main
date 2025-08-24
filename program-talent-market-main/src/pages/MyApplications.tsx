@@ -6,6 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Clock, CheckCircle, XCircle, Eye } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 
+// Database row type from supabase query
+interface ApplicationRow {
+  id: string;
+  status: string;
+  created_at: string;
+  budget: number | string | null;
+  jobs: {
+    id: string;
+    title: string;
+    company: string;
+  }[] | null;
+}
+
 // Render-facing type used by this page
 interface Application {
   applicationId: string; // primary key of applications row
@@ -70,7 +83,7 @@ const MyApplications = () => {
         return;
       }
 
-      const mapped: Application[] = (data ?? []).map((row: any) => {
+      const mapped: Application[] = (data ?? []).map((row: ApplicationRow) => {
         // Format budget as a currency-looking string if numeric; otherwise pass-through
         let budgetStr = "";
         if (typeof row?.budget === "number") {
@@ -85,11 +98,13 @@ const MyApplications = () => {
           budgetStr = "$0";
         }
 
+        const job = row?.jobs?.[0] ?? null;
+        
         return {
           applicationId: row.id,
-          jobId: row?.jobs?.id ?? null,
-          jobTitle: row?.jobs?.title ?? "Unknown Role",
-          company: row?.jobs?.company ?? "Unknown Company",
+          jobId: job?.id ?? null,
+          jobTitle: job?.title ?? "Unknown Role",
+          company: job?.company ?? "Unknown Company",
           appliedDate: row?.created_at ?? new Date().toISOString(),
           status: row?.status ?? "pending",
           budget: budgetStr,
@@ -126,7 +141,7 @@ const MyApplications = () => {
       rejected: "bg-red-100 text-red-800",
     } as const;
 
-    const cls = (variants as any)[status] ?? "bg-secondary text-foreground";
+    const cls = variants[status as keyof typeof variants] ?? "bg-secondary text-foreground";
 
     return (
       <Badge className={cls}>

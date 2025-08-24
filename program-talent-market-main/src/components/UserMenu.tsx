@@ -42,25 +42,25 @@ const UserMenu: React.FC = () => {
     (user.email as string) ||
     "User";
 
-  const normalizeRole = (v: any) =>
+  const normalizeRole = (v: unknown) =>
     v === "student" || v === "client" || v === "admin" ? v : "client";
 
-  const metaRole = normalizeRole((user.user_metadata as any)?.role);
+  const metaRole = normalizeRole((user.user_metadata as Record<string, unknown>)?.role);
   const displayRole = userRole ?? metaRole ?? "client";
 
-  const goProfile = (e?: any) => {
+  const goProfile = (e?: React.MouseEvent) => {
     e?.preventDefault?.();
     navigate("/profile");
   };
 
-  const goSettings = (e?: any) => {
+  const goSettings = (e?: React.MouseEvent) => {
     e?.preventDefault?.();
     if (userRole === "admin") navigate("/admin/settings");
     else if (userRole === "client") navigate("/client/settings");
     else navigate("/profile");
   };
 
-  const doLogout = async (e?: any) => {
+  const doLogout = async (e?: React.MouseEvent) => {
     e?.preventDefault?.();
     console.log("[UserMenu] Logout clicked");
     await signOut();

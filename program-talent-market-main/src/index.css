@@ -152,4 +152,14 @@
     transition: transform 0.2s ease-in-out, 
                 box-shadow 0.2s ease-in-out;
   }
+  
+  /* Skill badge styling */
+  .skill-badge {
+    @apply bg-[hsl(var(--tag-bg))] text-[hsl(var(--tag-foreground))] px-2 md:px-3 py-1 text-xs rounded-lg;
+    transition: none !important;
+  }
+  
+  .skill-badge:hover {
+    @apply bg-[hsl(var(--tag-bg))] text-[hsl(var(--tag-foreground))] border-none scale-100;
+  }
 }

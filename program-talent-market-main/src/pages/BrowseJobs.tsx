@@ -13,10 +13,14 @@ const BrowseJobs = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [budgetRange, setBudgetRange] = useState<[number, number]>([0, 1000]);
+  const [sortBy, setSortBy] = useState<"title" | "budget" | "company">("title");
 
   // Scroll to top when component mounts
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ 
+      top: 0, 
+      behavior: 'smooth' 
+    });
   }, []);
 
   // Get all unique skills from jobs
@@ -49,8 +53,24 @@ const BrowseJobs = () => {
       return budget >= minBudget && budget <= maxBudget;
     });
 
+    // Apply sorting
+    filtered = filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "title":
+          return a.title.localeCompare(b.title);
+        case "budget":
+          const budgetA = parseInt(a.budget.replace(/[^\d]/g, ''));
+          const budgetB = parseInt(b.budget.replace(/[^\d]/g, ''));
+          return budgetA - budgetB;
+        case "company":
+          return a.company.localeCompare(b.company);
+        default:
+          return 0;
+      }
+    });
+
     setFilteredJobs(filtered);
-  }, [searchQuery, selectedSkills, budgetRange]);
+  }, [searchQuery, selectedSkills, budgetRange, sortBy]);
 
   const handleJobView = (id: number) => {
     navigate(`/job/${id}`);
@@ -74,16 +94,8 @@ const BrowseJobs = () => {
           </p>
         </div>
 
-  <div className="bg-white/70 dark:bg-[#040b17] backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-primary/20 dark:border-white/10 mb-10">
+        <div className="bg-white/70 dark:bg-[#040b17] backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-primary/20 dark:border-white/10 mb-10">
           <div className="flex flex-col lg:flex-row gap-6 mb-6 relative">
-            {/* Clear Filters Button - top right */}
-            <button
-              onClick={handleClearFilters}
-              className="absolute right-0 top-0 bg-gradient-to-r from-primary to-primary/80 text-white px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all text-sm font-semibold z-10"
-              style={{ margin: '1rem' }}
-            >
-              Clear Filters
-            </button>
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
               <input
@@ -93,6 +105,31 @@ const BrowseJobs = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-12 pr-4 py-4 text-lg rounded-2xl border border-primary/30 dark:border-white/10 focus:border-primary focus:ring-primary/20 bg-white/90 dark:bg-[#040b17] backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2"
               />
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground whitespace-nowrap">
+              Sort by:
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { value: "title", label: "Title" },
+                { value: "budget", label: "Budget" },
+                { value: "company", label: "Company" }
+              ].map((sort) => (
+                <button
+                  key={sort.value}
+                  onClick={() => setSortBy(sort.value as any)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
+                    sortBy === sort.value 
+                      ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
+                      : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
+                  }`}
+                >
+                  {sort.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -106,7 +143,7 @@ const BrowseJobs = () => {
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
                   selectedSkills.length === 0 
                     ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
-                    : "bg-white/90 dark:bg-[#040b17] text-primary border border-primary/30 dark:border-white/10 hover:bg-primary/5 dark:hover:bg-white/5"
+                    : "bg-secondary/60 dark:bg-[#040b17] text-primary border border-primary/20 dark:border-white/10 hover:bg-primary/5 dark:hover:bg-white/5"
                 }`}
               >
                 All Skills
@@ -124,7 +161,7 @@ const BrowseJobs = () => {
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
                     selectedSkills.includes(skill)
                       ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
-                      : "bg-white/90 dark:bg-[#040b17] text-primary border border-primary/30 dark:border-white/10 hover:bg-primary/5 dark:hover:bg-white/5"
+                      : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
                   }`}
                 >
                   {skill}
@@ -133,8 +170,14 @@ const BrowseJobs = () => {
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-primary/10">
-            <p className="text-sm text-muted-foreground">
+          <div className="mt-6 pt-4 border-t border-primary/10 relative">
+            <button
+              onClick={handleClearFilters}
+              className="absolute right-0 top-0 bg-gradient-to-r from-primary to-primary/80 text-white px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all text-sm font-semibold"
+            >
+              Clear Filters
+            </button>
+            <p className="text-sm text-muted-foreground pr-32">
               Found {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}
               {selectedSkills.length > 0 && ` with selected skills`}
               {searchQuery && ` matching "${searchQuery}"`}
@@ -149,7 +192,7 @@ const BrowseJobs = () => {
         </div>
 
         {filteredJobs.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
             {filteredJobs.map((job, index) => (
               <div 
                 key={job.id} 

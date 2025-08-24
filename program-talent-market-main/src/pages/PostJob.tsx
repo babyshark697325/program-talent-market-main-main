@@ -6,11 +6,21 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
+interface JobFormData {
+  title: string;
+  company: string;
+  description: string;
+  budget: string;
+  duration: string;
+  contactEmail: string;
+  skills: string;
+}
+
 const PostJob: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handlePostJob = (formData: any) => {
+  const handlePostJob = (formData: JobFormData) => {
     console.log("Job posted:", formData);
     toast({
       title: "Job Posted Successfully!",

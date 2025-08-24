@@ -11,10 +11,10 @@ const AdminUsers = () => {
   const { toast } = useToast();
   const [waitlistEntries, setWaitlistEntries] = React.useState<any[]>([]);
   const [loadingWaitlist, setLoadingWaitlist] = React.useState(true);
-  const [totalUsers, setTotalUsers] = React.useState(0);
-  const [activeUsers, setActiveUsers] = React.useState(0);
-  const [pendingUsers, setPendingUsers] = React.useState(0);
-  const [adminsCount, setAdminsCount] = React.useState(0);
+  const [totalUsers, setTotalUsers] = React.useState<number | null>(null);
+  const [activeUsers, setActiveUsers] = React.useState<number | null>(null);
+  const [pendingUsers, setPendingUsers] = React.useState<number | null>(null);
+  const [adminsCount, setAdminsCount] = React.useState<number | null>(null);
   const [recentUsers, setRecentUsers] = React.useState<any[]>([]);
   const [loadingRecent, setLoadingRecent] = React.useState(true);
 
@@ -223,7 +223,9 @@ const AdminUsers = () => {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalUsers}</div>
+              <div className="text-2xl font-bold">
+                {totalUsers === null ? '-' : totalUsers}
+              </div>
             </CardContent>
           </Card>
           <Card>
@@ -232,7 +234,9 @@ const AdminUsers = () => {
               <UserCheck className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{activeUsers}</div>
+              <div className="text-2xl font-bold">
+                {activeUsers === null ? '-' : activeUsers}
+              </div>
             </CardContent>
           </Card>
           <Card>
@@ -241,7 +245,9 @@ const AdminUsers = () => {
               <UserX className="h-4 w-4 text-yellow-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{pendingUsers}</div>
+              <div className="text-2xl font-bold">
+                {pendingUsers === null ? '-' : pendingUsers}
+              </div>
             </CardContent>
           </Card>
           <Card>
@@ -250,7 +256,9 @@ const AdminUsers = () => {
               <Shield className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{adminsCount}</div>
+              <div className="text-2xl font-bold">
+                {adminsCount === null ? '-' : adminsCount}
+              </div>
             </CardContent>
           </Card>
           <Card>

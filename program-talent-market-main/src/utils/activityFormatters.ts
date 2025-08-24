@@ -1,4 +1,4 @@
-import { ActivityType } from '@/types/adminActivity';
+import { ActivityType, ActivityData } from '@/types/adminActivity';
 
 export const formatActivityTime = (timestamp: Date): string => {
   const now = new Date();
@@ -10,19 +10,39 @@ export const formatActivityTime = (timestamp: Date): string => {
   return `${Math.floor(diffInMinutes / 1440)} days ago`;
 };
 
-export const formatActivityMessage = (type: ActivityType, data: any): string => {
+export const formatActivityMessage = (type: ActivityType, data: ActivityData): string => {
   switch (type) {
     case ActivityType.USER_REGISTRATION:
-      return `New student registered: ${data.userName}`;
+      if ('userName' in data) {
+        return `New student registered: ${data.userName}`;
+      }
+      break;
     case ActivityType.JOB_POSTED:
-      return `Job posted: ${data.jobTitle} at ${data.company}`;
+      if ('jobTitle' in data && 'company' in data) {
+        return `Job posted: ${data.jobTitle} at ${data.company}`;
+      }
+      break;
     case ActivityType.REPORT_GENERATED:
-      return `${data.reportType} report generated`;
+      if ('reportType' in data) {
+        return `${data.reportType} report generated`;
+      }
+      break;
     case ActivityType.USER_REPORTS:
-      return `${data.reportedBy} reported: ${data.reportType} - ${data.reason}`;
+      if ('reportedBy' in data && 'reportType' in data && 'reason' in data) {
+        return `${data.reportedBy} reported: ${data.reportType} - ${data.reason}`;
+      }
+      break;
     case ActivityType.USER_ISSUES:
-      return `${data.reportedBy} reported issue: ${data.issueType} - ${data.description}`;
-    default:
-      return data.message;
+      if ('reportedBy' in data && 'issueType' in data && 'description' in data) {
+        return `${data.reportedBy} reported issue: ${data.issueType} - ${data.description}`;
+      }
+      break;
   }
+  
+  // Fallback to generic message
+  if ('message' in data) {
+    return data.message;
+  }
+  
+  return 'Unknown activity';
 };

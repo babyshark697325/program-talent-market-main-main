@@ -8,12 +8,13 @@ const AdminAnalytics = () => {
   const [userGrowthData, setUserGrowthData] = React.useState<{ month: string; users: number }[]>([]);
   const [userTypeData, setUserTypeData] = React.useState<{ name: string; value: number; color: string }[]>([]);
   const [jobPostingData, setJobPostingData] = React.useState<{ month: string; jobs: number }[]>([]);
-  const [metrics, setMetrics] = React.useState<{ revenue: number; activeProjects: number; completionRate: number | null; avgResponseHours: number | null }>({
-    revenue: 0,
-    activeProjects: 0,
+  const [metrics, setMetrics] = React.useState<{ revenue: number | null; activeProjects: number | null; completionRate: number | null; avgResponseHours: number | null }>({
+    revenue: null,
+    activeProjects: null,
     completionRate: null,
     avgResponseHours: null,
   });
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
     const fetchAnalytics = async () => {
@@ -75,7 +76,7 @@ const AdminAnalytics = () => {
           ]);
           console.warn('Roles distribution fetch error', rolesError);
         }
-      // Jobs: aggregate postings over last 6 months
+        // Jobs: aggregate postings over last 6 months
         const sixMonthsAgoJobs = new Date();
         sixMonthsAgoJobs.setMonth(sixMonthsAgoJobs.getMonth() - 5);
         sixMonthsAgoJobs.setHours(0, 0, 0, 0);
@@ -121,7 +122,7 @@ const AdminAnalytics = () => {
           completionRate = relevant > 0 ? (totalCompleted / relevant) * 100 : null;
         }
 
-        // Revenue (current month) from payments if table exists
+        // Revenue (current month) from payments
         let revenue = 0;
         const firstOfMonth = new Date();
         firstOfMonth.setDate(1);
@@ -146,6 +147,8 @@ const AdminAnalytics = () => {
         }));
       } catch (e) {
         console.error('Analytics load error', e);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -161,6 +164,19 @@ const AdminAnalytics = () => {
         <div className="rounded-md border bg-popover px-3 py-2 text-sm shadow-sm">
           <div className="font-medium">{label}</div>
           <div className="text-muted-foreground">Users: <span className="font-semibold text-foreground">{value}</span></div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const JobPostingTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const value = payload[0].value;
+      return (
+        <div className="rounded-md border bg-popover px-3 py-2 text-sm shadow-sm">
+          <div className="font-medium">{label}</div>
+          <div className="text-muted-foreground">Jobs: <span className="font-semibold text-foreground">{value}</span></div>
         </div>
       );
     }
@@ -202,7 +218,11 @@ const AdminAnalytics = () => {
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${metrics.revenue.toLocaleString()}</div>
+              <div className="text-2xl font-bold">
+                {isLoading ? '-' : (
+                  metrics.revenue ? `$${metrics.revenue.toLocaleString()}` : '-'
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">+20.1% from last month</p>
             </CardContent>
           </Card>
@@ -211,7 +231,11 @@ const AdminAnalytics = () => {
               <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics.activeProjects}</div>
+              <div className="text-2xl font-bold">
+                {isLoading ? '-' : (
+                  metrics.activeProjects ?? '-'
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">+12% from last month</p>
             </CardContent>
           </Card>
@@ -220,7 +244,11 @@ const AdminAnalytics = () => {
               <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics.completionRate !== null ? `${metrics.completionRate.toFixed(1)}%` : '—'}</div>
+              <div className="text-2xl font-bold">
+                {isLoading ? '-' : (
+                  metrics.completionRate !== null ? `${metrics.completionRate.toFixed(1)}%` : '-'
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">+2.1% from last month</p>
             </CardContent>
           </Card>
@@ -229,7 +257,11 @@ const AdminAnalytics = () => {
               <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{metrics.avgResponseHours !== null ? `${metrics.avgResponseHours.toFixed(1)}h` : '—'}</div>
+              <div className="text-2xl font-bold">
+                {isLoading ? '-' : (
+                  metrics.avgResponseHours !== null ? `${metrics.avgResponseHours.toFixed(1)}h` : '-'
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">-15min from last month</p>
             </CardContent>
           </Card>
@@ -276,7 +308,11 @@ const AdminAnalytics = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <Tooltip />
+                  <Tooltip
+                    content={<JobPostingTooltip />}
+                    cursor={{ stroke: 'var(--color-border, #e5e7eb)', strokeDasharray: '4 4' }}
+                    wrapperStyle={{ outline: 'none' }}
+                  />
                   <Bar dataKey="jobs" fill="#10b981" />
                 </BarChart>
               </ResponsiveContainer>

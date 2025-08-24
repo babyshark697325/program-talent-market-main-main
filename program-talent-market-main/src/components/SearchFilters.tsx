@@ -59,10 +59,10 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                   variant={sortBy === sort.value ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSortBy(sort.value as any)}
-                  className={`rounded-xl transition-all duration-200 text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2 ${
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
                     sortBy === sort.value 
-                      ? "bg-primary text-white shadow-md" 
-                      : "bg-white/80 border-primary/20 hover:bg-primary/5"
+                      ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
+                      : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
                   }`}
                 >
                   {sort.label}
@@ -84,7 +84,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             className={`cursor-pointer px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
               selectedSkill === null 
                 ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
-                : "bg-white/90 text-primary border border-primary/30 hover:bg-primary/5"
+                : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
             }`}
             onClick={() => setSelectedSkill(null)}
           >
@@ -96,9 +96,9 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
               className={`cursor-pointer px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
                 selectedSkill === skill 
                   ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
-                  : "bg-white/90 text-primary border border-primary/30 hover:bg-primary/5"
+                  : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
               }`}
-              onClick={() => setSelectedSkill(skill)}
+              onClick={() => setSelectedSkill(selectedSkill === skill ? null : skill)}
             >
               {skill}
             </Badge>

@@ -1,4 +1,4 @@
-import { Calendar, Home, Users, Briefcase, BookOpen, Settings, HelpCircle, User, FileText, Shield, BarChart3, AlertTriangle, Search, Star, UserPlus, Sparkles } from "lucide-react"
+import { Calendar, Home, Users, Briefcase, BookOpen, Settings, HelpCircle, User, FileText, Shield, BarChart3, AlertTriangle, Search, Star, UserPlus, Sparkles, LucideIcon } from "lucide-react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useRole } from "@/contexts/RoleContext"
 import { useAuth } from "@/contexts/AuthContext"
@@ -13,6 +13,15 @@ import {
   SidebarMenuItem,
   SidebarHeader,
 } from "@/components/ui/sidebar"
+
+// Navigation item types
+interface NavigationItem {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  tab?: string;
+  scrollTo?: string;
+}
 
 const studentNavigation = [
   {
@@ -111,6 +120,11 @@ const studentQuickActions = [
     url: "/saved-jobs",
     icon: Star,
   },
+  {
+    title: "Post a Job",
+    url: "/post-job",
+    icon: Briefcase,
+  },
 ]
 
 const clientQuickActions = [
@@ -150,16 +164,22 @@ export function AppSidebar() {
   const quickActions = role === 'student' ? studentQuickActions : 
                       role === 'admin' ? adminQuickActions : clientQuickActions
 
-  const handleNavigation = (item: any) => {
+  const handleNavigation = (item: NavigationItem) => {
     if (item.tab) {
       // Navigate to the URL and pass the tab and optional scroll target in state
       navigate(item.url, { state: { activeTab: item.tab, scrollTo: item.scrollTo } })
     } else {
       navigate(item.url)
+      // Scroll to top for routes that go to home/dashboard pages
+      if (item.url === '/' || item.url.includes('dashboard')) {
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+        }, 100)
+      }
     }
   }
 
-  const isItemActive = (item: any) => {
+  const isItemActive = (item: NavigationItem) => {
     if (location.pathname !== item.url) return false
     
     // For items with tabs, check if we're on the right tab
@@ -202,9 +222,13 @@ export function AppSidebar() {
   const handleHomeClick = () => {
     if (isGuest) {
       navigate('/')
-      return
+    } else {
+      navigate(getDashboardPath())
     }
-    navigate(getDashboardPath())
+    // Always scroll to top when navigating home
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }, 100)
   }
 
   return (
