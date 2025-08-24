@@ -14,8 +14,45 @@ interface StudentDashboardProps {
 }
 
 const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab }) => {
-  const navigate = useNavigate();
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // Function to get day-based greeting
+  const getDayGreeting = () => {
+    const hour = new Date().getHours();
+    const day = new Date().getDay();
+    
+    // Time-based greetings
+    let timeGreeting = "Good morning";
+    if (hour >= 12 && hour < 17) timeGreeting = "Good afternoon";
+    else if (hour >= 17) timeGreeting = "Good evening";
+    
+    // Day-based messages (like Roblox)
+    const dayMessages = [
+      "Ready to conquer this Sunday?", // Sunday
+      "Let's make this Monday amazing!", // Monday  
+      "Tuesday vibes are strong today!", // Tuesday
+      "Halfway through the week - keep going!", // Wednesday
+      "Thursday energy is unmatched!", // Thursday
+      "Friday feeling activated!", // Friday
+      "Saturday adventures await!" // Saturday
+    ];
+    
+    return { timeGreeting, dayMessage: dayMessages[day] };
+  };
+  
+  const getDisplayName = () => {
+    if (!user) return "Student";
+    return (
+      (user.user_metadata?.display_name as string) ||
+      (user.user_metadata?.first_name as string) ||
+      (user.email as string)?.split('@')[0] ||
+      "Student"
+    );
+  };
+  
+  const { timeGreeting, dayMessage } = getDayGreeting();
+  const displayName = getDisplayName();
 
   // Quick stats from local storage or backend (placeholder keys)
   const [stats, setStats] = React.useState({ skills: 0, projects: 0, earnings: 0 });
@@ -58,21 +95,35 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
       {/* Student Dashboard Header */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-accent/8"></div>
-        <div className="relative z-10 max-w-6xl mx-auto px-6 py-24">
-          <div className="text-center">
-            <h1 className="text-6xl md:text-7xl font-black mb-4 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent leading-tight tracking-tight">
+        <div className="relative z-10 max-w-6xl mx-auto px-6 py-20">
+          <div className="text-center space-y-6">
+            {/* Title */}
+            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent leading-tight tracking-tight">
               Your Dashboard
             </h1>
+            
+            {/* Greeting */}
+            <p className="text-xl md:text-2xl font-medium text-foreground/90">
+              {timeGreeting}, {displayName}!
+            </p>
+            
+            {/* Motivational Line */}
+            <p className="text-lg md:text-xl text-muted-foreground font-medium">
+              {dayMessage}
+            </p>
           </div>
         </div>
       </div>
 
+      {/* Breathing room before Stats Cards */}
+      <div className="h-8"></div>
+
       {/* Student Quick Stats */}
       <div className="max-w-6xl mx-auto w-full px-6 pb-16 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-secondary/40 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-primary/10">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-primary to-primary/80 rounded-2xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-r from-primary to-primary/80 rounded-xl flex items-center justify-center">
                 <Award className="text-primary-foreground" size={24} />
               </div>
               <div>
@@ -83,7 +134,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
           </div>
           <div className="bg-secondary/40 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-primary/10">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-accent to-accent/80 rounded-2xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-r from-accent to-accent/80 rounded-xl flex items-center justify-center">
                 <Briefcase className="text-primary-foreground" size={24} />
               </div>
               <div>
@@ -94,7 +145,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
           </div>
           <div className="bg-secondary/40 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-primary/10">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center">
                 <TrendingUp className="text-primary-foreground" size={24} />
               </div>
               <div>
@@ -108,7 +159,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
         {/* Browse Jobs Section */}
         <div className="bg-gradient-to-r from-secondary/60 to-primary/10 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-primary/10 mb-12">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-bold text-primary">Recommended Opportunities</h2>
+            <h2 className="text-4xl font-bold text-primary">Recommended Opportunities</h2>
             <Button 
               onClick={() => navigate("/browse-jobs")} 
               variant="outline"

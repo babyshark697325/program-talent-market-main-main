@@ -6,6 +6,7 @@ import JobCard from "@/components/JobCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Search, Filter, Heart } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
 
 const BrowseJobs = () => {
   const navigate = useNavigate();
@@ -84,15 +85,11 @@ const BrowseJobs = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-6">
-            Browse Job Opportunities
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Find exciting projects that match your skills and interests
-          </p>
-        </div>
+      <div className="container mx-auto p-6 space-y-6">
+        <PageHeader 
+          title="Browse Job Opportunities" 
+          description="Find exciting projects that match your skills and interests"
+        />
 
         <div className="bg-white/70 dark:bg-[#040b17] backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-primary/20 dark:border-white/10 mb-10">
           <div className="flex flex-col lg:flex-row gap-6 mb-6 relative">

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, CheckCircle, XCircle, Eye } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import PageHeader from '@/components/PageHeader';
 
 // Database row type from supabase query
 interface ApplicationRow {
@@ -156,18 +157,14 @@ const MyApplications = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent leading-tight tracking-tight">
-            My Applications
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Track the status of your job applications
-          </p>
-        </div>
+      <div className="container mx-auto p-6 space-y-6">
+        <PageHeader 
+          title="My Applications" 
+          description="Track the status of your job applications"
+        />
 
         {/* KPI cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardHeader className="pb-2">
               <h3 className="text-sm font-medium text-muted-foreground">Total Applications</h3>

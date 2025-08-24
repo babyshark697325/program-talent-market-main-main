@@ -37,7 +37,7 @@ const FeaturedStudent: React.FC<FeaturedStudentProps> = ({ student, onViewProfil
               <span className="sm:hidden">Featured Student</span>
               <Star size={12} className="md:w-4 md:h-4 text-primary animate-pulse fill-current" style={{ animationDelay: '1s' }} />
             </div>
-            <h3 className="text-xl md:text-3xl font-black text-foreground mb-2 md:mb-3 leading-relaxed pb-2">
+            <h3 className="text-2xl md:text-4xl font-black text-foreground mb-2 md:mb-3 leading-relaxed pb-2">
               Spotlight Success
             </h3>
             <p className="text-muted-foreground font-medium text-sm md:text-lg">Celebrating excellence in our community</p>

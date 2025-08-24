@@ -20,19 +20,21 @@ const JobCard: React.FC<JobCardProps> = ({ job, onView, hideBookmark = false }) 
   // Handle case when userRole is null
   const isClient = userRole === 'client';
   return (
-    <Card className="h-[420px] w-[350px] flex flex-col hover:shadow-lg card-hover bg-background text-foreground border-border">
-      <CardHeader className="p-6 pb-4 h-[200px] flex flex-col">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-lg mb-2 line-clamp-3 h-[5.25rem] leading-tight flex items-start break-words">{job.title}</h3>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground h-[1.25rem]">
+    <Card className="h-[380px] w-full flex flex-col hover:shadow-lg card-hover bg-background text-foreground border-border">
+      <CardHeader className="p-4 pb-3 h-[115px] flex flex-col">
+        <div className="flex items-start justify-between mb-3 h-[75px]">
+          <div className="flex-1 min-w-0 flex flex-col h-full">
+            <div className="min-h-[55px] flex items-start">
+              <h3 className="font-semibold text-xl leading-6 line-clamp-2">{job.title}</h3>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground h-[20px] mt-auto">
               <Building size={14} className="flex-shrink-0" />
               <span className="truncate">{job.company}</span>
             </div>
           </div>
           {!isClient && !hideBookmark && <BookmarkButton jobId={job.id} className="ml-2 flex-shrink-0" />}
         </div>
-        <div className="flex flex-wrap gap-2 h-[2.5rem] items-start mt-auto overflow-hidden">
+        <div className="flex flex-wrap gap-2 items-start h-[2rem] overflow-hidden">
           {job.skills.slice(0, 3).map((skill) => (
             <Badge key={skill} className="bg-[hsl(var(--tag-bg))] text-[hsl(var(--tag-foreground))] text-xs px-2 py-1 whitespace-nowrap flex-shrink-0">
               {skill}
@@ -46,12 +48,12 @@ const JobCard: React.FC<JobCardProps> = ({ job, onView, hideBookmark = false }) 
         </div>
       </CardHeader>
       
-      <CardContent className="flex-1 px-6 py-0 h-[120px] flex flex-col">
-        <p className="text-sm text-muted-foreground line-clamp-3 mb-4 h-[4rem] leading-relaxed break-words overflow-hidden">
+      <CardContent className="flex-1 px-4 py-0 flex flex-col h-[200px]">
+        <p className="text-sm text-muted-foreground line-clamp-3 mb-3 leading-relaxed break-words overflow-hidden flex-1">
           {job.description}
         </p>
         
-        <div className="space-y-2 text-sm mt-auto">
+        <div className="space-y-2 text-sm mt-auto h-[60px] flex flex-col justify-end">
           <div className="flex items-center gap-2 h-[1.25rem]">
             <DollarSign size={14} className="text-primary flex-shrink-0" />
             <span className="font-medium text-primary truncate">{job.budget}</span>
@@ -63,7 +65,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onView, hideBookmark = false }) 
         </div>
       </CardContent>
       
-      <CardFooter className="p-6 pt-4 h-[70px] flex items-center">
+      <CardFooter className="p-4 pt-3 h-[80px] flex items-center">
         <Button asChild variant="default" className="w-full !bg-[#2E7D32] !text-white shadow-none hover:brightness-95 text-center">
           <Link to={`/jobs/${job.id}`} onClick={onView}>
             View Details
