@@ -59,18 +59,17 @@ const AllResources = () => {
     : resources.filter(r => r.type === filter);
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6">
-          <div className="flex items-center justify-between mb-8 space-x-4">
-          <div>
-            <h1 className="text-5xl font-bold text-foreground leading-tight mb-2">All Learning Resources</h1>
-            <p className="text-muted-foreground text-lg">Explore our complete collection of learning materials</p>
-          </div>
-          <Button onClick={() => navigate('/student/resources')}>
-            <BookOpen className="mr-2 h-4 w-4" />
-            Back to Student Resources
-          </Button>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between mb-8 space-x-4">
+        <div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-6">All Learning Resources</h1>
+          <p className="text-muted-foreground text-lg">Explore our complete collection of learning materials</p>
         </div>
+        <Button onClick={() => navigate('/student/resources')}>
+          <BookOpen className="mr-2 h-4 w-4" />
+          Back to Student Resources
+        </Button>
+      </div>
 
         <div className="space-y-6">
           <div className="flex gap-2">

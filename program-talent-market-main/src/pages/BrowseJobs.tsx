@@ -96,6 +96,14 @@ const BrowseJobs = () => {
 
         <div className="bg-white/70 dark:bg-[#040b17] backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-primary/20 dark:border-white/10 mb-10">
           <div className="flex flex-col lg:flex-row gap-6 mb-6 relative">
+            {/* Clear Filters Button - top right */}
+            <button
+              onClick={handleClearFilters}
+              className="absolute right-0 top-0 bg-gradient-to-r from-primary to-primary/80 text-white px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all text-sm font-semibold z-10"
+              style={{ margin: '1rem' }}
+            >
+              Clear Filters
+            </button>
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
               <input
@@ -170,14 +178,8 @@ const BrowseJobs = () => {
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-primary/10 relative">
-            <button
-              onClick={handleClearFilters}
-              className="absolute right-0 top-0 bg-gradient-to-r from-primary to-primary/80 text-white px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all text-sm font-semibold"
-            >
-              Clear Filters
-            </button>
-            <p className="text-sm text-muted-foreground pr-32">
+          <div className="mt-6 pt-4 border-t border-primary/10">
+            <p className="text-sm text-muted-foreground">
               Found {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}
               {selectedSkills.length > 0 && ` with selected skills`}
               {searchQuery && ` matching "${searchQuery}"`}

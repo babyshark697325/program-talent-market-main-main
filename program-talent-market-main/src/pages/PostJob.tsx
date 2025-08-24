@@ -50,7 +50,7 @@ const PostJob: React.FC = () => {
           
           <Card className="rounded-3xl border-0 shadow-2xl">
             <CardHeader className="pb-4">
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <CardTitle className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-6">
                 Post a New Job
               </CardTitle>
               <CardDescription className="text-muted-foreground text-lg">

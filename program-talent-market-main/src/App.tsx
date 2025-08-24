@@ -94,7 +94,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
       <AuthProvider>
         <RoleProvider>
           <SavedJobsProvider>

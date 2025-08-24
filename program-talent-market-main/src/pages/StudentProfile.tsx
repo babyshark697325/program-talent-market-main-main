@@ -83,7 +83,7 @@ const StudentProfile = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header Section */}
       <Card>
         <CardContent className="p-8">
@@ -97,7 +97,7 @@ const StudentProfile = () => {
             
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <h1 className="text-3xl font-bold">{student.name}</h1>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-6">{student.name}</h1>
                 {student.affiliation && (
                   <Badge
                     variant={student.affiliation === 'alumni' ? 'secondary' : 'default'}

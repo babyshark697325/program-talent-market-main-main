@@ -63,9 +63,6 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
             <h1 className="text-6xl md:text-7xl font-black mb-4 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent leading-tight tracking-tight">
               Your Dashboard
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-medium mb-8">
-              Track your progress, explore opportunities, and level up your skills
-            </p>
           </div>
         </div>
       </div>

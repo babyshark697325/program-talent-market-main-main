@@ -2,8 +2,6 @@ import * as React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../integrations/supabase/client";
-
-// shadcn/ui
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -12,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
+import { Eye, EyeOff } from "lucide-react";
 
 /** Role type used locally to keep TS strict while we coerce values */
 type Role = "student" | "client" | "admin";
@@ -23,7 +22,7 @@ const getPathForRole = (role?: Role | null) =>
   role === "student" ? "/student-dashboard" : "/client-dashboard";
 
 const Auth: React.FC = () => {
-  const { signIn, signUp, user, userRole, continueAsGuest, loading } = useAuth();
+  const { signUp, user, userRole, continueAsGuest, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -43,8 +42,12 @@ const Auth: React.FC = () => {
     lastName: "",
     role: "student",
     city: "",
+    passcode: "",
   });
   const [submitting, setSubmitting] = React.useState<"in" | "up" | "reset" | "resend" | "waitlist" | null>(null);
+  const [showPasscode, setShowPasscode] = React.useState(false);
+  const [showSignInPassword, setShowSignInPassword] = React.useState(false);
+  const [showSignUpPassword, setShowSignUpPassword] = React.useState(false);
 
   React.useEffect(() => {
     if (!loading && user) {
@@ -68,7 +71,10 @@ const Auth: React.FC = () => {
     const password = signInData.password;
 
     try {
-      const { error } = await signIn(email, password);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       if (error) {
         toast({
           title: "Sign in failed",
@@ -77,8 +83,6 @@ const Auth: React.FC = () => {
         });
         return;
       }
-      // Do not navigate immediately; let onAuthStateChange update context and
-      // the effect below will navigate once user/session are ready.
     } finally {
       setSubmitting(null);
     }
@@ -87,19 +91,18 @@ const Auth: React.FC = () => {
   const resendConfirmation = async (email: string) => {
     setSubmitting("resend");
     try {
-      // Supabase resend for signup confirmations
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,
         options: { emailRedirectTo: `${window.location.origin}/auth` },
       });
       if (error) {
-        toast({ title: "Couldn’t resend confirmation", description: error.message, variant: "destructive" });
+        toast({ title: "Couldn't resend confirmation", description: error.message, variant: "destructive" });
       } else {
         toast({ title: "Confirmation sent", description: "Check your inbox for the confirmation link." });
       }
     } catch (e: any) {
-      toast({ title: "Couldn’t resend confirmation", description: e?.message ?? String(e), variant: "destructive" });
+      toast({ title: "Couldn't resend confirmation", description: e?.message ?? String(e), variant: "destructive" });
     } finally {
       setSubmitting(null);
     }
@@ -109,7 +112,7 @@ const Auth: React.FC = () => {
     e.preventDefault();
     setSubmitting("up");
 
-    const email = signUpData.email.trim().toLowerCase(); // normalize
+    const email = signUpData.email.trim().toLowerCase();
     const { password, firstName, lastName, role } = signUpData;
 
     try {
@@ -127,7 +130,6 @@ const Auth: React.FC = () => {
         },
       });
 
-      // --- Detect "already registered" (Supabase quirk) ---
       const identitiesLen = (data?.user as any)?.identities?.length ?? undefined;
       const msg = (error?.message || "").toLowerCase();
       const alreadyRegistered =
@@ -135,7 +137,7 @@ const Auth: React.FC = () => {
         msg.includes("already registered") ||
         msg.includes("already exists") ||
         msg.includes("duplicate") ||
-        identitiesLen === 0; // empty identities => existing user
+        identitiesLen === 0;
 
       if (alreadyRegistered) {
         toast({
@@ -149,24 +151,22 @@ const Auth: React.FC = () => {
 
       if (error) {
         toast({
-          title: "Couldn’t create account",
+          title: "Couldn't create account",
           description: error.message || "Please try again.",
           variant: "destructive",
         });
         return;
       }
 
-      // Real new signup
       toast({
         title: "Check your email",
         description: "We sent a confirmation link to complete sign up.",
       });
       setTab("signin");
 
-      // Optional helper: quick resend button
       setTimeout(() => {
         toast({
-          title: "Didn’t get it?",
+          title: "Didn't get it?",
           description: "You can resend the confirmation email.",
           action: (
             <Button
@@ -212,25 +212,56 @@ const Auth: React.FC = () => {
     e.preventDefault();
     setSubmitting("waitlist");
 
-    const email = waitlistData.email.trim().toLowerCase();
-    const { firstName, lastName, role, city } = waitlistData;
-
     try {
-              const { error } = await supabase
-          .from('waitlist')
-          .insert({
-            email,
-            first_name: firstName || null,
-            last_name: lastName || null,
-            role: role,
-            city: city || null,
-          });
+      // Check if all required fields are filled
+      const missingFields = [];
+      
+      if (!waitlistData.firstName.trim()) missingFields.push("First name");
+      if (!waitlistData.lastName.trim()) missingFields.push("Last name");
+      if (!waitlistData.email.trim()) missingFields.push("Email");
+      if (!waitlistData.role) missingFields.push("Role");
+      if (!waitlistData.city.trim()) missingFields.push("City");
+      if (waitlistData.role && !waitlistData.passcode.trim()) missingFields.push("Passcode");
+
+      if (missingFields.length > 0) {
+        toast({
+          title: "Missing required information",
+          description: `One or more of the following boxes still require input: ${missingFields.join(", ")}.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const rolePasscodes = {
+        student: "STU-2025",
+        client: "CLI-2025",
+        admin: "ADM-2025"
+      };
+
+      if (waitlistData.role && waitlistData.passcode !== rolePasscodes[waitlistData.role as keyof typeof rolePasscodes]) {
+        toast({
+          title: "Invalid passcode",
+          description: "Please enter the correct passcode for your selected role.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from("waitlist")
+        .insert({
+          email: waitlistData.email,
+          first_name: waitlistData.firstName,
+          last_name: waitlistData.lastName,
+          role: waitlistData.role,
+          city: waitlistData.city,
+        });
 
       if (error) {
-        if (error.code === '23505') { // Unique constraint violation
+        if (error.code === '23505') {
           toast({
             title: "Already on waitlist",
-            description: "This email is already on our waitlist.",
+            description: "This email is already registered for the waitlist.",
             variant: "destructive",
           });
         } else {
@@ -248,16 +279,15 @@ const Auth: React.FC = () => {
         description: "We'll notify you when we're ready to onboard new users.",
       });
 
-      // Reset form
       setWaitlistData({
         email: "",
         firstName: "",
         lastName: "",
         role: "student",
         city: "",
+        passcode: "",
       });
 
-      // Switch to signin tab
       setTab("signin");
     } finally {
       setSubmitting(null);
@@ -284,7 +314,6 @@ const Auth: React.FC = () => {
               <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
             </TabsList>
 
-            {/* Sign In */}
             <TabsContent value="signin" className="mt-6">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
@@ -300,14 +329,30 @@ const Auth: React.FC = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password-in">Password</Label>
-                  <Input
-                    id="password-in"
-                    type="password"
-                    placeholder="••••••••"
-                    value={signInData.password}
-                    onChange={(e) => setSignInData({ ...signInData, password: e.target.value })}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password-in"
+                      type={showSignInPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={signInData.password}
+                      onChange={(e) => setSignInData({ ...signInData, password: e.target.value })}
+                      required
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowSignInPassword(!showSignInPassword)}
+                    >
+                      {showSignInPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
                 <Button type="submit" className="w-full" disabled={submitting === "in"}>
                   {submitting === "in" ? "Signing in..." : "Sign In"}
@@ -324,7 +369,6 @@ const Auth: React.FC = () => {
               </form>
             </TabsContent>
 
-            {/* Sign Up */}
             <TabsContent value="signup" className="mt-6">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -362,14 +406,30 @@ const Auth: React.FC = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password-up">Password</Label>
-                  <Input
-                    id="password-up"
-                    type="password"
-                    placeholder="Create a password"
-                    value={signUpData.password}
-                    onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password-up"
+                      type={showSignUpPassword ? "text" : "password"}
+                      placeholder="Create a password"
+                      value={signUpData.password}
+                      onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })}
+                      required
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowSignUpPassword(!showSignUpPassword)}
+                    >
+                      {showSignUpPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Role</Label>
@@ -393,7 +453,6 @@ const Auth: React.FC = () => {
               </form>
             </TabsContent>
 
-            {/* Waitlist */}
             <TabsContent value="waitlist" className="mt-6">
               <form onSubmit={handleWaitlist} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -404,6 +463,7 @@ const Auth: React.FC = () => {
                       placeholder="First name"
                       value={waitlistData.firstName}
                       onChange={(e) => setWaitlistData({ ...waitlistData, firstName: e.target.value })}
+                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -413,11 +473,12 @@ const Auth: React.FC = () => {
                       placeholder="Last name"
                       value={waitlistData.lastName}
                       onChange={(e) => setWaitlistData({ ...waitlistData, lastName: e.target.value })}
+                      required
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email-waitlist">Email *</Label>
+                  <Label htmlFor="email-waitlist">Email</Label>
                   <Input
                     id="email-waitlist"
                     type="email"
@@ -431,10 +492,11 @@ const Auth: React.FC = () => {
                   <Label>Role</Label>
                   <Select
                     value={waitlistData.role}
-                    onValueChange={(v) => setWaitlistData({ ...waitlistData, role: v })}
+                    onValueChange={(v) => setWaitlistData({ ...waitlistData, role: v, passcode: "" })}
+                    required
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a role" />
+                      <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="student">Student</SelectItem>
@@ -443,6 +505,35 @@ const Auth: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                {waitlistData.role && (
+                  <div className="space-y-2">
+                    <Label htmlFor="passcode-waitlist">Passcode</Label>
+                    <div className="relative">
+                      <Input
+                        id="passcode-waitlist"
+                        type={showPasscode ? "text" : "password"}
+                        placeholder="Enter passcode"
+                        value={waitlistData.passcode}
+                        onChange={(e) => setWaitlistData({ ...waitlistData, passcode: e.target.value })}
+                        required
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPasscode(!showPasscode)}
+                      >
+                        {showPasscode ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="city-waitlist">City</Label>
                   <Input
@@ -450,6 +541,7 @@ const Auth: React.FC = () => {
                     placeholder="e.g., Jacksonville, Orlando, Tampa"
                     value={waitlistData.city}
                     onChange={(e) => setWaitlistData({ ...waitlistData, city: e.target.value })}
+                    required
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={submitting === "waitlist"}>

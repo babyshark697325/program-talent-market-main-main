@@ -87,16 +87,15 @@ const BrowseStudents = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-4">
-            Browse Talented Students
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Discover skilled students ready to help with your projects
-          </p>
-        </div>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-6">
+          Browse Talented Students
+        </h1>
+        <p className="text-muted-foreground text-lg">
+          Discover skilled students ready to help with your projects
+        </p>
+      </div>
 
         <div className="rounded-3xl p-8 shadow-xl border mb-10 bg-white/70 dark:bg-[#040b17] border-primary/20 dark:border-white/10">
           <div className="flex flex-col lg:flex-row gap-6 mb-6 relative">

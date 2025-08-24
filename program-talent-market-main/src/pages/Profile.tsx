@@ -180,7 +180,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-6">My Profile</h1>
@@ -464,8 +464,8 @@ const Profile = () => {
                 <div ref={portfolioFormRef} className="border rounded-md p-4 mb-4 space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <Input
-                      ref={portfolioTitleInputRef as any}
-                      placeholder="Title *"
+                      ref={portfolioTitleInputRef}
+                      placeholder="Project Title"
                       value={newPortfolio.title}
                       onChange={(e) => setNewPortfolio({ ...newPortfolio, title: e.target.value })}
                     />
@@ -474,186 +474,64 @@ const Profile = () => {
                       value={newPortfolio.link}
                       onChange={(e) => setNewPortfolio({ ...newPortfolio, link: e.target.value })}
                     />
-                    <Textarea
-                      placeholder="Description (optional)"
-                      className="md:col-span-2"
-                      rows={3}
-                      value={newPortfolio.description}
-                      onChange={(e) => setNewPortfolio({ ...newPortfolio, description: e.target.value })}
-                    />
-                    <div className="md:col-span-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const f = e.target.files?.[0];
-                          if (!f) return;
-                          const r = new FileReader();
-                          r.onload = () => setNewPortfolio({ ...newPortfolio, imageUrl: String(r.result || '') });
-                          r.readAsDataURL(f);
-                        }}
-                      />
-                      {newPortfolio.imageUrl && (
-                        <img src={newPortfolio.imageUrl} alt="Preview" className="mt-2 h-32 w-full object-cover rounded-md border" />
-                      )}
-                    </div>
                   </div>
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setShowPortfolioForm(false);
-                        setNewPortfolio({ title: '', description: '', link: '', imageUrl: '' });
-                      }}
-                    >
+                  <Textarea
+                    placeholder="Project Description"
+                    rows={3}
+                    value={newPortfolio.description}
+                    onChange={(e) => setNewPortfolio({ ...newPortfolio, description: e.target.value })}
+                  />
+                  <Input
+                    placeholder="Image URL (optional)"
+                    value={newPortfolio.imageUrl}
+                    onChange={(e) => setNewPortfolio({ ...newPortfolio, imageUrl: e.target.value })}
+                  />
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={addPortfolioItem}>
+                      <Plus className="mr-1 h-3 w-3" />
+                      Add Project
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setShowPortfolioForm(false)}>
                       Cancel
                     </Button>
-                    <Button size="sm" onClick={addPortfolioItem}>Add Item</Button>
                   </div>
                 </div>
               )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                {profile.portfolio?.map((item) => (
-                  <div key={item.id} className="border rounded-lg overflow-hidden">
-                    <img 
-                      src={item.imageUrl} 
-                      alt={item.title}
-                      className="w-full h-40 object-cover"
-                    />
-                    <div className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-semibold">{item.title}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {editedProfile.portfolio.map((item: any) => (
+                  <Card key={item.id} className="relative">
+                    {item.imageUrl && (
+                      <div className="aspect-video bg-muted rounded-t-lg overflow-hidden">
+                        <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-medium">{item.title}</h3>
+                          {item.description && <p className="text-sm text-muted-foreground mt-1">{item.description}</p>}
+                          {item.link && (
+                            <a href={item.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-2">
+                              <ExternalLink className="h-3 w-3" />
+                              View Project
+                            </a>
+                          )}
+                        </div>
                         {isEditing && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 -mt-1 -mr-1"
                             onClick={() => removePortfolioItem(item.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
-                      {item.description && (
-                        <p className="text-muted-foreground text-sm mb-3">{item.description}</p>
-                      )}
-                      {item.link && (
-                        <Button variant="outline" size="sm" asChild>
-                          <a href={item.link} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="mr-2 h-3 w-3" />
-                            View Project
-                          </a>
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
-                          </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="settings">
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Settings</CardTitle>
-              <CardDescription>Manage your account preferences</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Email Notifications</h4>
-                  <p className="text-sm text-muted-foreground">Receive email updates about your account</p>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setShowEmailSettings((v) => !v)}>
-                  {showEmailSettings ? "Close" : "Manage"}
-                </Button>
-              </div>
-              {showEmailSettings && (
-                <div className="mt-3 space-y-3 border rounded-md p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Job alerts</p>
-                      <p className="text-xs text-muted-foreground">New jobs matching your skills</p>
-                    </div>
-                    <Switch
-                      checked={emailSettings.jobAlerts}
-                      onCheckedChange={(v) => setEmailSettings({ ...emailSettings, jobAlerts: v })}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Messages</p>
-                      <p className="text-xs text-muted-foreground">New messages from clients</p>
-                    </div>
-                    <Switch
-                      checked={emailSettings.messages}
-                      onCheckedChange={(v) => setEmailSettings({ ...emailSettings, messages: v })}
-                    />
-                  </div>
-                                    <div className="text-right">
-                    <Button size="sm" onClick={() => setShowEmailSettings(false)}>Save</Button>
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">2FA</h4>
-                  <p className="text-sm text-muted-foreground">Manage two-factor authentication</p>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setShow2FA((v) => !v)}>
-                  {show2FA ? "Close" : "Manage"}
-                </Button>
-              </div>
-              {show2FA && (
-                <div className="mt-3 space-y-3 border rounded-md p-3">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">Enable 2FA</p>
-                    <Switch checked={twoFAEnabled} onCheckedChange={setTwoFAEnabled} />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Use an authenticator app to secure your account.
-                  </p>
-                  <div className="text-right">
-                    <Button size="sm" onClick={() => setShow2FA(false)}>Save</Button>
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Change Password</h4>
-                  <p className="text-sm text-muted-foreground">Update your account password</p>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setShowPassword((v) => !v)}>
-                  {showPassword ? "Close" : "Update"}
-                </Button>
-              </div>
-              {showPassword && (
-                <div className="mt-3 space-y-3 border rounded-md p-3">
-                  <Input
-                    type="password"
-                    placeholder="Current password"
-                    value={pwd.current}
-                    onChange={(e) => setPwd({ ...pwd, current: e.target.value })}
-                  />
-                  <Input
-                    type="password"
-                    placeholder="New password"
-                    value={pwd.next}
-                    onChange={(e) => setPwd({ ...pwd, next: e.target.value })}
-                  />
-                  <Input
-                    type="password"
-                    placeholder="Confirm new password"
-                    value={pwd.confirm}
-                    onChange={(e) => setPwd({ ...pwd, confirm: e.target.value })}
-                  />
-                  <div className="text-right">
-                    <Button size="sm" onClick={() => setShowPassword(false)}>Save</Button>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -661,19 +539,19 @@ const Profile = () => {
         <TabsContent value="connections">
           <Card>
             <CardHeader>
-              <CardTitle>Platform Links</CardTitle>
-              <CardDescription>Connect your professional platform profiles</CardDescription>
+              <CardTitle>Platform Connections</CardTitle>
+              <CardDescription>Connect your professional profiles</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium flex items-center gap-2 mb-2">
-                    <Linkedin className="h-4 w-4 text-[#0077B5]" />
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Linkedin className="h-4 w-4" />
                     LinkedIn
                   </label>
                   {isEditing ? (
                     <Input
-                      placeholder="https://linkedin.com/in/yourprofile"
+                      placeholder="https://linkedin.com/in/username"
                       value={editedProfile.platformLinks.linkedin}
                       onChange={(e) => setEditedProfile({
                         ...editedProfile,
@@ -681,27 +559,19 @@ const Profile = () => {
                       })}
                     />
                   ) : (
-                    profile.platformLinks.linkedin ? (
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={profile.platformLinks.linkedin} target="_blank" rel="noopener noreferrer">
-                          <Linkedin className="mr-2 h-3 w-3" />
-                          View LinkedIn
-                        </a>
-                      </Button>
-                    ) : (
-                      <p className="text-muted-foreground text-sm">Not linked</p>
-                    )
+                    <p className="text-sm text-muted-foreground">
+                      {profile.platformLinks.linkedin || 'Not connected'}
+                    </p>
                   )}
                 </div>
-                
                 <div>
-                  <label className="text-sm font-medium flex items-center gap-2 mb-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
                     <Github className="h-4 w-4" />
                     GitHub
                   </label>
                   {isEditing ? (
                     <Input
-                      placeholder="https://github.com/yourusername"
+                      placeholder="https://github.com/username"
                       value={editedProfile.platformLinks.github}
                       onChange={(e) => setEditedProfile({
                         ...editedProfile,
@@ -709,27 +579,19 @@ const Profile = () => {
                       })}
                     />
                   ) : (
-                    profile.platformLinks.github ? (
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={profile.platformLinks.github} target="_blank" rel="noopener noreferrer">
-                          <Github className="mr-2 h-3 w-3" />
-                          View GitHub
-                        </a>
-                      </Button>
-                    ) : (
-                      <p className="text-muted-foreground text-sm">Not linked</p>
-                    )
+                    <p className="text-sm text-muted-foreground">
+                      {profile.platformLinks.github || 'Not connected'}
+                    </p>
                   )}
                 </div>
-                
                 <div>
-                  <label className="text-sm font-medium flex items-center gap-2 mb-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
                     <UpworkIcon className="h-4 w-4" />
                     Upwork
                   </label>
                   {isEditing ? (
                     <Input
-                      placeholder="https://upwork.com/freelancers/yourprofile"
+                      placeholder="https://upwork.com/freelancers/username"
                       value={editedProfile.platformLinks.upwork}
                       onChange={(e) => setEditedProfile({
                         ...editedProfile,
@@ -737,27 +599,19 @@ const Profile = () => {
                       })}
                     />
                   ) : (
-                    profile.platformLinks.upwork ? (
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={profile.platformLinks.upwork} target="_blank" rel="noopener noreferrer">
-                          <UpworkIcon className="mr-2 h-3 w-3" />
-                          View Upwork
-                        </a>
-                      </Button>
-                    ) : (
-                      <p className="text-muted-foreground text-sm">Not linked</p>
-                    )
+                    <p className="text-sm text-muted-foreground">
+                      {profile.platformLinks.upwork || 'Not connected'}
+                    </p>
                   )}
                 </div>
-                
                 <div>
-                  <label className="text-sm font-medium flex items-center gap-2 mb-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
                     <FiverrIcon className="h-4 w-4" />
                     Fiverr
                   </label>
                   {isEditing ? (
                     <Input
-                      placeholder="https://fiverr.com/yourusername"
+                      placeholder="https://fiverr.com/username"
                       value={editedProfile.platformLinks.fiverr}
                       onChange={(e) => setEditedProfile({
                         ...editedProfile,
@@ -765,21 +619,99 @@ const Profile = () => {
                       })}
                     />
                   ) : (
-                    profile.platformLinks.fiverr ? (
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={profile.platformLinks.fiverr} target="_blank" rel="noopener noreferrer">
-                          <FiverrIcon className="mr-2 h-3 w-3" />
-                          View Fiverr
-                        </a>
-                      </Button>
-                    ) : (
-                      <p className="text-muted-foreground text-sm">Not linked</p>
-                    )
+                    <p className="text-sm text-muted-foreground">
+                      {profile.platformLinks.fiverr || 'Not connected'}
+                    </p>
                   )}
                 </div>
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Email Notifications</CardTitle>
+                <CardDescription>Manage your email preferences</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Job Alerts</p>
+                    <p className="text-sm text-muted-foreground">Receive notifications about new job opportunities</p>
+                  </div>
+                  <Switch
+                    checked={emailSettings.jobAlerts}
+                    onCheckedChange={(checked) => setEmailSettings({ ...emailSettings, jobAlerts: checked })}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Messages</p>
+                    <p className="text-sm text-muted-foreground">Receive notifications about new messages</p>
+                  </div>
+                  <Switch
+                    checked={emailSettings.messages}
+                    onCheckedChange={(checked) => setEmailSettings({ ...emailSettings, messages: checked })}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Security</CardTitle>
+                <CardDescription>Manage your account security settings</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Two-Factor Authentication</p>
+                    <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
+                  </div>
+                  <Switch
+                    checked={twoFAEnabled}
+                    onCheckedChange={setTwoFAEnabled}
+                  />
+                </div>
+                <div className="pt-4 border-t">
+                  <Button variant="outline" onClick={() => setShowPassword(!showPassword)}>
+                    Change Password
+                  </Button>
+                  {showPassword && (
+                    <div className="mt-4 space-y-3">
+                      <Input
+                        type="password"
+                        placeholder="Current Password"
+                        value={pwd.current}
+                        onChange={(e) => setPwd({ ...pwd, current: e.target.value })}
+                      />
+                      <Input
+                        type="password"
+                        placeholder="New Password"
+                        value={pwd.next}
+                        onChange={(e) => setPwd({ ...pwd, next: e.target.value })}
+                      />
+                      <Input
+                        type="password"
+                        placeholder="Confirm New Password"
+                        value={pwd.confirm}
+                        onChange={(e) => setPwd({ ...pwd, confirm: e.target.value })}
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm">Update Password</Button>
+                        <Button variant="ghost" size="sm" onClick={() => setShowPassword(false)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
@@ -787,3 +719,4 @@ const Profile = () => {
 };
 
 export default Profile;
+
