@@ -7,8 +7,6 @@ html {
   text-size-adjust: 100% !important;
   zoom: 1 !important;
   transform: scale(1) !important;
-  min-zoom: 1 !important;
-  max-zoom: 1 !important;
   width: 100% !important;
   height: 100% !important;
 }
@@ -50,9 +48,9 @@ body {
   zoom: 1 !important;
 }
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
 
@@ -155,11 +153,12 @@ body {
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: var(--border);
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
 }
 
@@ -207,12 +206,27 @@ body {
   
   /* Skill badge styling */
   .skill-badge {
-    @apply bg-[hsl(var(--tag-bg))] text-[hsl(var(--tag-foreground))] px-2 md:px-3 py-1 text-xs rounded-lg;
+    background-color: hsl(var(--tag-bg));
+    color: hsl(var(--tag-foreground));
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.75rem;
+    border-radius: 0.5rem;
+    
+    @media (min-width: 768px) {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
     transition: none !important;
   }
   
   .skill-badge:hover {
-    @apply bg-[hsl(var(--tag-bg))] text-[hsl(var(--tag-foreground))] border-none scale-100;
+    background-color: hsl(var(--tag-bg));
+    color: hsl(var(--tag-foreground));
+    border: none;
+    transform: scale(1);
   }
 }
 
