@@ -1,56 +1,38 @@
 /* Force consistent zoom/scaling across all browsers and domains */
 html {
-  font-size: 16px !important;
-  -webkit-text-size-adjust: 100% !important;
-  -moz-text-size-adjust: 100% !important;
-  -ms-text-size-adjust: 100% !important;
-  text-size-adjust: 100% !important;
-  zoom: 1 !important;
-  transform: scale(1) !important;
-  width: 100% !important;
-  height: 100% !important;
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  height: 100%;
 }
 
 body {
-  font-size: 1rem !important;
-  zoom: 1 !important;
-  transform: scale(1) !important;
-  width: 100% !important;
-  min-width: 100% !important;
-  max-width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
+  font-size: 1rem;
+  margin: 0;
+  padding: 0;
+  width: 100%;
 }
 
-/* Prevent any zoom-related scaling */
+/* Base box-sizing */
 * {
-  -webkit-text-size-adjust: 100% !important;
-  -moz-text-size-adjust: 100% !important;
-  -ms-text-size-adjust: 100% !important;
-  text-size-adjust: 100% !important;
-  zoom: 1 !important;
-  box-sizing: border-box !important;
+  box-sizing: border-box;
 }
 
-/* Force viewport consistency */
+/* Root container */
 #root {
-  transform: scale(1) !important;
-  zoom: 1 !important;
-  width: 100% !important;
-  min-height: 100vh !important;
-  margin: 0 !important;
-  padding: 0 !important;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
-/* Override Tailwind container scaling issues */
-.container {
-  transform: scale(1) !important;
-  zoom: 1 !important;
-}
 
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
 
@@ -87,23 +69,16 @@ body {
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
 
     /* Chips/Tags and Glow tokens */
-    --tag-bg: 0 0% 92%; /* light mode fallback */
+    --tag-bg: 0 0% 92%;
     --tag-foreground: 222.2 47.4% 11.2%;
   }
 
@@ -126,8 +101,7 @@ body {
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    /* Reduced emerald/lime accent for better contrast in dark mode */
-    --accent: 217.2 20% 15%; /* Reduced from 32.6% to 20% saturation and 17.5% to 15% lightness */
+    --accent: 217.2 20% 15%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
@@ -145,20 +119,18 @@ body {
     --sidebar-border: 210 35% 12%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Dark mode tokens for chips/tags and glow - reduced emerald/lime wash */
-    --tag-bg: 0 0% 16%; /* Reduced from 18% to 16% for less wash */
-    --tag-foreground: 0 0% 81%; /* ~#cfcfcf */
+    --tag-bg: 0 0% 16%;
+    --tag-foreground: 0 0% 81%;
   }
 }
 
 @layer base {
   * {
-    border-color: var(--border);
+    @apply border-border;
   }
 
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    @apply bg-background text-foreground;
   }
 }
 
@@ -206,27 +178,12 @@ body {
   
   /* Skill badge styling */
   .skill-badge {
-    background-color: hsl(var(--tag-bg));
-    color: hsl(var(--tag-foreground));
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-    font-size: 0.75rem;
-    border-radius: 0.5rem;
-    
-    @media (min-width: 768px) {
-      padding-left: 0.75rem;
-      padding-right: 0.75rem;
-    }
+    @apply bg-[hsl(var(--tag-bg))] text-[hsl(var(--tag-foreground))] px-2 md:px-3 py-1 text-xs rounded-lg;
     transition: none !important;
   }
   
   .skill-badge:hover {
-    background-color: hsl(var(--tag-bg));
-    color: hsl(var(--tag-foreground));
-    border: none;
-    transform: scale(1);
+    @apply bg-[hsl(var(--tag-bg))] text-[hsl(var(--tag-foreground))] border-none scale-100;
   }
 }
 
