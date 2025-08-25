@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "../integrations/supabase/client";
+import { isDeveloperEmail } from "../config/developer";
 
 /** Strict role union kept in code so TS matches DB constraint */
 type Role = "student" | "client" | "admin";
@@ -11,6 +12,7 @@ type AuthContextType = {
   userRole: Role | null;
   loading: boolean;
   isGuest: boolean;
+  isDeveloper: boolean;
   signUp: (
     email: string,
     password: string,
@@ -119,6 +121,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
   const [userRole, setUserRole] = useState<Role | null>(null);
   const [loading, setLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
+  const [isDeveloper, setIsDeveloper] = useState(false);
 
   const loadSessionAndRole = async (s: Session | null) => {
     try {
@@ -130,10 +133,15 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
         // Ensure guest mode is cleared when a real session exists
         setIsGuest(false);
 
+        // Mark developer accounts by email
+        const email = (u.email || '').trim().toLowerCase();
+        const dev = isDeveloperEmail(email);
+        setIsDeveloper(dev);
+
         // Set a preliminary role from metadata immediately for fast UI routing
         const md: Record<string, unknown> = u.user_metadata || {};
         const prelimRole: Role = normalizeRole(md.role);
-        setUserRole(prelimRole);
+        setUserRole(dev ? 'admin' : prelimRole);
 
         // Run profile sync + role ensure + DB fetch in background without blocking UI
         ;(async () => {
@@ -141,6 +149,8 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
             await Promise.all([ensureProfile(u), ensureUserRoleRow(u)]);
             const dbRole = await fetchUserRole(u.id);
             let finalRole: Role = dbRole ?? prelimRole;
+            // Elevate developer accounts to admin at runtime without DB change
+            if (dev) finalRole = 'admin';
             // If DB role missing, try to persist prelim role
             if (!dbRole) {
               try {
@@ -157,6 +167,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
           }
         })();
       } else {
+        setIsDeveloper(false);
         setUserRole(null);
       }
     } catch (e) {
@@ -299,6 +310,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
     userRole,
     loading,
     isGuest,
+    isDeveloper,
     signUp,
     signIn,
     signOut,

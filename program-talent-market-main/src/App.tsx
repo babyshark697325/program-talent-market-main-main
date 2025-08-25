@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { RoleProvider } from "./contexts/RoleContext";
 import { SavedJobsProvider } from "./contexts/SavedJobsContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -62,6 +62,7 @@ import { AdminDashboardPage, StudentDashboardPage, ClientDashboardPage } from ".
 // ---------- Inline layout with sidebar + header ----------
 function Layout({ children }: { children: React.ReactNode }) {
   const { role } = useRole();
+  const { userRole, isDeveloper } = useAuth();
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -80,7 +81,7 @@ function Layout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex items-center gap-1 md:gap-2">
               <ThemeToggle />
-              <RoleSelector />
+              {(userRole === 'admin' || isDeveloper) && <RoleSelector />}
               <UserMenu />
             </div>
           </div>

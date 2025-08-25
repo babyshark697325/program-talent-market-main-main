@@ -25,7 +25,7 @@ function getInitials(nameOrEmail: string) {
 }
 
 const UserMenu: React.FC = () => {
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, isDeveloper, signOut } = useAuth();
   const navigate = useNavigate();
 
   if (!user) {
@@ -46,7 +46,7 @@ const UserMenu: React.FC = () => {
     v === "student" || v === "client" || v === "admin" ? v : "client";
 
   const metaRole = normalizeRole((user.user_metadata as Record<string, unknown>)?.role);
-  const displayRole = userRole ?? metaRole ?? "client";
+  const baseRole = metaRole || "client";
 
   const goProfile = (e?: React.MouseEvent) => {
     e?.preventDefault?.();
@@ -85,10 +85,15 @@ const UserMenu: React.FC = () => {
         <DropdownMenuLabel className="flex flex-col gap-1">
           <span className="font-medium truncate">{displayName}</span>
           <span className="text-xs text-muted-foreground truncate">{user.email}</span>
-          <div className="mt-1">
+          <div className="mt-1 flex items-center gap-1">
             <Badge variant="secondary" className="text-[10px] uppercase">
-              {displayRole}
+              {baseRole}
             </Badge>
+            {isDeveloper && (
+              <Badge className="text-[10px] uppercase bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent))]">
+                Developer
+              </Badge>
+            )}
           </div>
         </DropdownMenuLabel>
 
