@@ -2,19 +2,52 @@
 html {
   font-size: 16px !important;
   -webkit-text-size-adjust: 100% !important;
+  -moz-text-size-adjust: 100% !important;
+  -ms-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
   zoom: 1 !important;
   transform: scale(1) !important;
+  min-zoom: 1 !important;
+  max-zoom: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 body {
   font-size: 1rem !important;
   zoom: 1 !important;
+  transform: scale(1) !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* Prevent any zoom-related scaling */
 * {
   -webkit-text-size-adjust: 100% !important;
+  -moz-text-size-adjust: 100% !important;
+  -ms-text-size-adjust: 100% !important;
   text-size-adjust: 100% !important;
+  zoom: 1 !important;
+  box-sizing: border-box !important;
+}
+
+/* Force viewport consistency */
+#root {
+  transform: scale(1) !important;
+  zoom: 1 !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Override Tailwind container scaling issues */
+.container {
+  transform: scale(1) !important;
+  zoom: 1 !important;
 }
 
 @tailwind base;
@@ -182,3 +215,5 @@ body {
     @apply bg-[hsl(var(--tag-bg))] text-[hsl(var(--tag-foreground))] border-none scale-100;
   }
 }
+
+
