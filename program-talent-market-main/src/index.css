@@ -1,3 +1,22 @@
+/* Force consistent zoom/scaling across all browsers and domains */
+html {
+  font-size: 16px !important;
+  -webkit-text-size-adjust: 100% !important;
+  zoom: 1 !important;
+  transform: scale(1) !important;
+}
+
+body {
+  font-size: 1rem !important;
+  zoom: 1 !important;
+}
+
+/* Prevent any zoom-related scaling */
+* {
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -162,24 +181,4 @@
   .skill-badge:hover {
     @apply bg-[hsl(var(--tag-bg))] text-[hsl(var(--tag-foreground))] border-none scale-100;
   }
-}
-
-
-/* Add at the very top of the file */
-html {
-  font-size: 16px !important;
-  -webkit-text-size-adjust: 100% !important;
-  zoom: 1 !important;
-  transform: scale(1) !important;
-}
-
-body {
-  font-size: 1rem !important;
-  zoom: 1 !important;
-}
-
-/* Prevent any zoom-related scaling */
-* {
-  -webkit-text-size-adjust: 100% !important;
-  text-size-adjust: 100% !important;
 }
