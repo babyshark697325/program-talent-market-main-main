@@ -1,13 +1,20 @@
 
 import React from 'react';
 import { useRole } from '@/contexts/RoleContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Users, Briefcase, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const RoleSelector: React.FC = () => {
   const { role, setRole } = useRole();
+  const { userRole } = useAuth();
   const navigate = useNavigate();
+
+  // Only show role selector for admin users
+  if (userRole !== 'admin') {
+    return null;
+  }
 
   return (
     <div className="flex items-center gap-2 bg-secondary/50 backdrop-blur-sm rounded-2xl p-1 shadow-md border border-primary/10">
