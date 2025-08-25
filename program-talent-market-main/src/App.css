@@ -1,6 +1,8 @@
 #root {
-  /* Remove max-width, margin, padding, and text-align constraints */
+  width: 100%;
 }
+/* Remove the extra closing brace as it has no matching opening brace */  /* Remove max-width, margin, padding, and text-align constraints */
+
 
 .logo {
   height: 6em;
