@@ -1,0 +1,26 @@
+{
+  "name": "program-talent-market-main-main",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/babyshark697325/program-talent-market-main-main.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/babyshark697325/program-talent-market-main-main/issues"
+  },
+  "homepage": "https://github.com/babyshark697325/program-talent-market-main-main#readme",
+  "devDependencies": {
+    "@types/react": "^19.1.11",
+    "@types/react-dom": "^19.1.8",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  }
+}

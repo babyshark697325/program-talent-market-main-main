@@ -29,7 +29,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
   resultsCount
 }) => {
   return (
-    <div className="bg-secondary/60 backdrop-blur-sm rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-xl border border-primary/20 mb-6 md:mb-10 animate-fade-in">
+    <div className="rounded-3xl p-4 md:p-8 shadow-md border bg-white border-black/10 dark:bg-[#040b17] dark:border-white/5 mb-6 md:mb-10 animate-fade-in">
       <div className="flex flex-col lg:flex-row gap-4 md:gap-6 mb-4 md:mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
@@ -38,7 +38,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             placeholder={`Search ${activeTab === "students" ? "students..." : "jobs..."}...`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 md:pl-12 py-3 md:py-4 text-base md:text-lg rounded-2xl border-primary/30 focus:border-primary focus:ring-primary/20 bg-secondary backdrop-blur-sm shadow-sm"
+            className="pl-10 md:pl-12 py-3 md:py-4 text-base md:text-lg rounded-2xl border border-black/10 dark:border-white/5 bg-white dark:bg-[#040b17] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
         </div>
         
@@ -59,7 +59,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                   variant={sortBy === sort.value ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSortBy(sort.value as any)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-[1.02] shadow-sm ${
                     sortBy === sort.value 
                       ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
                       : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
@@ -81,7 +81,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
         <div className="flex flex-wrap gap-2">
           <Badge
             key="all"
-            className={`cursor-pointer px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
+            className={`cursor-pointer px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 hover:scale-[1.02] shadow-sm ${
               selectedSkill === null 
                 ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
                 : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
@@ -93,7 +93,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
           {allSkills.slice(0, window.innerWidth < 640 ? 4 : 8).map((skill) => (
             <Badge
               key={skill}
-              className={`cursor-pointer px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
+              className={`cursor-pointer px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 hover:scale-[1.02] shadow-sm ${
                 selectedSkill === skill 
                   ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
                   : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"

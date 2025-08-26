@@ -131,7 +131,7 @@ const ManageJobs = () => {
                   </div>
                 </div>
                 
-                <div className="animate-fade-in hover:scale-105 transition-transform duration-300 h-full flex flex-col"
+                <div className="animate-fade-in hover:scale-[1.02] transition-transform duration-200 h-full flex flex-col"
                      style={{ animationDelay: `${0.1 * index}s` }}>
                   <JobCard
                     job={job}

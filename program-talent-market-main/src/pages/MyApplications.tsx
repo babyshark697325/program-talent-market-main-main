@@ -202,7 +202,7 @@ const MyApplications = () => {
         ) : applications.length > 0 ? (
           <div className="space-y-4">
             {applications.map((application) => (
-              <Card key={application.applicationId} className="hover:shadow-lg transition-shadow">
+              <Card key={application.applicationId}>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">

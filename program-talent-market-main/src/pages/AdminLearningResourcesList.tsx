@@ -226,7 +226,7 @@ const AdminLearningResourcesList: React.FC = () => {
         ) : (
           <div className="space-y-4">
             {filteredResources.map((resource) => (
-              <Card key={resource.id} className="hover:shadow-md transition-shadow">
+              <Card key={resource.id}>
                 <CardContent className="p-6">
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
                     {/* Type Icon */}

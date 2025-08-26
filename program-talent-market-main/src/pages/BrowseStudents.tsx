@@ -94,7 +94,7 @@ const BrowseStudents = () => {
         description="Discover skilled students ready to help with your projects"
       />
 
-        <div className="rounded-3xl p-8 shadow-xl border mb-10 bg-white/70 dark:bg-[#040b17] border-primary/20 dark:border-white/10">
+        <div className="rounded-3xl p-8 shadow-md border bg-white border-black/10 dark:bg-[#040b17] dark:border-white/5 mb-10">
           <div className="flex flex-col lg:flex-row gap-6 mb-6 relative">
             {/* Clear Filters Button - top right */}
             <button
@@ -197,7 +197,7 @@ const BrowseStudents = () => {
             {filteredStudents.map((student, index) => (
               <div 
                 key={student.id} 
-                className="animate-fade-in hover:scale-105 transition-transform duration-300"
+                className="animate-fade-in hover:scale-[1.02] transition-transform duration-200"
                 style={{ animationDelay: `${0.1 * index}s` }}
               >
                 <StudentServiceCard
@@ -209,7 +209,7 @@ const BrowseStudents = () => {
           </div>
         ) : (
           <div className="text-center py-20">
-            <div className="rounded-3xl p-16 shadow-xl border max-w-lg mx-auto bg-white/70 dark:bg-[#040b17] border-primary/20 dark:border-white/10">
+            <div className="rounded-3xl p-16 shadow-md border bg-white border-black/10 dark:bg-[#040b17] dark:border-white/5 max-w-lg mx-auto">
               <div className="w-24 h-24 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-4xl">🔍</span>
               </div>

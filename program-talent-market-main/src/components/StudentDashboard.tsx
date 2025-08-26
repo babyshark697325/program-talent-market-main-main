@@ -121,7 +121,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
       {/* Student Quick Stats */}
       <div className="max-w-6xl mx-auto w-full px-6 pb-16 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-secondary/40 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-primary/10">
+          <div className="bg-secondary/70 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-primary/15">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-r from-primary to-primary/80 rounded-xl flex items-center justify-center">
                 <Award className="text-primary-foreground" size={24} />
@@ -132,7 +132,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
               </div>
             </div>
           </div>
-          <div className="bg-secondary/40 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-primary/10">
+          <div className="bg-secondary/70 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-primary/15">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-r from-accent to-accent/80 rounded-xl flex items-center justify-center">
                 <Briefcase className="text-primary-foreground" size={24} />
@@ -143,7 +143,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
               </div>
             </div>
           </div>
-          <div className="bg-secondary/40 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-primary/10">
+          <div className="bg-secondary/70 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-primary/15">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center">
                 <TrendingUp className="text-primary-foreground" size={24} />

@@ -74,7 +74,7 @@ const SavedJobs = () => {
           {savedJobs.map((job, index) => (
             <div 
               key={job.id} 
-              className="animate-fade-in hover:scale-105 transition-transform duration-300"
+              className="animate-fade-in hover:scale-[1.02] transition-transform duration-200"
               style={{ animationDelay: `${0.1 * index}s` }}
             >
               <JobCard

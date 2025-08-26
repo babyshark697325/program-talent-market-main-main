@@ -113,7 +113,7 @@ const StudentResources = () => {
             {resources.map((resource) => {
               const IconComponent = getIconForType(resource.type);
               return (
-                <Card key={resource.id} className="rounded-2xl shadow-[0_6px_24px_rgba(0,0,0,0.08)] flex flex-col relative">
+                <Card key={resource.id} className="flex flex-col relative">
                   <CardHeader className="flex-1 pt-3 pb-2">
                     <div className="absolute top-3 right-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(resource.status)}`}>

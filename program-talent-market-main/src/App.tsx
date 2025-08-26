@@ -68,7 +68,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <SidebarInset className="flex-1 flex flex-col">
-          <div className="flex h-14 md:h-16 shrink-0 items-center gap-2 border-b px-2 md:px-4">
+          <div className="flex h-14 md:h-16 shrink-0 items-center gap-2 border-b border-border/40 dark:border-white/5 px-2 md:px-4">
             <SidebarTrigger className="h-6 w-6 md:h-8 md:w-8" />
             <div className="h-4 w-px bg-border mx-1 md:mx-2" />
             <div className="flex items-center gap-2 flex-1">

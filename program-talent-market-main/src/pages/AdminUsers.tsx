@@ -296,7 +296,7 @@ const AdminUsers = () => {
               ) : (
                 <div className="space-y-4">
                   {recentUsers.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={user.id} className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 rounded-2xl border bg-white border-black/10 dark:bg-[#040b17] dark:border-white/5">
                       <div className="flex items-center space-x-4">
                         <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
                           <span className="text-white font-medium text-sm">
@@ -308,7 +308,7 @@ const AdminUsers = () => {
                           <p className="text-sm text-muted-foreground">{user.email}</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center gap-2 md:gap-3 flex-wrap">
                         <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
                           {user.role}
                         </Badge>
@@ -351,7 +351,7 @@ const AdminUsers = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {waitlistEntries.map((entry) => (
+                {waitlistEntries.slice(0, 4).map((entry) => (
                   <Card key={entry.id} className="p-4">
                     <div className="flex items-start space-x-4">
                       <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center flex-shrink-0">
@@ -385,7 +385,7 @@ const AdminUsers = () => {
                           </p>
                         </div>
                         {entry.status === 'pending' && (
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-wrap">
                             <Button
                               variant="outline"
                               size="sm"

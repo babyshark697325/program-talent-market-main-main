@@ -69,7 +69,7 @@ const ContentGrid: React.FC<ContentGridProps> = ({
             {filteredStudents.map((student, index) => (
               <div 
                 key={student.id} 
-                className="hover:scale-105 transition-transform duration-300"
+                className="hover:scale-[1.02] transition-transform duration-200"
                 style={hasAnimated ? 
                   { opacity: 1 } : 
                   { 
@@ -95,7 +95,7 @@ const ContentGrid: React.FC<ContentGridProps> = ({
             {filteredJobs.map((job, index) => (
               <div 
                 key={job.id} 
-                className="hover:scale-105 transition-transform duration-300"
+                className="hover:scale-[1.02] transition-transform duration-200"
                 style={hasAnimated ? 
                   { opacity: 1 } : 
                   { 

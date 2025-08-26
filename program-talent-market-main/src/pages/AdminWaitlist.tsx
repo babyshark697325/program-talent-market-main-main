@@ -149,9 +149,9 @@ const AdminWaitlist = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="outline" size="sm" onClick={() => navigate('/admin-dashboard')}>
+          <Button variant="outline" size="sm" onClick={() => navigate('/admin/users')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+            Back
           </Button>
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -218,7 +218,7 @@ const AdminWaitlist = () => {
         <CardContent>
           <div className="space-y-4">
             {filteredEntries.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={entry.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl border bg-white border-black/10 dark:bg-[#040b17] dark:border-white/5">
                 <div className="flex items-center space-x-4">
                   <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
                     <Clock className="h-5 w-5 text-white" />
@@ -245,7 +245,7 @@ const AdminWaitlist = () => {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center gap-2 md:gap-3 flex-wrap">
                   <Badge variant={
                     entry.status === 'pending' ? 'secondary' : 
                     entry.status === 'approved' ? 'default' : 'destructive'

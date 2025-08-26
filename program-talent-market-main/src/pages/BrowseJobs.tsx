@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { mockJobs, JobPosting } from "@/data/mockJobs";
@@ -91,7 +90,7 @@ const BrowseJobs = () => {
           description="Find exciting projects that match your skills and interests"
         />
 
-        <div className="bg-white/70 dark:bg-[#040b17] backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-primary/20 dark:border-white/10 mb-10">
+        <div className="rounded-3xl p-8 shadow-md border bg-white border-black/10 dark:bg-[#040b17] dark:border-white/5 mb-10">
           <div className="flex flex-col lg:flex-row gap-6 mb-6 relative">
             {/* Clear Filters Button - top right */}
             <button
@@ -195,7 +194,7 @@ const BrowseJobs = () => {
             {filteredJobs.map((job, index) => (
               <div 
                 key={job.id} 
-                className="animate-fade-in hover:scale-105 transition-transform duration-300"
+                className="animate-fade-in hover:scale-[1.02] transition-transform duration-200"
                 style={{ animationDelay: `${0.1 * index}s` }}
               >
                 <JobCard
@@ -207,7 +206,7 @@ const BrowseJobs = () => {
           </div>
         ) : (
           <div className="text-center py-20">
-            <div className="bg-white/70 dark:bg-[#040b17] backdrop-blur-sm rounded-3xl p-16 shadow-xl border border-primary/20 dark:border-white/10 max-w-lg mx-auto">
+            <div className="rounded-3xl p-16 shadow-md border bg-white border-black/10 dark:bg-[#040b17] dark:border-white/5 max-w-lg mx-auto">
               <div className="w-24 h-24 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-4xl">🔍</span>
               </div>

@@ -26,6 +26,8 @@ const AdminUsersList = () => {
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const pageSize = 12;
 
   // Fetch live users from Supabase
   useEffect(() => {
@@ -109,6 +111,7 @@ const AdminUsersList = () => {
     }
 
     setFilteredUsers(filtered);
+    setPage(1); // reset to page 1 when filters change
   }, [users, searchTerm, roleFilter, statusFilter]);
 
   const handleEditUser = (userId: string) => {
@@ -136,9 +139,9 @@ const AdminUsersList = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="outline" size="sm" onClick={() => navigate('/admin-dashboard')}>
+          <Button variant="outline" size="sm" onClick={() => navigate('/admin/users')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+            Back
           </Button>
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -198,56 +201,69 @@ const AdminUsersList = () => {
         </CardContent>
       </Card>
 
-      {/* Users List */}
+      {/* Users Grid */}
       <Card>
         <CardHeader>
           <CardTitle>Users ({filteredUsers.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {filteredUsers.map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
-                    <span className="text-white font-medium text-sm">
-                      {(user.name || '—')
-                        .split(' ')
-                        .filter(Boolean)
-                        .map(n => n[0])
-                        .join('') || '—'}
-                    </span>
+          {filteredUsers.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">No users match your filters.</div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+                {filteredUsers.slice((page-1)*pageSize, page*pageSize).map((user) => (
+                  <div key={user.id} className="rounded-2xl border bg-white border-black/10 dark:bg-[#040b17] dark:border-white/5 p-4 flex flex-col">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
+                        <span className="text-white font-medium text-sm">
+                          {(user.name || '—').split(' ').filter(Boolean).map(n => n[0]).join('') || '—'}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium break-words whitespace-normal" title={user.name}>{user.name}</p>
+                        <p className="text-sm text-muted-foreground break-words whitespace-normal" title={user.email}>{user.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'} className="capitalize">{user.role || '—'}</Badge>
+                      <Badge
+                        variant={
+                          user.status === 'active' ? 'default' :
+                          user.status === 'pending' ? 'secondary' :
+                          user.status === 'inactive' ? 'destructive' : 'secondary'
+                        }
+                        className="capitalize"
+                      >
+                        {user.status || '—'}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-4">Joined: {user.createdAt}</p>
+                    <div className="mt-auto flex gap-2">
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditUser(user.id)}>
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => handleDeleteUser(user.id)}>
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
-                    <p className="text-xs text-muted-foreground">Joined: {user.createdAt}</p>
-                  </div>
+                ))}
+              </div>
+              {/* Pagination */}
+              <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-muted-foreground">
+                  Showing {(page-1)*pageSize + 1}-{Math.min(page*pageSize, filteredUsers.length)} of {filteredUsers.length}
                 </div>
-                <div className="flex items-center space-x-3">
-                  <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
-                    {user.role || '—'}
-                  </Badge>
-                  <Badge
-                    variant={
-                      user.status === 'active' ? 'default' :
-                      user.status === 'pending' ? 'secondary' :
-                      user.status === 'inactive' ? 'destructive' : 'secondary'
-                    }
-                  >
-                    {user.status || '—'}
-                  </Badge>
-                  <Button variant="outline" size="sm" onClick={() => handleEditUser(user.id)}>
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDeleteUser(user.id)}>
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete
-                  </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p-1))}>Previous</Button>
+                  <Button variant="outline" size="sm" disabled={page*pageSize >= filteredUsers.length} onClick={() => setPage((p) => p+1)}>Next</Button>
                 </div>
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
