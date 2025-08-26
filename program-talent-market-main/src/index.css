@@ -200,11 +200,14 @@ body {
     font-size: 0.75rem;
     border-radius: 0.5rem;
     
-    @media (min-width: 768px) {
+        transition: none !important;
+  }
+  
+  @media (min-width: 768px) {
+    .skill-badge {
       padding-left: 0.75rem;
       padding-right: 0.75rem;
     }
-    transition: none !important;
   }
   
   .skill-badge:hover {
