@@ -41,10 +41,10 @@ body {
 
 
 
-/* Import Tailwind base styles */
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+/* Tailwind layers */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
 
