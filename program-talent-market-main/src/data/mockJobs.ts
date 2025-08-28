@@ -11,6 +11,7 @@ export interface JobPosting {
   contactEmail: string;
   location?: 'Remote' | 'On-site' | 'Hybrid';
   experienceLevel?: 'Entry' | 'Mid' | 'Senior';
+  requirements?: string[];
 }
 
 export const mockJobs: JobPosting[] = [

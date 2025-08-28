@@ -8,7 +8,7 @@ import TabNavigation from "@/components/TabNavigation";
 import SearchFilters from "@/components/SearchFilters";
 import ContentGrid from "@/components/ContentGrid";
 import { StudentService } from "@/data/mockStudents";
-import { mockJobs, JobPosting } from "@/data/mockJobs";
+import { JobPosting } from "@/data/mockJobs";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useRole } from "@/contexts/RoleContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,24 @@ interface DatabaseProfile {
   updated_at: string;
 }
 
+// Database job type from Supabase
+interface DatabaseJob {
+  id: string;
+  user_id: string;
+  title: string;
+  company: string | null;
+  description: string | null;
+  requirements: string[];
+  skills: string[];
+  budget: string | null;
+  duration: string | null;
+  contact_email: string | null;
+  status: "active" | "flagged" | "removed" | "completed";
+  posted_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Transform database profile to StudentService format
 const transformProfileToStudent = (profile: DatabaseProfile): StudentService => {
   const name = profile.display_name || 
@@ -37,12 +55,12 @@ const transformProfileToStudent = (profile: DatabaseProfile): StudentService => 
     // Convert UUID to number for compatibility with existing routes
     id: parseInt(profile.id.slice(-8), 16),
     name,
-    title: 'Student Developer', // Default title since profiles don't have specific titles
+    title: 'Student Developer',
     description: profile.bio || 'Skilled developer ready to help with your projects',
     avatarUrl: profile.avatar_url || 
       'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80',
-    skills: [], // Default empty skills - could be enhanced later
-    price: '$25/hr', // Default price
+    skills: [],
+    price: '$25/hr',
     affiliation: 'student' as const,
     aboutMe: profile.bio,
     contact: {
@@ -53,7 +71,23 @@ const transformProfileToStudent = (profile: DatabaseProfile): StudentService => 
       upworkUrl: undefined,
       fiverrUrl: undefined,
     },
-    portfolio: [], // Default empty portfolio
+    portfolio: [],
+  };
+};
+
+// Transform database job to JobPosting format
+const transformDatabaseJobToJobPosting = (dbJob: DatabaseJob): JobPosting => {
+  return {
+    id: parseInt(dbJob.id.slice(-8), 16),
+    title: dbJob.title,
+    company: dbJob.company || 'Company',
+    description: dbJob.description || 'No description provided',
+    skills: dbJob.skills || [],
+    budget: dbJob.budget || '$500',
+    duration: dbJob.duration || '1-2 weeks',
+    postedDate: new Date(dbJob.posted_at).toLocaleDateString(),
+    contactEmail: dbJob.contact_email || '',
+    requirements: dbJob.requirements || ['No requirements specified'],
   };
 };
 
@@ -190,7 +224,7 @@ const Index: React.FC = () => {
   const [search, setSearch] = useState("");
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"students" | "jobs">("students");
-  const [jobs, setJobs] = useState<JobPosting[]>(mockJobs);
+  const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [students, setStudents] = useState<StudentService[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -254,11 +288,36 @@ const Index: React.FC = () => {
     fetchStudents();
   }, []);
 
+  // Fetch jobs from Supabase
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('jobs')
+          .select('*')
+          .eq('status', 'active')
+          .order('posted_at', { ascending: false });
+
+        if (fetchError) {
+          console.error('Error fetching jobs:', fetchError);
+          return;
+        }
+
+        const transformedJobs = (data || []).map(transformDatabaseJobToJobPosting);
+        setJobs(transformedJobs);
+      } catch (err) {
+        console.error('Unexpected error fetching jobs:', err);
+      }
+    };
+
+    fetchJobs();
+  }, []);
+
   // Memoized skills calculation
   const allSkills = useMemo(() => 
     Array.from(
-      new Set([...students.flatMap((s) => s.skills), ...mockJobs.flatMap((j) => j.skills)])
-    ), [students]
+      new Set([...students.flatMap((s) => s.skills), ...jobs.flatMap((j) => j.skills)])
+    ), [students, jobs]
   );
 
   // Handle tab switching from sidebar navigation
@@ -362,7 +421,7 @@ const Index: React.FC = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading students...</p>
+          <p className="text-muted-foreground">Loading data...</p>
         </div>
       </div>
     );
