@@ -1,43 +1,206 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { mockJobs, JobPosting } from "@/data/mockJobs";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import JobCard from "@/components/JobCard";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import PostJobForm from "@/components/PostJobForm";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+// Database job type - updated to match actual schema
+interface DatabaseJob {
+  id: string;
+  title: string;
+  company: string | null;
+  description: string | null;
+  skills: string[];
+  budget: string | null;
+  duration: string | null;
+  posted_at: string;
+  contact_email: string | null;
+  status: string;
+  user_id: string;
+}
+
+// JobPosting interface for compatibility
+interface JobPosting {
+  id: number;
+  title: string;
+  company: string;
+  description: string;
+  skills: string[];
+  budget: string;
+  duration: string;
+  postedDate: string;
+  contactEmail: string;
+  location?: string;
+  experienceLevel?: string;
+}
 
 const ManageJobs = () => {
   const navigate = useNavigate();
-  const [jobs, setJobs] = useState<JobPosting[]>(mockJobs);
+  const { user } = useAuth();
+  const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [isPostJobOpen, setIsPostJobOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalBudgetRange, setTotalBudgetRange] = useState("$0-0");
+
+  // Convert database job to JobPosting format - updated to match schema
+  const convertDatabaseJobToJobPosting = (dbJob: DatabaseJob): JobPosting => ({
+    id: parseInt(dbJob.id.replace(/-/g, '').substring(0, 8), 16), // Convert UUID to number
+    title: dbJob.title,
+    company: dbJob.company || "Unknown Company",
+    description: dbJob.description || "",
+    skills: dbJob.skills || [],
+    budget: dbJob.budget || "Not specified",
+    duration: dbJob.duration || "Not specified",
+    postedDate: dbJob.posted_at ? new Date(dbJob.posted_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    contactEmail: dbJob.contact_email || "contact@company.com"
+  });
+
+  // Fetch jobs from Supabase
+  const fetchJobs = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error: fetchError } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('user_id', user.id)
+        .neq('status', 'removed')
+        .order('posted_at', { ascending: false });
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      const convertedJobs = (data || []).map(convertDatabaseJobToJobPosting);
+      setJobs(convertedJobs);
+
+      // Calculate budget range
+      if (convertedJobs.length > 0) {
+        const budgets = convertedJobs
+          .map(job => {
+            const match = job.budget.match(/\$(\d+)/);
+            return match ? parseInt(match[1]) : 0;
+          })
+          .filter(budget => budget > 0);
+        
+        if (budgets.length > 0) {
+          const minBudget = Math.min(...budgets);
+          const maxBudget = Math.max(...budgets);
+          setTotalBudgetRange(`$${minBudget}-${maxBudget}`);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching jobs:', err);
+      // Silently handle errors - no user-facing error messages
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load jobs on component mount
+  useEffect(() => {
+    fetchJobs();
+  }, [user]);
 
   const handleJobView = (id: number) => {
     navigate(`/job/${id}`, { state: { clientView: true } });
   };
 
-  const handlePostJob = (formData: any) => {
-    const newJob: JobPosting = {
-      id: jobs.length + 1,
-      title: formData.title,
-      company: formData.company || "Your Company",
-      description: formData.description,
-      skills: formData.skills ? formData.skills.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
-      budget: formData.budget,
-      duration: formData.duration || "To be discussed",
-      postedDate: new Date().toISOString().split('T')[0],
-      contactEmail: formData.contactEmail || "contact@yourcompany.com",
-    };
+  const handlePostJob = async (formData: any) => {
+    if (!user) {
+      setError("Please log in to post a job");
+      return;
+    }
 
-    setJobs([newJob, ...jobs]);
-    setIsPostJobOpen(false);
+    try {
+      setError(null);
+      
+      // Updated to match actual database schema
+      const jobData = {
+        title: formData.title,
+        company: formData.company || "Your Company",
+        description: formData.description,
+        skills: formData.skills ? formData.skills.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
+        budget: formData.budget,
+        duration: formData.duration || "To be discussed",
+        contact_email: formData.contactEmail || user.email || "contact@yourcompany.com",
+        user_id: user.id,
+        status: 'active'
+      };
+
+      const { error: insertError } = await supabase
+        .from('jobs')
+        .insert({
+          title: jobData.title,
+          company: jobData.company,
+          description: jobData.description,
+          skills: jobData.skills,
+          budget: jobData.budget,
+          duration: jobData.duration,
+          contact_email: jobData.contact_email,
+          user_id: jobData.user_id,
+          status: 'active' as const
+        });
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      // Refresh jobs list
+      await fetchJobs();
+      setIsPostJobOpen(false);
+    } catch (err) {
+      console.error('Error posting job:', err);
+      setError(err instanceof Error ? err.message : 'Failed to post job');
+    }
   };
 
-  const handleDeleteJob = (id: number) => {
-    setJobs(jobs.filter(job => job.id !== id));
+  const handleDeleteJob = async (id: number) => {
+    try {
+      setError(null);
+      
+      const { error: deleteError } = await supabase
+        .from('jobs')
+        .update({ status: 'removed' })
+        .eq('id', id.toString())
+        .eq('user_id', user?.id);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      // Remove job from local state
+      setJobs(jobs.filter(job => job.id !== id));
+    } catch (err) {
+      console.error('Error deleting job:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete job');
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading your jobs...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -71,6 +234,13 @@ const ManageJobs = () => {
           </Dialog>
         </div>
 
+        {/* Remove the error alert section completely */}
+        {/* {error && (
+          <Alert className="mb-6">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )} */}
+
         <div className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card>
@@ -94,7 +264,7 @@ const ManageJobs = () => {
                 <h3 className="text-sm font-medium text-muted-foreground">Budget Range</h3>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">$25-150</div>
+                <div className="text-2xl font-bold">{totalBudgetRange}</div>
               </CardContent>
             </Card>
           </div>
@@ -134,7 +304,7 @@ const ManageJobs = () => {
                 <div className="animate-fade-in hover:scale-105 transition-transform duration-300 h-full flex flex-col"
                      style={{ animationDelay: `${0.1 * index}s` }}>
                   <JobCard
-                    job={job}
+                    job={{...job, location: "Remote" as const, experienceLevel: "Entry" as const}}
                     onView={() => handleJobView(job.id)}
                     hideBookmark
                   />
@@ -144,7 +314,7 @@ const ManageJobs = () => {
           </div>
         ) : (
           <div className="text-center py-20">
-            <div className="bg-white/70 backdrop-blur-sm rounded-3xl p-16 shadow-xl border border-primary/20 max-w-lg mx-auto">
+            <div className="bg-card/70 backdrop-blur-sm rounded-3xl p-16 shadow-xl border border-primary/20 max-w-lg mx-auto">
               <div className="w-24 h-24 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Plus className="text-primary/40" size={48} />
               </div>

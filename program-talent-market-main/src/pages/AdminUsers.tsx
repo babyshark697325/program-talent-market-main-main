@@ -350,47 +350,57 @@ const AdminUsers = () => {
                 <div className="text-muted-foreground">No waitlist entries found</div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 {waitlistEntries.map((entry) => (
                   <Card key={entry.id} className="p-4">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Clock className="h-5 w-5 text-white" />
+                    <div className="space-y-3">
+                      {/* Header: Name left, Status right */}
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-medium text-base">
+                          {entry.first_name && entry.last_name 
+                            ? `${entry.first_name} ${entry.last_name}` 
+                            : entry.email.split('@')[0]
+                          }
+                        </h3>
+                        <Badge 
+                          variant={entry.status === 'pending' ? 'outline' : 
+                                 entry.status === 'approved' ? 'default' : 'destructive'}
+                          className={
+                            entry.status === 'pending' 
+                              ? 'border-orange-400 text-orange-600 dark:border-orange-500 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/20' 
+                              : ''
+                          }
+                        >
+                          {entry.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
+                          {entry.status} ●
+                        </Badge>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-medium truncate">
-                            {entry.first_name && entry.last_name 
-                              ? `${entry.first_name} ${entry.last_name}` 
-                              : entry.email.split('@')[0]
-                            }
-                          </p>
-                          <Badge variant={
-                            entry.status === 'pending' ? 'secondary' : 
-                            entry.status === 'approved' ? 'default' : 'destructive'
-                          }>
-                            {entry.status}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">{entry.email}</p>
-                        <div className="space-y-1 mb-3">
-                          <p className="text-xs text-muted-foreground">
-                            Role: <Badge variant="outline" className="ml-1">{entry.role}</Badge>
-                          </p>
+                      
+                      {/* Email */}
+                      <p className="text-sm text-muted-foreground">{entry.email}</p>
+                      
+                      {/* Role */}
+                      <p className="text-sm text-muted-foreground">
+                        Role: <Badge variant="outline" className="ml-1">{entry.role}</Badge>
+                      </p>
+                      
+                      {/* Location and Date on same line */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                           {entry.city && (
-                            <p className="text-xs text-muted-foreground">📍 {entry.city}</p>
+                            <span>📍 {entry.city}</span>
                           )}
-                          <p className="text-xs text-muted-foreground">
-                            Joined: {new Date(entry.created_at).toLocaleDateString()}
-                          </p>
+                          <span>Joined: {new Date(entry.created_at).toLocaleDateString()}</span>
                         </div>
+                        
+                        {/* Buttons positioned on the right */}
                         {entry.status === 'pending' && (
                           <div className="flex gap-2">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => updateWaitlistStatus(entry.id, 'approved')}
-                              className="text-green-600 hover:text-green-700 flex-1"
+                              className="text-green-600 hover:text-green-700"
                             >
                               <CheckCircle className="h-4 w-4 mr-1" />
                               Approve
@@ -399,7 +409,7 @@ const AdminUsers = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => updateWaitlistStatus(entry.id, 'rejected')}
-                              className="text-red-600 hover:text-red-700 flex-1"
+                              className="text-red-600 hover:text-red-700"
                             >
                               <XCircle className="h-4 w-4 mr-1" />
                               Reject
