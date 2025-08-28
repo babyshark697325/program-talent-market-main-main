@@ -101,18 +101,7 @@ const BrowseStudents = () => {
 
         const { data, error: fetchError } = await supabase
           .from('students')
-          .select(
-            `
-            *,
-            student_portfolio(
-              id,
-              title,
-              description,
-              image_url,
-              project_url
-            )
-          `
-          )
+          .select('*, student_portfolio!inner(id, title, description, image_url, project_url)')
           .eq('availability', 'available')
           .order('created_at', { ascending: false });
 
