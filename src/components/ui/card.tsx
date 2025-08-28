@@ -1,11 +1,6 @@
-/** @jsxRuntime classic */
-/** @jsx React.createElement */
 import * as React from "react"
 
-// Minimal cn utility to merge class names without external deps
-function cn(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ")
-}
+import { cn } from "@/lib/utils"
 
 const Card = React.forwardRef<
   HTMLDivElement,
@@ -14,7 +9,9 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-lg border bg-card text-card-foreground shadow-sm",
+      "rounded-3xl text-card-foreground shadow-md transition-shadow",
+      "bg-white border border-black/10",
+      "dark:bg-[#040b17] dark:border-white/5",
       className
     )}
     {...props}
@@ -35,8 +32,8 @@ const CardHeader = React.forwardRef<
 CardHeader.displayName = "CardHeader"
 
 const CardTitle = React.forwardRef<
-  HTMLHeadingElement,
-  React.HTMLAttributes<HTMLHeadingElement>
+  React.ElementRef<"h3">,
+  React.ComponentPropsWithoutRef<"h3">
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
