@@ -167,19 +167,18 @@ function getSpotlightFromStorage(students: StudentService[]) {
     const q = localStorage.getItem(LS_QUOTE_KEY) || "";
     const sid = localStorage.getItem(LS_STUDENT_ID_KEY);
     const img = localStorage.getItem(LS_SHOWCASE_IMAGE_KEY) || "";
-    const id = sid ? Number(sid) : (students[0]?.id || 1);
-    const s = students.find((m) => m.id === id) || students[0];
     
+    // Only show spotlight if a student ID is explicitly stored in localStorage
+    if (!sid) {
+      return null;
+    }
+    
+    const id = Number(sid);
+    const s = students.find((m) => m.id === id);
+    
+    // If the stored student ID doesn't match any actual student, don't show spotlight
     if (!s) {
-      return {
-        id: 1,
-        name: "Featured Student",
-        title: "Student Developer",
-        avatarUrl: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80',
-        skills: [],
-        quote: DEFAULT_QUOTE,
-        clientReview: DEFAULT_CLIENT_REVIEW
-      };
+      return null;
     }
     
     const orientation = localStorage.getItem('spotlight.orientation');
@@ -196,27 +195,8 @@ function getSpotlightFromStorage(students: StudentService[]) {
       clientReview: DEFAULT_CLIENT_REVIEW
     };
   } catch {
-    const s = students[0];
-    if (!s) {
-      return {
-        id: 1,
-        name: "Featured Student",
-        title: "Student Developer",
-        avatarUrl: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80',
-        skills: [],
-        quote: DEFAULT_QUOTE,
-        clientReview: DEFAULT_CLIENT_REVIEW
-      };
-    }
-    return {
-      id: s.id,
-      name: s.name,
-      title: s.title,
-      avatarUrl: s.avatarUrl,
-      skills: s.skills,
-      quote: DEFAULT_QUOTE,
-      clientReview: DEFAULT_CLIENT_REVIEW
-    };
+    // If there's any error, don't show the spotlight
+    return null;
   }
 }
 

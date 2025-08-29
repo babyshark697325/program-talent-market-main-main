@@ -11,11 +11,48 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ExternalLink } from "lucide-react";
-import { mockStudents, StudentService } from "@/data/mockStudents";
+import { StudentService } from "@/data/mockStudents";
+import { supabase } from "@/integrations/supabase/client";
 
 const LS_QUOTE_KEY = "spotlight.quote";
 const LS_STUDENT_ID_KEY = "spotlight.studentId";
 const LS_SHOWCASE_IMAGE_KEY = "spotlight.showcaseImage";
+
+// Transform database profile to StudentService format (same as in Index.tsx)
+interface DatabaseProfile {
+  id: string;
+  user_id: string;
+  email: string;
+  display_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const transformProfileToStudent = (profile: DatabaseProfile): StudentService => {
+  const displayName = profile.display_name || 
+    [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 
+    profile.email.split('@')[0];
+  
+  return {
+    id: parseInt(profile.id),
+    name: displayName,
+    title: "Student Developer", // Default title
+    description: profile.bio || "Talented student developer ready to help with your projects.", // Added required description field
+    avatarUrl: profile.avatar_url || `https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80`,
+    skills: [], // Default empty skills
+    price: "$25/hr", // Changed from hourlyRate to price (string format)
+    affiliation: "student" as const, // Default affiliation
+    aboutMe: profile.bio || "", // Optional field
+    contact: {
+      email: profile.email // Properly nested email within contact object
+    },
+    portfolio: [] // Default empty portfolio
+  };
+};
 
 const getInitials = (name: string) => {
   const parts = (name || "").split(/\s+/).filter(Boolean);
@@ -30,6 +67,59 @@ const AdminSpotlightSuccess: React.FC = () => {
   const [studentId, setStudentId] = React.useState<number | null>(null);
   const [showcaseImage, setShowcaseImage] = React.useState<string>("");
   const [showcaseFile, setShowcaseFile] = React.useState<File | null>(null);
+  const [students, setStudents] = React.useState<StudentService[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  // Fetch students from database
+  React.useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Get profiles for users with 'student' role
+        const { data: studentRoles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'student');
+
+        if (rolesError) {
+          console.error('Error fetching student roles:', rolesError);
+          setError('Failed to load student roles');
+          return;
+        }
+
+        if (!studentRoles || studentRoles.length === 0) {
+          setStudents([]);
+          return;
+        }
+
+        const studentUserIds = studentRoles.map(role => role.user_id);
+        
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('user_id', studentUserIds);
+
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+          setError('Failed to load student profiles');
+          return;
+        }
+
+        const transformedStudents = (profiles || []).map(transformProfileToStudent);
+        setStudents(transformedStudents);
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        setError('An unexpected error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, []);
 
   React.useEffect(() => {
     try {
@@ -45,8 +135,8 @@ const AdminSpotlightSuccess: React.FC = () => {
   }, []);
 
   const selectedStudent: StudentService | undefined = React.useMemo(
-    () => (studentId ? mockStudents.find((s) => s.id === studentId) : undefined),
-    [studentId]
+    () => (studentId ? students.find((s) => s.id === studentId) : undefined),
+    [studentId, students]
   );
 
   const profilePath = selectedStudent ? `/student/${selectedStudent.id}` : "";
@@ -73,7 +163,7 @@ const AdminSpotlightSuccess: React.FC = () => {
       toast({ title: "Spotlight saved", description: "Your spotlight settings were updated." });
       try { window.dispatchEvent(new Event('spotlight:updated')); } catch {}
     } catch (e: any) {
-      toast({ title: "Couldn’t save", description: e?.message ?? String(e), variant: "destructive" });
+      toast({ title: "Couldn't save", description: e?.message ?? String(e), variant: "destructive" });
     }
   };
 
@@ -143,10 +233,10 @@ const AdminSpotlightSuccess: React.FC = () => {
         setShowcaseImage(result);
         setShowcaseFile(file);
       };
-      reader.onerror = () => toast({ title: "Couldn’t load image", description: "Please try a different file.", variant: "destructive" });
+      reader.onerror = () => toast({ title: "Couldn't load image", description: "Please try a different file.", variant: "destructive" });
       reader.readAsDataURL(file);
     } catch (e: any) {
-      toast({ title: "Couldn’t load image", description: e?.message ?? String(e), variant: "destructive" });
+      toast({ title: "Couldn't load image", description: e?.message ?? String(e), variant: "destructive" });
     }
   };
 
@@ -175,21 +265,32 @@ const AdminSpotlightSuccess: React.FC = () => {
             <CardContent className="space-y-5">
               <div className="grid gap-2">
                 <Label>Pick Featured Student</Label>
-                <Select
-                  value={studentId ? String(studentId) : ""}
-                  onValueChange={(v) => setStudentId(v ? Number(v) : null)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a student" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mockStudents.map((s) => (
-                      <SelectItem key={s.id} value={String(s.id)}>
-                        {s.name} — {s.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {loading ? (
+                  <div className="flex items-center justify-center p-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    <span className="ml-2 text-sm text-muted-foreground">Loading students...</span>
+                  </div>
+                ) : error ? (
+                  <div className="p-4 text-center text-red-500">
+                    <p className="text-sm">{error}</p>
+                  </div>
+                ) : (
+                  <Select
+                    value={studentId ? String(studentId) : ""}
+                    onValueChange={(v) => setStudentId(v ? Number(v) : null)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a student" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {students.map((s) => (
+                        <SelectItem key={s.id} value={String(s.id)}>
+                          {s.name} — {s.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <p className="text-xs text-muted-foreground">Autofills name, role, skills, and profile picture.</p>
               </div>
 
@@ -199,113 +300,114 @@ const AdminSpotlightSuccess: React.FC = () => {
                 <Label htmlFor="spotlight-quote">Spotlight Quote / Personal Statement</Label>
                 <Textarea
                   id="spotlight-quote"
-                  placeholder="Add a compelling personal statement to highlight on the homepage or dashboard."
-                  rows={6}
+                  placeholder="Enter a motivational quote or personal statement..."
                   value={quote}
                   onChange={(e) => setQuote(e.target.value)}
+                  rows={4}
                 />
               </div>
 
               <Separator />
 
               <div className="grid gap-2">
-                <Label>Showcase Work (Image)</Label>
-                <div className="flex items-center gap-3">
+                <Label>Showcase Image (Optional)</Label>
+                <div className="space-y-3">
                   <Input
                     type="file"
                     accept="image/*"
                     onChange={(e) => onPickShowcase(e.target.files?.[0])}
                   />
                   {showcaseImage && (
-                    <Button variant="outline" size="sm" onClick={clearShowcase}>
-                      Remove
-                    </Button>
+                    <div className="relative">
+                      <img
+                        src={showcaseImage}
+                        alt="Showcase preview"
+                        className="w-full h-32 object-cover rounded-md border"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={clearShowcase}
+                      >
+                        Remove
+                      </Button>
+                    </div>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground">This image will appear on the client Spotlight Success card as “Showcase Work”.</p>
-                <ul className="text-xs text-muted-foreground pl-5 list-disc space-y-1 mt-1">
-                  <li>Recommended landscape: 1200×675 (16:9)</li>
-                  <li>Recommended portrait: 1200×1500 (4:5)</li>
-                  <li>Maximum processed size: long edge up to 1600px (larger files are downscaled)</li>
-                </ul>
               </div>
 
-              <div className="flex items-center gap-2 justify-end pt-2">
-                <Button variant="outline" onClick={reset}>Reset</Button>
-                <Button onClick={save}>Save Changes</Button>
+              <div className="flex gap-3 pt-4">
+                <Button onClick={save} className="flex-1">
+                  Save Settings
+                </Button>
+                <Button onClick={reset} variant="outline">
+                  Reset
+                </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Live preview */}
+          {/* Preview */}
           <Card>
             <CardHeader>
               <CardTitle>Preview</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="rounded-2xl border p-4 bg-secondary/30">
-                  <div className="flex items-start gap-4">
+              {selectedStudent ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
-                      {selectedStudent?.avatarUrl ? (
-                        <img src={selectedStudent.avatarUrl} alt={selectedStudent.name} className="h-12 w-12 object-cover rounded-full" />
-                      ) : (
-                        <AvatarFallback>{getInitials(selectedStudent?.name || "")}</AvatarFallback>
-                      )}
+                      <img src={selectedStudent.avatarUrl} alt={selectedStudent.name} />
+                      <AvatarFallback>{getInitials(selectedStudent.name)}</AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold leading-tight truncate">
-                          {selectedStudent?.name || "No student selected"}
-                        </h3>
-                        {selectedStudent?.affiliation && (
-                          <Badge variant={selectedStudent.affiliation === 'alumni' ? 'secondary' : 'default'}>
-                            {selectedStudent.affiliation === 'alumni' ? 'MyVillage Alumni' : 'MyVillage Student'}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-sm text-muted-foreground truncate">
-                        {selectedStudent?.title || "—"}
-                      </div>
+                    <div>
+                      <h3 className="font-semibold">{selectedStudent.name}</h3>
+                      <p className="text-sm text-muted-foreground">{selectedStudent.title}</p>
                     </div>
                   </div>
-
-                  <div className="mt-3 text-sm text-muted-foreground whitespace-pre-line">
-                    {quote || "Your spotlight quote will appear here."}
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {(selectedStudent?.skills || []).slice(0, 5).map((t) => (
-                      <Badge key={t} variant="outline">{t}</Badge>
-                    ))}
-                  </div>
-
-                  {showcaseImage && (
-                    <div className="mt-4">
-                      <div className="text-xs font-medium mb-2">Showcase Work</div>
-                      <div className="relative w-full overflow-hidden rounded-xl border aspect-video">
-                        <img
-                          src={showcaseImage}
-                          alt="Showcase Work"
-                          className="absolute inset-0 w-full h-full object-cover"
-                        />
-                      </div>
+                  
+                  {selectedStudent.skills && selectedStudent.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedStudent.skills.map((skill, index) => (
+                        <Badge key={index} variant="secondary">
+                          {skill}
+                        </Badge>
+                      ))}
                     </div>
                   )}
-
-                  <div className="mt-4">
-                    <Button
-                      onClick={goProfile}
-                      disabled={!selectedStudent}
-                      className="gap-2"
-                      aria-disabled={!selectedStudent}
-                      title={selectedStudent ? "View Full Profile" : "Pick a student to enable"}
-                    >
-                      <ExternalLink size={16} /> View Full Profile
-                    </Button>
-                  </div>
+                  
+                  {quote && (
+                    <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground">
+                      "{quote}"
+                    </blockquote>
+                  )}
+                  
+                  {showcaseImage && (
+                    <div className="rounded-md overflow-hidden border">
+                      <img
+                        src={showcaseImage}
+                        alt="Showcase"
+                        className="w-full h-32 object-cover"
+                      />
+                    </div>
+                  )}
+                  
+                  <Button
+                    onClick={goProfile}
+                    className="w-full"
+                    disabled={!profilePath}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    View Full Profile
+                  </Button>
                 </div>
-              </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-8">
+                  Select a student to see the preview
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
