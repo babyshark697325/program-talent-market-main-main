@@ -6,6 +6,7 @@ import { JobPosting } from "@/data/mockJobs";
 import JobCard from "@/components/JobCard";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import BackToTop from "./BackToTop";
 
 interface StudentDashboardProps {
@@ -16,6 +17,33 @@ interface StudentDashboardProps {
 const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [userSkills, setUserSkills] = React.useState<string[]>([]);
+
+  // Fetch user's skills from their profile
+  React.useEffect(() => {
+    const fetchUserSkills = async () => {
+      if (!user) return;
+      
+      try {
+        // Since there's no students table with skills, we'll use a placeholder approach
+        // You can either:
+        // 1. Add skills to the profiles table, or
+        // 2. Create a proper students table, or 
+        // 3. Use localStorage/user metadata for now
+        
+        // Option 3: Use user metadata or localStorage as fallback
+        const skillsFromMetadata = user.user_metadata?.skills as string[] || [];
+        const skillsFromStorage = JSON.parse(localStorage.getItem(`user_skills_${user.id}`) || '[]');
+        
+        setUserSkills(skillsFromMetadata.length > 0 ? skillsFromMetadata : skillsFromStorage);
+      } catch (err) {
+        console.error('Error fetching user skills:', err);
+        setUserSkills([]);
+      }
+    };
+
+    fetchUserSkills();
+  }, [user]);
 
   // Function to get day-based greeting
   const getDayGreeting = () => {
@@ -40,7 +68,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
     
     return { timeGreeting, dayMessage: dayMessages[day] };
   };
-  
+
   const getDisplayName = () => {
     if (!user) return "Student";
     return (
@@ -77,11 +105,36 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
     };
   }, []);
 
-  // Recommended jobs: pick active or recent as a simple heuristic
+  // Skill-based job recommendations
   const recommendedJobs = React.useMemo(() => {
-    const active = jobs.filter((j) => true);
-    return active.slice(0, 6);
-  }, [jobs]);
+    if (userSkills.length === 0) {
+      // If user has no skills, show recent jobs
+      return jobs.slice(0, 6);
+    }
+
+    // Calculate skill match score for each job
+    const jobsWithScore = jobs.map(job => {
+      const matchingSkills = job.skills.filter(skill => 
+        userSkills.some(userSkill => 
+          userSkill.toLowerCase().includes(skill.toLowerCase()) ||
+          skill.toLowerCase().includes(userSkill.toLowerCase())
+        )
+      );
+      
+      return {
+        job,
+        score: matchingSkills.length,
+        matchingSkills
+      };
+    });
+
+    // Sort by skill match score (descending) and take top 6
+    return jobsWithScore
+      .filter(item => item.score > 0) // Only jobs with at least one matching skill
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6)
+      .map(item => item.job);
+  }, [jobs, userSkills]);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden page-transition">
@@ -178,12 +231,17 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
               ))
             ) : (
               <div className="col-span-full text-center py-8">
-                <p className="text-muted-foreground text-lg">No recommended opportunities found based on your skills.</p>
+                <p className="text-muted-foreground text-lg">
+                  {userSkills.length === 0 
+                    ? "Complete your profile with skills to get personalized job recommendations."
+                    : "No opportunities found matching your skills. Check back later for new postings!"
+                  }
+                </p>
                 <Button 
-                  onClick={() => setActiveTab("jobs")} 
+                  onClick={() => userSkills.length === 0 ? navigate("/profile") : setActiveTab("jobs")} 
                   className="mt-4 bg-gradient-to-r from-primary to-primary/80"
                 >
-                  Browse All Jobs
+                  {userSkills.length === 0 ? "Complete Profile" : "Browse All Jobs"}
                 </Button>
               </div>
             )}

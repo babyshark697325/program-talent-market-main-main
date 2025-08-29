@@ -389,6 +389,7 @@ const Index: React.FC = () => {
         job.description.toLowerCase().includes(searchLower) ||
         job.skills.some((skill) => skill.toLowerCase().includes(searchLower));
       const matchSkill = !selectedSkill || job.skills.includes(selectedSkill);
+      
       return matchSearch && matchSkill;
     });
   }, [jobs, search, selectedSkill]);
@@ -396,6 +397,7 @@ const Index: React.FC = () => {
   const handleClearFilters = () => {
     setSearch("");
     setSelectedSkill(null);
+    setSortBy("name");
   };
 
   if (role === 'student') {
