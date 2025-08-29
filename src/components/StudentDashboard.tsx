@@ -53,8 +53,8 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ setActiveTab }) => 
         
         if (error) {
           console.error('Error fetching jobs:', error);
-          // Only set error for actual database errors, not empty results
-          if (error.code !== 'PGRST116') { // PGRST116 is "table not found" or similar
+          // Only set error for actual database connection issues, not missing tables or empty results
+          if (error.code && !['PGRST116', '42P01'].includes(error.code)) {
             setJobsError('Failed to load job opportunities');
           }
           setJobs([]);
@@ -63,7 +63,10 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ setActiveTab }) => 
         }
       } catch (err) {
         console.error('Error fetching jobs:', err);
-        // Only show error for actual failures, not empty data
+        // Only show error for actual network/connection failures
+        if (err instanceof Error && err.message.includes('fetch')) {
+          setJobsError('Failed to load job opportunities');
+        }
         setJobs([]);
       } finally {
         setJobsLoading(false);
