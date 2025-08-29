@@ -103,8 +103,20 @@ const DEFAULT_CLIENT_REVIEW = {
   rating: 5
 };
 
-// Add missing interface for FeaturedStudentProps
-interface FeaturedStudentProps {
+// Remove the duplicate FeaturedStudentProps interface (lines 107-116)
+// Delete these lines:
+// interface FeaturedStudentProps {
+//   student: StudentService;
+//   quote: string;
+//   showcaseImage?: string;
+//   clientReview: {
+//     text: string;
+//     clientName: string;
+//     rating: number;
+//   };
+// }
+
+const getSpotlightFromStorage = async (): Promise<{
   student: StudentService;
   quote: string;
   showcaseImage?: string;
@@ -113,9 +125,7 @@ interface FeaturedStudentProps {
     clientName: string;
     rating: number;
   };
-}
-
-const getSpotlightFromStorage = async (): Promise<FeaturedStudentProps | null> => {
+} | null> => {
   const studentId = localStorage.getItem(LS_STUDENT_ID_KEY);
   const quote = localStorage.getItem(LS_QUOTE_KEY);
   const showcaseImage = localStorage.getItem(LS_SHOWCASE_IMAGE_KEY);
@@ -208,7 +218,8 @@ const Index: React.FC = () => {
 
         if (!studentRoles || studentRoles.length === 0) {
           setStudents([]);
-          setFeatured(getSpotlightFromStorage());
+          const featuredData = await getSpotlightFromStorage();
+          setFeatured(featuredData);
           return;
         }
 
@@ -246,11 +257,11 @@ const Index: React.FC = () => {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        // Try fetching jobs without status filter first
+        // Use created_at instead of posted_at since the column doesn't exist
         const { data, error: fetchError } = await supabase
           .from('jobs')
           .select('*')
-          .order('posted_at', { ascending: false });
+          .order('created_at', { ascending: false });
 
         if (fetchError) {
           console.error('Error fetching jobs:', fetchError);
@@ -425,7 +436,11 @@ const Index: React.FC = () => {
         {featured && (
           <FeaturedStudent 
             student={{
-              ...featured.student,
+              id: featured.student.id,
+              name: featured.student.name,
+              title: featured.student.title,
+              avatarUrl: featured.student.avatarUrl,
+              skills: featured.student.skills,
               quote: featured.quote,
               showcaseImage: featured.showcaseImage,
               clientReview: featured.clientReview

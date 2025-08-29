@@ -50,14 +50,14 @@ const StudentServiceCard: React.FC<StudentServiceCardProps> = ({ student, onView
 
       {/* Skills */}
       <div className="flex flex-wrap gap-1.5 md:gap-2 mb-4">
-        {student.skills.slice(0, 3).map((skill) => (
+        {(student.skills || []).slice(0, 3).map((skill) => (
           <Badge key={skill} className="skill-badge">
             {skill}
           </Badge>
         ))}
-        {student.skills.length > 3 && (
+        {(student.skills || []).length > 3 && (
           <Badge className="skill-badge">
-            +{student.skills.length - 3}
+            +{(student.skills || []).length - 3}
           </Badge>
         )}
       </div>
