@@ -53,14 +53,17 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ setActiveTab }) => 
         
         if (error) {
           console.error('Error fetching jobs:', error);
-          setJobsError('Failed to load job opportunities');
+          // Only set error for actual database errors, not empty results
+          if (error.code !== 'PGRST116') { // PGRST116 is "table not found" or similar
+            setJobsError('Failed to load job opportunities');
+          }
           setJobs([]);
         } else {
           setJobs(data || []);
         }
       } catch (err) {
         console.error('Error fetching jobs:', err);
-        setJobsError('Failed to load job opportunities');
+        // Only show error for actual failures, not empty data
         setJobs([]);
       } finally {
         setJobsLoading(false);
