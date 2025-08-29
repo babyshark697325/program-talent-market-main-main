@@ -254,6 +254,8 @@ const Index: React.FC = () => {
 
         if (fetchError) {
           console.error('Error fetching jobs:', fetchError);
+          // Set empty array if table doesn't exist or has access issues
+          setJobs([]);
           return;
         }
 
@@ -261,6 +263,8 @@ const Index: React.FC = () => {
         setJobs(transformedJobs);
       } catch (err) {
         console.error('Unexpected error fetching jobs:', err);
+        // Fallback to empty array to prevent crashes
+        setJobs([]);
       }
     };
 
