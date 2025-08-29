@@ -2,22 +2,73 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Award, Briefcase, TrendingUp } from "lucide-react";
-import { JobPosting } from "@/data/mockJobs";
 import JobCard from "@/components/JobCard";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import BackToTop from "./BackToTop";
 
+// Updated interface - removed jobs prop
 interface StudentDashboardProps {
-  jobs: JobPosting[];
   setActiveTab: (tab: "students" | "jobs") => void;
 }
 
-const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab }) => {
+// Job interface matching Supabase schema
+interface Job {
+  id: string;
+  title: string;
+  company: string;
+  description: string;
+  skills: string[];
+  budget: string;
+  duration: string;
+  contact_email: string;
+  status: string;
+  posted_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+const StudentDashboard: React.FC<StudentDashboardProps> = ({ setActiveTab }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [userSkills, setUserSkills] = React.useState<string[]>([]);
+  const [jobs, setJobs] = React.useState<Job[]>([]);
+  const [jobsLoading, setJobsLoading] = React.useState(true);
+  const [jobsError, setJobsError] = React.useState<string | null>(null);
+
+  // Fetch jobs from Supabase
+  React.useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        setJobsLoading(true);
+        setJobsError(null);
+        
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('*')
+          .eq('status', 'active')
+          .order('posted_at', { ascending: false })
+          .limit(20); // Get more jobs for better recommendations
+        
+        if (error) {
+          console.error('Error fetching jobs:', error);
+          setJobsError('Failed to load job opportunities');
+          setJobs([]);
+        } else {
+          setJobs(data || []);
+        }
+      } catch (err) {
+        console.error('Error fetching jobs:', err);
+        setJobsError('Failed to load job opportunities');
+        setJobs([]);
+      } finally {
+        setJobsLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
 
   // Fetch user's skills from their profile
   React.useEffect(() => {
@@ -48,25 +99,18 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
   // Function to get day-based greeting
   const getDayGreeting = () => {
     const hour = new Date().getHours();
-    const day = new Date().getDay();
-    
-    // Time-based greetings
     let timeGreeting = "Good morning";
-    if (hour >= 12 && hour < 17) timeGreeting = "Good afternoon";
-    else if (hour >= 17) timeGreeting = "Good evening";
-    
-    // Day-based messages (like Roblox)
-    const dayMessages = [
-      "Ready to conquer this Sunday?", // Sunday
-      "Let's make this Monday amazing!", // Monday  
-      "Tuesday vibes are strong today!", // Tuesday
-      "Halfway through the week - keep going!", // Wednesday
-      "Thursday energy is unmatched!", // Thursday
-      "Friday feeling activated!", // Friday
-      "Saturday adventures await!" // Saturday
-    ];
-    
-    return { timeGreeting, dayMessage: dayMessages[day] };
+    let dayMessage = "Ready to tackle some exciting projects today?";
+
+    if (hour >= 12 && hour < 17) {
+      timeGreeting = "Good afternoon";
+      dayMessage = "Hope you're having a productive day!";
+    } else if (hour >= 17) {
+      timeGreeting = "Good evening";
+      dayMessage = "Time to wind down or work on passion projects?";
+    }
+
+    return { timeGreeting, dayMessage };
   };
 
   const getDisplayName = () => {
@@ -136,6 +180,21 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
       .map(item => item.job);
   }, [jobs, userSkills]);
 
+  // Convert Supabase job to JobCard format
+  const convertJobForCard = (job: Job) => ({
+    id: job.id,
+    title: job.title,
+    company: job.company,
+    description: job.description,
+    skills: job.skills,
+    budget: job.budget,
+    duration: job.duration,
+    postedDate: new Date(job.posted_at).toLocaleDateString(),
+    contactEmail: job.contact_email,
+    location: "Remote", // Default since not in schema
+    experienceLevel: "All Levels" // Default since not in schema
+  });
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden page-transition">
       {/* Animated background elements */}
@@ -148,9 +207,8 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
       {/* Student Dashboard Header */}
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-accent/8"></div>
-        <div className="relative z-10 max-w-6xl mx-auto px-6 py-20">
-          <div className="text-center space-y-6">
-            {/* Title */}
+        <div className="relative z-10 pt-20 pb-16">
+          <div className="max-w-6xl mx-auto px-6 text-center">
             <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent leading-tight tracking-tight">
               Your Dashboard
             </h1>
@@ -188,7 +246,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
           <div className="bg-secondary/70 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-primary/15">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-r from-accent to-accent/80 rounded-xl flex items-center justify-center">
-                <Briefcase className="text-primary-foreground" size={24} />
+                <Briefcase className="text-accent-foreground" size={24} />
               </div>
               <div>
                 <h3 className="font-bold text-2xl text-accent">{stats.projects}</h3>
@@ -199,10 +257,10 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
           <div className="bg-secondary/70 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-primary/15">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center">
-                <TrendingUp className="text-primary-foreground" size={24} />
+                <TrendingUp className="text-white" size={24} />
               </div>
               <div>
-                <h3 className="font-bold text-2xl text-green-600">${stats.earnings.toLocaleString()}</h3>
+                <h3 className="font-bold text-2xl text-green-600">${stats.earnings}</h3>
                 <p className="text-muted-foreground">Earnings This Month</p>
               </div>
             </div>
@@ -220,32 +278,52 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ jobs, setActiveTab 
               View All Jobs
             </Button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recommendedJobs.length > 0 ? (
-              recommendedJobs.slice(0, 6).map((job) => (
-                <JobCard
-                  key={job.id}
-                  job={job}
-                  onView={() => navigate(`/job/${job.id}`)}
-                />
-              ))
-            ) : (
-              <div className="col-span-full text-center py-8">
-                <p className="text-muted-foreground text-lg">
-                  {userSkills.length === 0 
-                    ? "Complete your profile with skills to get personalized job recommendations."
-                    : "No opportunities found matching your skills. Check back later for new postings!"
-                  }
-                </p>
-                <Button 
-                  onClick={() => userSkills.length === 0 ? navigate("/profile") : setActiveTab("jobs")} 
-                  className="mt-4 bg-gradient-to-r from-primary to-primary/80"
-                >
-                  {userSkills.length === 0 ? "Complete Profile" : "Browse All Jobs"}
-                </Button>
-              </div>
-            )}
-          </div>
+          
+          {jobsLoading ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground text-lg">Loading opportunities...</p>
+            </div>
+          ) : jobsError ? (
+            <div className="text-center py-8">
+              <p className="text-red-500 text-lg mb-4">{jobsError}</p>
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline"
+              >
+                Try Again
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recommendedJobs.length > 0 ? (
+                recommendedJobs.slice(0, 6).map((job) => (
+                  <JobCard
+                    key={job.id}
+                    job={({
+                      ...convertJobForCard(job),
+                      location: "Remote" as const // Explicitly type as literal "Remote"
+                    })}
+                    onView={() => navigate(`/job/${job.id}`)}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full text-center py-8">
+                  <p className="text-muted-foreground text-lg">
+                    {userSkills.length === 0 
+                      ? "Complete your profile with skills to get personalized job recommendations."
+                      : "No opportunities found matching your skills. Check back later for new postings!"
+                    }
+                  </p>
+                  <Button 
+                    onClick={() => userSkills.length === 0 ? navigate("/profile") : setActiveTab("jobs")} 
+                    className="mt-4 bg-gradient-to-r from-primary to-primary/80"
+                  >
+                    {userSkills.length === 0 ? "Complete Profile" : "Browse All Jobs"}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <BackToTop />

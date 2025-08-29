@@ -1,6 +1,6 @@
 
 export interface JobPosting {
-  id: number;
+  id: string | number;
   title: string;
   company: string;
   description: string;
@@ -9,8 +9,8 @@ export interface JobPosting {
   duration: string;
   postedDate: string;
   contactEmail: string;
-  location?: 'Remote' | 'On-site' | 'Hybrid';
-  experienceLevel?: 'Entry' | 'Mid' | 'Senior';
+  location?: 'Remote' | 'On-site' | 'Hybrid' | string;
+  experienceLevel?: 'Entry' | 'Mid' | 'Senior' | string;
   requirements?: string[];
 }
 

@@ -377,7 +377,6 @@ const Index: React.FC = () => {
   if (role === 'student') {
     return (
       <StudentDashboard 
-        jobs={jobs}
         setActiveTab={setActiveTab}
       />
     );

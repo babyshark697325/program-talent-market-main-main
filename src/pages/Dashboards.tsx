@@ -27,7 +27,7 @@ export const StudentDashboardPage: React.FC = () => {
     else navigate("/");
   };
 
-  return <StudentDashboard jobs={mockJobs} setActiveTab={handleSetActiveTab} />;
+  return <StudentDashboard setActiveTab={handleSetActiveTab} />;
 };
 
 // Client Dashboard Page wrapper
