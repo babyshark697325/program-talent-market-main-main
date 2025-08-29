@@ -229,7 +229,8 @@ const Index: React.FC = () => {
         setStudents(transformedStudents);
         
         // Set featured student after students are loaded
-        setFeatured(getSpotlightFromStorage());
+        const featuredData = await getSpotlightFromStorage();
+        setFeatured(featuredData);
       } catch (err) {
         console.error('Unexpected error:', err);
         setError('An unexpected error occurred');
@@ -293,9 +294,10 @@ const Index: React.FC = () => {
 
   // Reload spotlight on focus or when admin saves settings
   useEffect(() => {
-    const refresh = () => {
+    const refresh = async () => {
       if (students.length > 0) {
-        setFeatured(getSpotlightFromStorage());
+        const featuredData = await getSpotlightFromStorage();
+        setFeatured(featuredData);
       }
     };
     window.addEventListener('focus', refresh);
