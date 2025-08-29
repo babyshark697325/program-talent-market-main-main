@@ -7,7 +7,7 @@ import StatsGrid from "@/components/StatsGrid";
 import TabNavigation from "@/components/TabNavigation";
 import SearchFilters from "@/components/SearchFilters";
 import ContentGrid from "@/components/ContentGrid";
-import { StudentService } from "@/data/mockStudents";
+import { StudentService } from "@/types/student";
 import { JobPosting } from "@/data/mockJobs";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useRole } from "@/contexts/RoleContext";
@@ -78,76 +78,16 @@ const transformProfileToStudent = (profile: DatabaseProfile): StudentService => 
 // Transform database job to JobPosting format
 const transformDatabaseJobToJobPosting = (dbJob: DatabaseJob): JobPosting => {
   return {
-    id: parseInt(dbJob.id.slice(-8), 16),
+    id: parseInt(dbJob.id.slice(-8), 16), // Convert string UUID to number
     title: dbJob.title,
-    company: dbJob.company || 'Company',
-    description: dbJob.description || 'No description provided',
+    company: dbJob.company || "Unknown Company",
+    description: dbJob.description || "No description provided",
+    requirements: dbJob.requirements || [],
     skills: dbJob.skills || [],
-    budget: dbJob.budget || '$500',
-    duration: dbJob.duration || '1-2 weeks',
-    postedDate: new Date(dbJob.posted_at).toLocaleDateString(),
-    contactEmail: dbJob.contact_email || '',
-    requirements: dbJob.requirements || ['No requirements specified'],
-  };
-};
-
-// Import the DatabaseStudent interface from BrowseStudents
-export interface DatabaseStudent {
-  id: string;
-  user_id: string;
-  name: string;
-  email: string;
-  skills: string[];
-  hourly_rate: number;
-  bio?: string;
-  location?: string;
-  availability: string;
-  rating: number;
-  total_jobs: number;
-  profile_image_url?: string;
-  created_at: string;
-  updated_at: string;
-  student_portfolio: {
-    id: string;
-    title: string;
-    description?: string;
-    image_url?: string;
-    project_url?: string;
-  }[];
-}
-
-// Transform database student to component format
-const transformStudent = (dbStudent: DatabaseStudent): StudentService => {
-  return {
-    // Convert UUID to number for compatibility with existing routes
-    id: parseInt(dbStudent.id.slice(-8), 16),
-    name: dbStudent.name,
-    // Use bio as title, fallback to default
-    title: dbStudent.bio || 'Student Developer',
-    description: dbStudent.bio || 'Skilled developer ready to help with your projects',
-    avatarUrl:
-      dbStudent.profile_image_url ||
-      'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80',
-    skills: dbStudent.skills || [],
-    price: `$${dbStudent.hourly_rate || 25}/hr`,
-    // Default to student since we're in students table
-    affiliation: 'student' as const,
-    aboutMe: dbStudent.bio,
-    contact: {
-      email: dbStudent.email,
-      phone: undefined,
-      linkedinUrl: undefined,
-      githubUrl: undefined,
-      upworkUrl: undefined,
-      fiverrUrl: undefined,
-    },
-    portfolio: (dbStudent.student_portfolio || []).map((item) => ({
-      id: parseInt(item.id.slice(-8), 16),
-      title: item.title,
-      description: item.description,
-      imageUrl: item.image_url || '',
-      link: item.project_url,
-    })),
+    budget: dbJob.budget || "Budget not specified",
+    duration: dbJob.duration || "Duration not specified",
+    contactEmail: dbJob.contact_email || "",
+    postedDate: dbJob.posted_at,
   };
 };
 
@@ -155,6 +95,7 @@ const transformStudent = (dbStudent: DatabaseStudent): StudentService => {
 const LS_QUOTE_KEY = "spotlight.quote";
 const LS_STUDENT_ID_KEY = "spotlight.studentId";
 const LS_SHOWCASE_IMAGE_KEY = "spotlight.showcaseImage";
+const LS_REVIEW_KEY = "spotlight.review";
 const DEFAULT_QUOTE = "Building amazing web experiences is my passion. Every line of code I write aims to create something that users will love and businesses will thrive with!";
 const DEFAULT_CLIENT_REVIEW = {
   text: "Alex built our entire e-commerce platform from scratch and it's been a game-changer for our business. The site is fast, beautiful, and user-friendly. Sales increased by 40% in the first month!",
@@ -162,43 +103,75 @@ const DEFAULT_CLIENT_REVIEW = {
   rating: 5
 };
 
-function getSpotlightFromStorage(students: StudentService[]) {
-  try {
-    const q = localStorage.getItem(LS_QUOTE_KEY) || "";
-    const sid = localStorage.getItem(LS_STUDENT_ID_KEY);
-    const img = localStorage.getItem(LS_SHOWCASE_IMAGE_KEY) || "";
-    
-    // Only show spotlight if a student ID is explicitly stored in localStorage
-    if (!sid) {
-      return null;
-    }
-    
-    const id = Number(sid);
-    const s = students.find((m) => m.id === id);
-    
-    // If the stored student ID doesn't match any actual student, don't show spotlight
-    if (!s) {
-      return null;
-    }
-    
-    const orientation = localStorage.getItem('spotlight.orientation');
-    
-    return {
-      id: s.id,
-      name: s.name,
-      title: s.title,
-      avatarUrl: s.avatarUrl,
-      skills: s.skills,
-      quote: q || DEFAULT_QUOTE,
-      showcaseImage: img || undefined,
-      showcaseOrientation: orientation === 'portrait' ? 'portrait' : 'landscape',
-      clientReview: DEFAULT_CLIENT_REVIEW
-    };
-  } catch {
-    // If there's any error, don't show the spotlight
+// Add missing interface for FeaturedStudentProps
+interface FeaturedStudentProps {
+  student: StudentService;
+  quote: string;
+  showcaseImage?: string;
+  clientReview: {
+    text: string;
+    clientName: string;
+    rating: number;
+  };
+}
+
+const getSpotlightFromStorage = async (): Promise<FeaturedStudentProps | null> => {
+  const studentId = localStorage.getItem(LS_STUDENT_ID_KEY);
+  const quote = localStorage.getItem(LS_QUOTE_KEY);
+  const showcaseImage = localStorage.getItem(LS_SHOWCASE_IMAGE_KEY);
+  const reviewId = localStorage.getItem(LS_REVIEW_KEY);
+
+  if (!studentId) {
     return null;
   }
-}
+
+  try {
+    // Fetch student profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', studentId)
+      .single();
+
+    if (profileError || !profile) {
+      console.error('Student not found:', profileError);
+      return null;
+    }
+
+    // Transform profile to student
+    const transformedStudent = transformProfileToStudent(profile);
+
+    // Fetch selected review if reviewId exists
+    let clientReview = DEFAULT_CLIENT_REVIEW;
+    if (reviewId) {
+      const { data: review, error: reviewError } = await supabase
+        .from('reviews')
+        .select('reviewer_name, reviewer_company, review_text, rating')
+        .eq('id', reviewId)
+        .single();
+
+      if (!reviewError && review) {
+        clientReview = {
+          text: review.review_text,
+          clientName: review.reviewer_company 
+            ? `${review.reviewer_name}, ${review.reviewer_company}`
+            : review.reviewer_name,
+          rating: review.rating
+        };
+      }
+    }
+
+    return {
+      student: transformedStudent,
+      quote: quote || "Passionate about creating innovative solutions",
+      showcaseImage: showcaseImage || undefined,
+      clientReview
+    };
+  } catch (error) {
+    console.error('Error loading spotlight data:', error);
+    return null;
+  }
+};
 
 const Index: React.FC = () => {
   const [search, setSearch] = useState("");
@@ -235,7 +208,7 @@ const Index: React.FC = () => {
 
         if (!studentRoles || studentRoles.length === 0) {
           setStudents([]);
-          setFeatured(getSpotlightFromStorage([]));
+          setFeatured(getSpotlightFromStorage());
           return;
         }
 
@@ -256,7 +229,7 @@ const Index: React.FC = () => {
         setStudents(transformedStudents);
         
         // Set featured student after students are loaded
-        setFeatured(getSpotlightFromStorage(transformedStudents));
+        setFeatured(getSpotlightFromStorage());
       } catch (err) {
         console.error('Unexpected error:', err);
         setError('An unexpected error occurred');
@@ -322,7 +295,7 @@ const Index: React.FC = () => {
   useEffect(() => {
     const refresh = () => {
       if (students.length > 0) {
-        setFeatured(getSpotlightFromStorage(students));
+        setFeatured(getSpotlightFromStorage());
       }
     };
     window.addEventListener('focus', refresh);

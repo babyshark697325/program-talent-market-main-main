@@ -185,6 +185,70 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          id: string
+          student_id: string
+          reviewer_id: string | null
+          reviewer_name: string
+          reviewer_company: string | null
+          review_text: string
+          rating: number
+          job_id: string | null
+          created_at: string
+          updated_at: string
+          is_featured: boolean | null
+        }
+        Insert: {
+          id?: string
+          student_id: string
+          reviewer_id?: string | null
+          reviewer_name: string
+          reviewer_company?: string | null
+          review_text: string
+          rating: number
+          job_id?: string | null
+          created_at?: string
+          updated_at?: string
+          is_featured?: boolean | null
+        }
+        Update: {
+          id?: string
+          student_id?: string
+          reviewer_id?: string | null
+          reviewer_name?: string
+          reviewer_company?: string | null
+          review_text?: string
+          rating?: number
+          job_id?: string | null
+          created_at?: string
+          updated_at?: string
+          is_featured?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string

@@ -1,7 +1,7 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { StudentService } from "@/data/mockStudents";
+import { StudentService } from "@/types/student";
 
 interface StudentServiceCardProps {
   student: StudentService;

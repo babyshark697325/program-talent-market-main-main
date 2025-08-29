@@ -14,7 +14,6 @@ import {
   CheckCircle,
   BookOpen
 } from "lucide-react";
-import { mockStudents } from "@/data/mockStudents";
 import { JobPosting } from "@/data/mockJobs";
 import { Link } from "react-router-dom";
 import RecentActivity from "./RecentActivity";
@@ -45,12 +44,13 @@ interface JobRow {
   posted_at: string;
 }
 
-interface ReportRow {
-  id: string;
-  title: string;
-  status: string;
-  created_at: string;
-}
+// Remove this interface (lines 48-53):
+// interface ReportRow {
+//   id: string;
+//   title: string;
+//   status: string;
+//   created_at: string;
+// }
 
 interface WaitlistRow {
   id: string;
@@ -112,15 +112,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
           if (!cancelled) setTotalRevenue(0);
         }
 
-        // Pending reviews aggregate: waitlist pending + open reports + flagged jobs
+        // Pending reviews aggregate: waitlist pending + flagged jobs (removed reports)
         let pending = 0;
         try {
-          const [{ count: waitlistPending }, { count: openReports }, { count: flaggedJobs }] = await Promise.all([
+          const [{ count: waitlistPending }, { count: flaggedJobs }] = await Promise.all([
             supabase.from('waitlist').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-            supabase.from('reports').select('id', { count: 'exact', head: true }).neq('status', 'resolved'),
             supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('status', 'flagged'),
           ]);
-          pending = (waitlistPending ?? 0) + (openReports ?? 0) + (flaggedJobs ?? 0);
+          pending = (waitlistPending ?? 0) + (flaggedJobs ?? 0);
         } catch {
           // Tables may not exist or RLS may block; keep pending as what we could compute
         }
@@ -147,12 +146,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
         since.setDate(since.getDate() - 14); // last 14 days
         const sinceIso = since.toISOString();
 
-        // Fetch recent items from multiple sources
-        const [profilesRes, jobsRes, paymentsRes, reportsRes, waitlistRes] = await Promise.allSettled([
+        // Fetch recent items from multiple sources (removed reports)
+        const [profilesRes, jobsRes, paymentsRes, waitlistRes] = await Promise.allSettled([
           supabase.from('profiles').select('user_id, display_name, first_name, last_name, email, created_at').gte('created_at', sinceIso).order('created_at', { ascending: false }).limit(20),
           supabase.from('jobs').select('id, title, company, posted_at').gte('posted_at', sinceIso).order('posted_at', { ascending: false }).limit(20),
           supabase.from('payments').select('id, amount, status, created_at').gte('created_at', sinceIso).order('created_at', { ascending: false }).limit(20),
-          supabase.from('reports').select('id, title, status, created_at').gte('created_at', sinceIso).order('created_at', { ascending: false }).limit(20),
           supabase.from('waitlist').select('id, email, first_name, last_name, role, city, created_at, status').order('created_at', { ascending: false }).limit(50),
         ]);
 
@@ -168,7 +166,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
               message: `New user registered: ${[p.first_name, p.last_name].filter(Boolean).join(' ') || p.display_name || (p.email ? p.email.split('@')[0] : 'User')}`,
               timestamp: new Date(p.created_at),
               status: ActivityStatus.SUCCESS,
-              data: { user_id: p.user_id, email: p.email },
+              data: { 
+                message: `User registration completed`,
+                user_id: p.user_id, 
+                email: p.email 
+              },
             });
           }
         }
@@ -182,7 +184,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
               message: `Job posted: ${j.title}${j.company ? ` at ${j.company}` : ''}`,
               timestamp: new Date(j.posted_at),
               status: ActivityStatus.SUCCESS,
-              data: { job_id: j.id, title: j.title, company: j.company },
+              data: { 
+                message: `Job posting created`,
+                job_id: j.id, 
+                title: j.title, 
+                company: j.company 
+              },
             });
           }
         }
@@ -197,29 +204,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
                 message: `Payment processed: ${Number(pay.amount || 0).toLocaleString()}`,
                 timestamp: new Date(pay.created_at),
                 status: ActivityStatus.SUCCESS,
-                data: { payment_id: pay.id, amount: pay.amount },
+                data: { 
+                  message: `Payment transaction completed`,
+                  payment_id: pay.id, 
+                  amount: pay.amount 
+                },
               });
             }
-          }
-        }
-
-        // Reports → user reports
-        if (reportsRes.status === 'fulfilled' && !reportsRes.value.error && reportsRes.value.data) {
-          for (const r of reportsRes.value.data as ReportRow[]) {
-            const st = String(r.status || '').toLowerCase();
-            const map: Record<string, ActivityStatus> = {
-              pending: ActivityStatus.WARNING,
-              investigating: ActivityStatus.INFO,
-              resolved: ActivityStatus.SUCCESS,
-            };
-            events.push({
-              id: id++,
-              type: ActivityType.USER_REPORTS,
-              message: `Report: ${r.title}`,
-              timestamp: new Date(r.created_at),
-              status: map[st] ?? ActivityStatus.INFO,
-              data: { report_id: r.id, status: r.status },
-            });
           }
         }
 
@@ -237,7 +228,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
               message: `Joined waitlist: ${name}${suffix}`,
               timestamp: new Date(w.created_at),
               status: ActivityStatus.INFO,
-              data: { id: w.id, email: w.email, status: w.status },
+              data: { 
+                message: `Waitlist registration completed`,
+                id: w.id, 
+                email: w.email, 
+                status: w.status 
+              },
             });
           }
         }

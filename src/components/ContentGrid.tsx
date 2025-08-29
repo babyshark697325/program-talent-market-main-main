@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import StudentServiceCard from "@/components/StudentServiceCard";
 import JobCard from "@/components/JobCard";
 import { Users, Briefcase } from "lucide-react";
-import { StudentService } from "@/data/mockStudents";
+import { StudentService } from "@/types/student";
 import { JobPosting } from "@/data/mockJobs";
 
 interface ContentGridProps {

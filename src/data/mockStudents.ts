@@ -17,7 +17,7 @@ export interface StudentContact {
 }
 
 export interface StudentService {
-  id: number;
+  id: number; // Revert back to number
   name: string;
   title: string;
   description: string;
@@ -32,7 +32,7 @@ export interface StudentService {
 
 export const mockStudents: StudentService[] = [
   {
-    id: 1,
+    id: 1, // Revert back to number
     name: "Alex Rivera",
     title: "Full-Stack Web Developer",
     description:
@@ -68,7 +68,7 @@ export const mockStudents: StudentService[] = [
     ]
   },
   {
-    id: 2,
+    id: 2, // Change from "2" to 2
     name: "Jamie Patel",
     title: "Logo & Brand Designer",
     description:
@@ -98,7 +98,7 @@ export const mockStudents: StudentService[] = [
     ]
   },
   {
-    id: 3,
+    id: 3, // Change from "3" to 3
     name: "Morgan Lee",
     title: "3D Artist & Animator",
     description:
@@ -128,7 +128,7 @@ export const mockStudents: StudentService[] = [
     ]
   },
   {
-    id: 4,
+    id: 4, // Change from "4" to 4
     name: "Samira Chen",
     title: "Game Designer & Developer",
     description:
@@ -158,7 +158,7 @@ export const mockStudents: StudentService[] = [
     ]
   },
   {
-    id: 5,
+    id: 5, // Change from "5" to 5
     name: "Ethan Smith",
     title: "Graphic Designer & Illustrator",
     description:

@@ -10,48 +10,38 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import StudentServiceCard from "@/components/StudentServiceCard";
 import PageHeader from '@/components/PageHeader';
-import { StudentService } from '@/data/mockStudents';
+import { StudentService } from '@/types/student';
 
-// Updated interface to match our actual database schema
+// Updated interface to match the profiles table structure
 export interface DatabaseStudent {
   id: string;
   user_id: string;
-  name: string;
   email: string;
-  skills: string[];
-  hourly_rate: number;
-  bio?: string;
-  location?: string;
-  availability: string;
-  rating: number;
-  total_jobs: number;
-  profile_image_url?: string;
+  display_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  bio: string | null;
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
-  student_portfolio: {
-    id: string;
-    title: string;
-    description?: string;
-    image_url?: string;
-    project_url?: string;
-  }[];
 }
 
-// Transform database student to component format
+// Transform database profile to component format
 const transformStudent = (dbStudent: DatabaseStudent): StudentService => {
+  const displayName = dbStudent.display_name || 
+    [dbStudent.first_name, dbStudent.last_name].filter(Boolean).join(' ') || 
+    dbStudent.email.split('@')[0];
+  
   return {
     // Convert UUID to number for compatibility with existing routes
     id: parseInt(dbStudent.id.slice(-8), 16),
-    name: dbStudent.name,
-    // Use bio as title, fallback to default
+    name: displayName,
     title: dbStudent.bio || 'Student Developer',
     description: dbStudent.bio || 'Skilled developer ready to help with your projects',
-    avatarUrl:
-      dbStudent.profile_image_url ||
+    avatarUrl: dbStudent.avatar_url || 
       'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80',
-    skills: dbStudent.skills || [],
-    price: `$${dbStudent.hourly_rate || 25}/hr`,
-    // Default to student since we're in students table
+    skills: [],
+    price: '$25/hr',
     affiliation: 'student' as const,
     aboutMe: dbStudent.bio,
     contact: {
@@ -62,13 +52,7 @@ const transformStudent = (dbStudent: DatabaseStudent): StudentService => {
       upworkUrl: undefined,
       fiverrUrl: undefined,
     },
-    portfolio: (dbStudent.student_portfolio || []).map((item) => ({
-      id: parseInt(item.id.slice(-8), 16),
-      title: item.title,
-      description: item.description,
-      imageUrl: item.image_url || '',
-      link: item.project_url,
-    })),
+    portfolio: [],
   };
 };
 
@@ -99,10 +83,30 @@ const BrowseStudents = () => {
         setLoading(true);
         setError(null);
 
+        // Get profiles for users with 'student' role
+        const { data: studentRoles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'student');
+
+        if (rolesError) {
+          console.error('Error fetching student roles:', rolesError);
+          setError('Failed to load student roles');
+          return;
+        }
+
+        if (!studentRoles || studentRoles.length === 0) {
+          setStudents([]);
+          setFilteredStudents([]);
+          return;
+        }
+
+        const studentUserIds = studentRoles.map(role => role.user_id);
+        
         const { data, error: fetchError } = await supabase
-          .from('students')
-          .select('*, student_portfolio!inner(id, title, description, image_url, project_url)')
-          .eq('availability', 'available')
+          .from('profiles')
+          .select('*')
+          .in('user_id', studentUserIds)
           .order('created_at', { ascending: false });
 
         if (fetchError) {
