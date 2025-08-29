@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import StudentServiceCard from "@/components/StudentServiceCard";
-import JobCard from "@/components/JobCard";
+import { JobPosting } from "@/data/mockJobs";
+import StudentServiceCard from "./StudentServiceCard";
+import JobCard from "./JobCard";
 import { Users, Briefcase } from "lucide-react";
 import { StudentService } from "@/types/student";
-import { JobPosting } from "@/data/mockJobs";
+import { Button } from "@/components/ui/button";
 
 interface ContentGridProps {
   activeTab: "students" | "jobs";

@@ -112,7 +112,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
           if (!cancelled) setTotalRevenue(0);
         }
 
-        // Pending reviews aggregate: waitlist pending + flagged jobs (removed reports)
+        // Pending reviews aggregate: waitlist pending + flagged jobs
         let pending = 0;
         try {
           const [{ count: waitlistPending }, { count: flaggedJobs }] = await Promise.all([
@@ -121,10 +121,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
           ]);
           pending = (waitlistPending ?? 0) + (flaggedJobs ?? 0);
         } catch {
-          // Tables may not exist or RLS may block; keep pending as what we could compute
+          pending = 0;
         }
         if (!cancelled) setPendingReviews(pending);
       } catch (e) {
+        // Handle any errors in the main stats loading
         if (!cancelled) {
           setTotalUsers(0);
           setTotalJobs(0);
@@ -134,42 +135,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
         }
       }
     };
-    load();
-    return () => { cancelled = true; };
-  }, []);
 
-  React.useEffect(() => {
-    let cancelled = false;
     const loadActivities = async () => {
       try {
-        const since = new Date();
-        since.setDate(since.getDate() - 14); // last 14 days
-        const sinceIso = since.toISOString();
-
-        // Fetch recent items from multiple sources (removed reports)
-        const [profilesRes, jobsRes, paymentsRes, waitlistRes] = await Promise.allSettled([
-          supabase.from('profiles').select('user_id, display_name, first_name, last_name, email, created_at').gte('created_at', sinceIso).order('created_at', { ascending: false }).limit(20),
-          supabase.from('jobs').select('id, title, company, posted_at').gte('posted_at', sinceIso).order('posted_at', { ascending: false }).limit(20),
-          supabase.from('payments').select('id, amount, status, created_at').gte('created_at', sinceIso).order('created_at', { ascending: false }).limit(20),
-          supabase.from('waitlist').select('id, email, first_name, last_name, role, city, created_at, status').order('created_at', { ascending: false }).limit(50),
-        ]);
-
         let id = 1;
         const events: AdminActivity[] = [];
 
-        // Profiles → user registration
+        // Fetch all data concurrently
+        const [profilesRes, jobsRes, paymentsRes, waitlistRes] = await Promise.allSettled([
+          supabase.from('profiles').select('user_id, display_name, first_name, last_name, email, created_at').order('created_at', { ascending: false }).limit(20),
+          supabase.from('jobs').select('id, title, company, posted_at').order('posted_at', { ascending: false }).limit(20),
+          supabase.from('payments').select('id, amount, status, created_at').eq('status', 'completed').order('created_at', { ascending: false }).limit(20),
+          supabase.from('waitlist').select('id, email, first_name, last_name, role, city, created_at, status').order('created_at', { ascending: false }).limit(20),
+        ]);
+
+        // Profiles → user registrations
         if (profilesRes.status === 'fulfilled' && !profilesRes.value.error && profilesRes.value.data) {
           for (const p of profilesRes.value.data as ProfileRow[]) {
+            const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.display_name || (p.email ? p.email.split('@')[0] : 'Guest');
             events.push({
               id: id++,
               type: ActivityType.USER_REGISTRATION,
-              message: `New user registered: ${[p.first_name, p.last_name].filter(Boolean).join(' ') || p.display_name || (p.email ? p.email.split('@')[0] : 'User')}`,
+              message: `New user registered: ${name}`,
               timestamp: new Date(p.created_at),
               status: ActivityStatus.SUCCESS,
               data: { 
-                message: `User registration completed`,
-                user_id: p.user_id, 
-                email: p.email 
+                message: `User account created`,
+                userName: name, 
+                userId: p.user_id 
               },
             });
           }
@@ -241,12 +234,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
         // Sort newest first and limit
         events.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
         const limited = events.slice(0, 50);
-        if (!cancelled) setActivities(limited);
+        
+        // Filter out any undefined or invalid activities
+        const validActivities = limited.filter(activity => 
+          activity && 
+          typeof activity.id === 'number' && 
+          activity.type && 
+          activity.message && 
+          activity.timestamp && 
+          activity.status && 
+          activity.data
+        );
+        
+        if (!cancelled) setActivities(validActivities);
       } catch (e) {
+        console.error('Error loading activities:', e);
         if (!cancelled) setActivities([]);
       }
     };
 
+    load();
     loadActivities();
     return () => { cancelled = true; };
   }, []);

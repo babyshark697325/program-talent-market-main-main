@@ -1,16 +1,15 @@
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Search, Star, MapPin, Clock, DollarSign, SortAsc } from 'lucide-react';
-import { supabase } from '../integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
-import { useState, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Search, Filter, MapPin, Star, ExternalLink, Briefcase, GraduationCap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import StudentServiceCard from "@/components/StudentServiceCard";
 import PageHeader from '@/components/PageHeader';
 import { StudentService } from '@/types/student';
+import { supabase } from "@/integrations/supabase/client";
 
 // Updated interface to match the profiles table structure
 export interface DatabaseStudent {

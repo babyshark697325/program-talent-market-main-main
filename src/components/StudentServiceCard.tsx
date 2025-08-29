@@ -1,6 +1,8 @@
 import React from "react";
-import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Star, MapPin, ExternalLink, Briefcase, GraduationCap } from "lucide-react";
 import { StudentService } from "@/types/student";
 
 interface StudentServiceCardProps {

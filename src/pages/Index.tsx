@@ -246,10 +246,10 @@ const Index: React.FC = () => {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
+        // Try fetching jobs without status filter first
         const { data, error: fetchError } = await supabase
           .from('jobs')
           .select('*')
-          .eq('status', 'active')
           .order('posted_at', { ascending: false });
 
         if (fetchError) {
@@ -259,11 +259,15 @@ const Index: React.FC = () => {
           return;
         }
 
-        const transformedJobs = (data || []).map(transformDatabaseJobToJobPosting);
+        // Filter active jobs in JavaScript if status column exists
+        const filteredData = (data || []).filter(job => 
+          !job.hasOwnProperty('status') || job.status === 'active'
+        );
+        
+        const transformedJobs = filteredData.map(transformDatabaseJobToJobPosting);
         setJobs(transformedJobs);
       } catch (err) {
         console.error('Unexpected error fetching jobs:', err);
-        // Fallback to empty array to prevent crashes
         setJobs([]);
       }
     };
@@ -419,21 +423,15 @@ const Index: React.FC = () => {
       <div className="max-w-6xl mx-auto w-full px-4 md:px-6 pb-16 relative z-10">
         {/* Featured Student Section */}
         {featured && (
-          <div className="mb-12 animate-fade-in">
-            <FeaturedStudent 
-              student={{
-                id: featured.student.id,
-                name: featured.student.name,
-                title: featured.student.title,
-                avatarUrl: featured.student.avatarUrl,
-                skills: featured.student.skills,
-                quote: featured.quote,
-                showcaseImage: featured.showcaseImage,
-                clientReview: featured.clientReview
-              }}
-              onViewProfile={() => navigate(`/student/${featured.student.id}`)}
-            />
-          </div>
+          <FeaturedStudent 
+            student={{
+              ...featured.student,
+              quote: featured.quote,
+              showcaseImage: featured.showcaseImage,
+              clientReview: featured.clientReview
+            }}
+            onViewProfile={() => navigate(`/student/${featured.student.id}`)}
+          />
         )}
 
         {/* Browse Students/Jobs Hero Section */}
