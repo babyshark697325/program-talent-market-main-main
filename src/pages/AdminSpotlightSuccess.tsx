@@ -46,12 +46,12 @@ interface DatabaseReview {
 }
 
 const transformProfileToStudent = (profile: DatabaseProfile): StudentService => {
-  const displayName = profile.display_name || 
-    [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 
+  const displayName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 
+    profile.display_name || 
     profile.email.split('@')[0];
   
   return {
-    id: parseInt(profile.id.slice(-8), 16), // Convert string UUID to number like other files
+    id: parseInt(profile.id.slice(-8), 16),
     name: displayName,
     title: profile.bio || "Student",
     description: profile.bio || "",
