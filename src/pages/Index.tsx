@@ -417,8 +417,17 @@ const Index: React.FC = () => {
         {featured && (
           <div className="mb-12 animate-fade-in">
             <FeaturedStudent 
-              student={featured}
-              onViewProfile={() => navigate(`/student/${featured.id}`)}
+              student={{
+                id: featured.student.id,
+                name: featured.student.name,
+                title: featured.student.title,
+                avatarUrl: featured.student.avatarUrl,
+                skills: featured.student.skills,
+                quote: featured.quote,
+                showcaseImage: featured.showcaseImage,
+                clientReview: featured.clientReview
+              }}
+              onViewProfile={() => navigate(`/student/${featured.student.id}`)}
             />
           </div>
         )}
