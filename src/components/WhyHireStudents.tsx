@@ -2,7 +2,7 @@ import { Rocket, DollarSign, GraduationCap } from 'lucide-react';
 
 export default function WhyHireStudents() { 
    return ( 
-     <section className="bg-[#0f172a] text-white py-8 px-6 md:px-10 lg:px-16 rounded-xl"> 
+     <section className="relative z-20 bg-[#0f172a] text-white py-8 px-6 md:px-10 lg:px-16 rounded-xl"> 
        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center md:items-start gap-6"> 
          
          {/* Left Illustration with Optional Glow */} 
