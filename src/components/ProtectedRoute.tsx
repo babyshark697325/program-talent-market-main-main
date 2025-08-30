@@ -10,7 +10,9 @@ type Props = {
 };
 
 const ProtectedRoute: React.FC<Props> = ({ children, requiredRole }) => {
+  // ALL HOOKS MUST BE AT THE TOP - BEFORE ANY CONDITIONAL LOGIC
   const { user, session, userRole, loading, isGuest } = useAuth();
+  const location = useLocation();
   const [waited, setWaited] = React.useState(false);
 
   // Safety valve for any slow/failed auth fetch: stop showing spinner after 5s
@@ -28,7 +30,6 @@ const ProtectedRoute: React.FC<Props> = ({ children, requiredRole }) => {
   }
 
   // Guests can browse most pages, but block specific client actions
-  const location = useLocation();
   const restrictedForGuests = new Set<string>(["/post-job", "/manage-jobs", "/client-dashboard"]);
   if (isGuest && restrictedForGuests.has(location.pathname)) {
     return (
