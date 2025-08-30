@@ -3,6 +3,8 @@ import FeaturedStudent from "@/components/FeaturedStudent";
 import StudentDashboard from "@/components/StudentDashboard";
 import AdminDashboard from "@/components/AdminDashboard";
 import HeroSection from "@/components/HeroSection";
+import HowItWorks from "@/components/HowItWorks";
+import WhyHireStudents from "@/components/WhyHireStudents";
 import StatsGrid from "@/components/StatsGrid";
 import TabNavigation from "@/components/TabNavigation";
 import SearchFilters from "@/components/SearchFilters";
@@ -431,6 +433,9 @@ const Index: React.FC = () => {
       <HeroSection />
 
       <div className="max-w-6xl mx-auto w-full px-4 md:px-6 pb-16 relative z-10">
+        {/* How It Works Section - First Card */}
+        <HowItWorks />
+
         {/* Featured Student Section */}
         {featured && (
           <FeaturedStudent 
@@ -447,6 +452,9 @@ const Index: React.FC = () => {
             onViewProfile={() => navigate(`/student/${featured.student.id}`)}
           />
         )}
+
+        {/* Why Hire Students Section */}
+        <WhyHireStudents />
 
         {/* Browse Students/Jobs Hero Section */}
         <StatsGrid 

@@ -107,7 +107,7 @@ const ContentGrid: React.FC<ContentGridProps> = ({
               >
                 <JobCard
                   job={job}
-                  onView={() => onJobView(job.id)}
+                  onView={() => onJobView(Number(job.id))}
                 />
               </div>
             ))}
