@@ -40,7 +40,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row lg:items-center lg:justify-between gap-4 md:gap-6 mb-6 md:mb-8 animate-fade-in">
+    <div className="flex flex-col sm:flex-row lg:items-center lg:justify-between gap-4 md:gap-6 mb-6 md:mb-8 mt-14 animate-fade-in">
       <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
         <button
           type="button"

@@ -9,8 +9,11 @@ interface StatsGridProps {
 
 const StatsGrid: React.FC<StatsGridProps> = ({ studentsCount, skillsCount }) => {
   return (
-    <section className="relative isolate overflow-hidden rounded-2xl bg-background py-14 px-6 md:px-12 mb-8 md:mb-12 animate-fade-in shadow-xl border border-border">
-      <div className="max-w-4xl mx-auto text-center">
+    <section className="relative isolate overflow-hidden rounded-2xl bg-background py-14 px-6 md:px-12 animate-fade-in shadow-xl border border-border">
+      {/* Background glow effects */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-primary/5 blur-3xl rounded-full pointer-events-none -z-10" aria-hidden="true"></div>
+      
+      <div className="relative z-10 max-w-4xl mx-auto text-center">
         <div className="flex justify-center mb-4 md:mb-6">
           <div className="w-16 md:w-20 h-16 md:h-20 bg-muted rounded-2xl md:rounded-3xl flex items-center justify-center shadow-lg">
             <Users className="text-primary" size={32} />
