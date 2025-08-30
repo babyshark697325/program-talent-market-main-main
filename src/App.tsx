@@ -55,6 +55,7 @@ import AdminLearningResourcesList from "./pages/AdminLearningResourcesList";
 import AdminLearningResourceEdit from "./pages/AdminLearningResourceEdit";
 import AdminUsersList from "./pages/AdminUsersList";
 import AdminWaitlist from "./pages/AdminWaitlist";
+import Waitlist from "./pages/Waitlist";
 
 // New dashboard pages
 import { AdminDashboardPage, StudentDashboardPage, ClientDashboardPage } from "./pages/Dashboards";
@@ -351,6 +352,7 @@ const App: React.FC = () => {
               />
 
               {/* ---------- 404 ---------- */}
+              <Route path="/waitlist" element={<Waitlist />} />
               <Route path="*" element={<Layout><NotFound /></Layout>} />
             </Routes>
             </Router>

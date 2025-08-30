@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import ActivityItem from './ActivityItem';
 import ActivityFilter from './ActivityFilter';
 import { AdminActivity, ActivityType, ActivityStatus } from '@/types/adminActivity';
+import ActivityDetailsModal from '@/components/ActivityDetailsModal';
 
 interface RecentActivityProps {
   activities: AdminActivity[];
@@ -21,6 +22,11 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
     status: 'all',
     timeRange: 'all'
   });
+  
+  // Add state for modal and read activities
+  const [selectedActivity, setSelectedActivity] = useState<AdminActivity | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [readActivities, setReadActivities] = useState<Set<number>>(new Set());
 
   const filteredActivities = useMemo(() => {
     let filtered = [...activities];
@@ -81,17 +87,33 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
   };
 
   const handleMarkAsRead = (activityId: number) => {
-    // In a real app, this would update the activity's read status
-    console.log('Mark as read:', activityId);
+    setReadActivities(prev => new Set([...prev, activityId]));
+    console.log('Marked as read:', activityId);
   };
 
   const handleViewDetails = (activityId: number) => {
-    // In a real app, this would open a detailed view
-    console.log('View details:', activityId);
+    const activity = activities.find(a => a.id === activityId);
+    if (activity) {
+      setSelectedActivity(activity);
+      setIsModalOpen(true);
+    }
     if (onActivityClick) {
       onActivityClick(activityId);
     }
   };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedActivity(null);
+  };
+
+  // Update filtered activities to include read status
+  const activitiesWithReadStatus = useMemo(() => {
+    return activities.map(activity => ({
+      ...activity,
+      isRead: activity.isRead || readActivities.has(activity.id)
+    }));
+  }, [activities, readActivities]);
 
   return (
     <Card className="p-8 bg-gradient-to-r from-secondary/60 to-accent/10 backdrop-blur-sm border border-accent/10">
@@ -108,15 +130,22 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
 
       <div className="space-y-3 max-h-80 overflow-y-auto">
         {filteredActivities.length > 0 ? (
-          filteredActivities.map((activity) => (
-            <ActivityItem
-              key={activity.id}
-              activity={activity}
-              onClick={onActivityClick}
-              onMarkAsRead={handleMarkAsRead}
-              onViewDetails={handleViewDetails}
-            />
-          ))
+          filteredActivities.map((activity) => {
+            const activityWithReadStatus = {
+              ...activity,
+              isRead: activity.isRead || readActivities.has(activity.id)
+            };
+            
+            return (
+              <ActivityItem
+                key={activity.id}
+                activity={activityWithReadStatus}
+                onClick={onActivityClick}
+                onMarkAsRead={handleMarkAsRead}
+                onViewDetails={handleViewDetails}
+              />
+            );
+          })
         ) : (
           <div className="text-center py-8 text-muted-foreground">
             <p>No activities found matching the current filters.</p>
@@ -131,6 +160,12 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
           </p>
         </div>
       )}
+
+      <ActivityDetailsModal
+        activity={selectedActivity}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </Card>
   );
 };
