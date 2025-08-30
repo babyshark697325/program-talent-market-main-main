@@ -95,7 +95,13 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+    <ThemeProvider 
+      attribute="class" 
+      defaultTheme="light" 
+      enableSystem 
+      disableTransitionOnChange
+      storageKey="myvillage-theme"
+    >
       <AuthProvider>
         <RoleProvider>
           <SavedJobsProvider>

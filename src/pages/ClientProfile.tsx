@@ -1,27 +1,65 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Building2, Globe, Phone, Mail, Edit, Save, X } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+
+const CLIENT_PROFILE_KEY = "client-profile";
 
 const ClientProfile: React.FC = () => {
+  const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  const [form, setForm] = useState({
+  
+  const defaultForm = {
     companyName: "Acme, Inc.",
     website: "https://acme.example",
     contactName: "Jane Client",
     contactEmail: "jane@acme.example",
     contactPhone: "+1 (555) 222-3344",
     about: "We hire talented students for web, design, and content projects.",
-  });
+  };
 
+  const [form, setForm] = useState(defaultForm);
   const [edited, setEdited] = useState(form);
 
+  // Load saved profile on component mount
+  useEffect(() => {
+    try {
+      const savedProfile = localStorage.getItem(CLIENT_PROFILE_KEY);
+      if (savedProfile) {
+        const parsed = JSON.parse(savedProfile);
+        const loadedForm = { ...defaultForm, ...parsed };
+        setForm(loadedForm);
+        setEdited(loadedForm);
+      }
+    } catch (error) {
+      console.error('Error loading client profile:', error);
+    }
+  }, []);
+
   const handleSave = async () => {
-    setForm(edited);
-    setIsEditing(false);
+    try {
+      // Save to localStorage
+      localStorage.setItem(CLIENT_PROFILE_KEY, JSON.stringify(edited));
+      
+      setForm(edited);
+      setIsEditing(false);
+      
+      toast({
+        title: "Profile saved",
+        description: "Your profile has been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save profile. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCancel = () => {

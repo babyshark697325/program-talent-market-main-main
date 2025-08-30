@@ -1,21 +1,20 @@
+import React from 'react';
 import { Rocket, DollarSign, GraduationCap } from 'lucide-react';
 
-export default function WhyHireStudents() { 
-   return ( 
-     <section className="relative isolate overflow-hidden rounded-2xl bg-[#0f172a] text-white py-14 px-6 md:px-12"> 
-       {/* Background glow effects */}
-       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-green-500/15 blur-3xl rounded-full pointer-events-none -z-10" aria-hidden="true"></div>
-       <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-blue-500/10 blur-3xl rounded-full pointer-events-none -z-10" aria-hidden="true"></div>
-       
-       <div className="relative z-10 max-w-5xl mx-auto flex flex-col md:flex-row items-center md:items-center gap-8"> 
-         
+const WhyHireStudents: React.FC = () => {
+  return (
+    <section className="bg-white dark:bg-[#0f172a] text-slate-900 dark:text-white py-16 px-4 relative overflow-hidden border border-black/10 dark:border-white/5 shadow-md transition-shadow rounded-3xl">
+      {/* Background glow effect - only on the left */}
+      <div className="absolute top-20 left-10 w-72 h-72 bg-orange-500/20 dark:bg-green-500/8 rounded-full blur-3xl"></div>
+      
+      <div className="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row items-center gap-8">
          {/* Left Illustration */} 
-         <div className="relative flex-1 flex justify-center"> 
+         <div className="flex-1 flex justify-center items-center">
            <img 
              src="/images/StudentsCollab.png" 
              alt="Students collaborating" 
-             className="relative z-10 w-[400px] md:w-[450px] max-w-full drop-shadow-xl" 
-           /> 
+             className="w-[400px] md:w-[450px] h-auto object-contain mx-auto"
+           />
          </div> 
          
          {/* Right Content */}
@@ -29,7 +28,7 @@ export default function WhyHireStudents() {
                <Rocket className="text-primary w-5 h-5 mt-1 flex-shrink-0" />
                <div>
                  <h3 className="font-semibold text-sm">Fresh Ideas</h3>
-                 <p className="text-gray-300 text-sm">
+                 <p className="text-slate-600 dark:text-gray-300 text-sm">
                    Students bring creativity and innovation.
                  </p>
                </div>
@@ -39,7 +38,7 @@ export default function WhyHireStudents() {
                <DollarSign className="text-primary w-5 h-5 mt-1 flex-shrink-0" />
                <div>
                  <h3 className="font-semibold text-sm">Affordable Talent</h3>
-                 <p className="text-gray-300 text-sm">
+                 <p className="text-slate-600 dark:text-gray-300 text-sm">
                    High-quality work at student-friendly rates.
                  </p>
                </div>
@@ -49,7 +48,7 @@ export default function WhyHireStudents() {
                <GraduationCap className="text-primary w-5 h-5 mt-1 flex-shrink-0" />
                <div>
                  <h3 className="font-semibold text-sm">Support Future Leaders</h3>
-                 <p className="text-gray-300 text-sm">
+                 <p className="text-slate-600 dark:text-gray-300 text-sm">
                    Every project helps students grow.
                  </p>
                </div>
@@ -62,6 +61,8 @@ export default function WhyHireStudents() {
            </button>
          </div>
        </div> 
-     </section> 
-   ); 
- }
+     </section>
+   );
+};
+
+export default WhyHireStudents;

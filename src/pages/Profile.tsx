@@ -8,9 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { User, Mail, Phone, MapPin, Edit, Save, X, Plus, Image, ExternalLink, Trash2, Users, Linkedin, Github, Link } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { User, Mail, Phone, MapPin, Edit, Save, X, Plus, Image, ExternalLink, Trash2, Users, Linkedin, Github, Link, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import PageHeader from '@/components/PageHeader';
+import { loadUserSettings, saveUserSettings } from '@/lib/userSettings';
+import { useToast } from '@/hooks/use-toast';
 
 // Brand icons for platform links
 const UpworkIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -25,8 +28,14 @@ const FiverrIcon: React.FC<{ className?: string }> = ({ className }) => (
   </span>
 );
 
+const STUDENT_PROFILE_KEY = 'myvillage-student-profile';
+const STUDENT_SETTINGS_KEY = 'myvillage-student-settings';
+
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
+  
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -100,10 +109,21 @@ const Profile = () => {
     }
   }, [showPortfolioForm]);
 
-  // Load current user's profile from Supabase
+  // Load current user's profile from localStorage first, then Supabase
   useEffect(() => {
     const load = async () => {
       try {
+        // First, try to load from localStorage
+        const savedProfile = localStorage.getItem(STUDENT_PROFILE_KEY);
+        if (savedProfile) {
+          const parsedProfile = JSON.parse(savedProfile);
+          setProfile(parsedProfile);
+          setEditedProfile(parsedProfile);
+          setLoadingProfile(false);
+          return;
+        }
+        
+        // If no localStorage data, load from Supabase
         const { data: userRes, error: userError } = await supabase.auth.getUser();
         if (userError) {
           console.error('Error getting user:', userError);
@@ -158,9 +178,73 @@ const Profile = () => {
     load();
   }, []);
 
-  const handleSave = () => {
-    setProfile(editedProfile);
-    setIsEditing(false);
+  // Load profile and settings from localStorage and database on component mount
+  useEffect(() => {
+    const loadProfileAndSettings = async () => {
+      // Load settings from localStorage first
+      const savedSettingsLocal = localStorage.getItem(STUDENT_SETTINGS_KEY);
+      if (savedSettingsLocal) {
+        const parsedSettings = JSON.parse(savedSettingsLocal);
+        setEmailSettings(parsedSettings.emailSettings || emailSettings);
+        setTwoFAEnabled(parsedSettings.twoFAEnabled || twoFAEnabled);
+      }
+      
+      // Try to load additional settings from database (fallback)
+      const savedSettings = await loadUserSettings('student_settings');
+      if (savedSettings) {
+        setEmailSettings(savedSettings.emailSettings || emailSettings);
+        setTwoFAEnabled(savedSettings.twoFAEnabled || twoFAEnabled);
+      }
+    };
+
+    loadProfileAndSettings();
+  }, []);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    
+    // Save profile data to profiles table (existing logic)
+    try {
+      // Save profile to localStorage
+      localStorage.setItem(STUDENT_PROFILE_KEY, JSON.stringify(editedProfile));
+      
+      // Save settings to localStorage
+      const settingsData = {
+        emailSettings,
+        twoFAEnabled
+      };
+      localStorage.setItem(STUDENT_SETTINGS_KEY, JSON.stringify(settingsData));
+      
+      setProfile(editedProfile);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error saving profile:', error);
+    }
+
+    // Save additional settings to user_settings table
+    const settingsSuccess = await saveUserSettings('student_settings', {
+      emailSettings,
+      twoFAEnabled,
+    });
+
+    // Save profile data to user_settings for persistence
+    const profileSuccess = await saveUserSettings('student_profile', editedProfile);
+    
+    if (settingsSuccess && profileSuccess) {
+      setProfile(editedProfile);
+      toast({
+        title: "Profile saved",
+        description: "Your profile has been saved successfully.",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to save profile. Please try again.",
+        variant: "destructive",
+      });
+    }
+    
+    setIsSaving(false);
   };
 
   const handleCancel = () => {
@@ -202,29 +286,225 @@ const Profile = () => {
     setEditedProfile({ ...editedProfile, experience: next });
   };
 
+  const [showPreview, setShowPreview] = useState(false);
+
+  // Create preview data from current profile
+  const createPreviewData = () => {
+    const name = editedProfile.name || profile?.email?.split('@')[0] || 'Student';
+    
+    return {
+      name,
+      title: editedProfile.name || 'Student',
+      email: profile?.email,
+      avatarUrl: editedProfile.avatarUrl,
+      aboutMe: editedProfile.bio,
+      description: editedProfile.bio,
+      price: null,
+      skills: editedProfile.skills || [],
+      contact: {
+        linkedinUrl: editedProfile.platformLinks?.linkedin,
+        githubUrl: editedProfile.platformLinks?.github,
+        upworkUrl: editedProfile.platformLinks?.upwork,
+        fiverrUrl: editedProfile.platformLinks?.fiverr,
+      },
+      portfolio: editedProfile.portfolio || [],
+      affiliation: 'student',
+    };
+  };
+
+  // Preview Profile Component
+  const PreviewProfile = ({ student }: { student: any }) => (
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="p-6 border rounded-lg">
+        <div className="flex flex-col lg:flex-row items-start gap-6">
+          <Avatar className="w-24 h-24">
+            <AvatarImage src={student.avatarUrl} alt={student.name} />
+            <AvatarFallback className="text-xl">
+              {student.name.split(' ').map((n: string) => n[0]).join('')}
+            </AvatarFallback>
+          </Avatar>
+          
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight">{student.name}</h1>
+              {student.affiliation && (
+                <Badge
+                  variant={student.affiliation === 'alumni' ? 'secondary' : 'default'}
+                  className="rounded-full text-xs px-2 py-0.5"
+                >
+                  {student.affiliation === 'alumni' ? 'MyVillage Alumni' : 'MyVillage Student'}
+                </Badge>
+              )}
+            </div>
+            <p className="text-xl text-muted-foreground mb-4">{student.title}</p>
+            
+            <div className="flex flex-wrap gap-2 mb-6">
+              {student.skills.map((skill: string) => (
+                <Badge key={skill} variant="secondary">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex gap-3">
+                <Button size="lg" className="bg-gradient-to-r from-primary to-primary/80">
+                  <Mail className="mr-2 h-4 w-4" />
+                  Contact Student
+                </Button>
+                <Button variant="outline" size="lg">
+                  <Phone className="mr-2 h-4 w-4" />
+                  Schedule Call
+                </Button>
+              </div>
+              
+              {/* Platform Links */}
+              <div className="flex items-center gap-3">
+                {student.contact?.linkedinUrl && (
+                  <div className="p-2 rounded-lg bg-[#0077b5]">
+                    <Linkedin className="h-5 w-5 text-white" />
+                  </div>
+                )}
+                {student.contact?.githubUrl && (
+                  <div className="p-2 rounded-lg bg-[#24292e]">
+                    <Github className="h-5 w-5 text-white" />
+                  </div>
+                )}
+                {student.contact?.upworkUrl && (
+                  <div className="p-2 rounded-lg bg-[#14A800]">
+                    <UpworkIcon className="h-5 w-5" />
+                  </div>
+                )}
+                {student.contact?.fiverrUrl && (
+                  <div className="p-2 rounded-lg bg-[#1DBF73]">
+                    <FiverrIcon className="h-5 w-5" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="text-right">
+            <div className="text-3xl font-bold text-primary mb-1">{student.price || '—'}</div>
+            <div className="text-muted-foreground">per hour</div>
+          </div>
+        </div>
+      </div>
+
+      {/* About Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>About</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground leading-relaxed">
+                {student.aboutMe || student.description || 'No description provided yet.'}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Services Offered</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="border rounded-lg p-4">
+                  <h3 className="font-semibold mb-2">{student.title}</h3>
+                  <p className="text-muted-foreground text-sm mb-2">
+                    {student.description || 'Professional services available'}
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Rate</span>
+                    <span className="font-semibold text-primary">{student.price || 'Contact for pricing'}</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Portfolio Section */}
+          {student.portfolio && student.portfolio.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Portfolio</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {student.portfolio.map((item: any, index: number) => (
+                    <div key={index} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                      <img 
+                        src={item.imageUrl} 
+                        alt={item.title}
+                        className="w-full h-40 object-cover"
+                      />
+                      <div className="p-4">
+                        <h3 className="font-semibold mb-2">{item.title}</h3>
+                        {item.description && (
+                          <p className="text-muted-foreground text-sm mb-3">{item.description}</p>
+                        )}
+                        {item.link && (
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={item.link} target="_blank" rel="noopener noreferrer">
+                              View Project
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <PageHeader 
         title="My Profile" 
         description="Manage your profile information and settings"
       >
-        {!isEditing ? (
-          <Button onClick={() => setIsEditing(true)}>
-            <Edit className="mr-2 h-4 w-4" />
-            Edit Profile
-          </Button>
-        ) : (
-          <>
-            <Button onClick={handleSave}>
-              <Save className="mr-2 h-4 w-4" />
-              Save
+        <div className="flex gap-2">
+          <Dialog open={showPreview} onOpenChange={setShowPreview}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Eye className="mr-2 h-4 w-4" />
+                Preview Profile
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Profile Preview - Client View</DialogTitle>
+              </DialogHeader>
+              <PreviewProfile student={createPreviewData()} />
+            </DialogContent>
+          </Dialog>
+          
+          {!isEditing ? (
+            <Button onClick={() => setIsEditing(true)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit Profile
             </Button>
-            <Button variant="outline" onClick={handleCancel}>
-              <X className="mr-2 h-4 w-4" />
-              Cancel
-            </Button>
-          </>
-        )}
+          ) : (
+            <>
+              <Button onClick={handleSave}>
+                <Save className="mr-2 h-4 w-4" />
+                Save
+              </Button>
+              <Button variant="outline" onClick={handleCancel}>
+                <X className="mr-2 h-4 w-4" />
+                Cancel
+              </Button>
+            </>
+          )}
+        </div>
       </PageHeader>
 
       <Tabs defaultValue="general" className="space-y-6">

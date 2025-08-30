@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,10 +6,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Settings } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { loadUserSettings, saveUserSettings } from '@/lib/userSettings';
+
+const CLIENT_SETTINGS_KEY = "client-settings";
 
 const ClientSettings: React.FC = () => {
+  const { toast } = useToast();
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Default form values
+  const defaultForm = {
     companyName: "Acme, Inc.",
     website: "https://acme.example",
     contactName: "Jane Client",
@@ -27,13 +35,63 @@ const ClientSettings: React.FC = () => {
       recommendations: false,
       billingEmails: true,
     },
+  };
+
+  const [form, setForm] = useState(defaultForm);
+  const [settings, setSettings] = useState({
+    notifications: defaultForm.notifications,
+    privacy: {},
+    preferences: {}
   });
 
+  // Load saved settings on component mount
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem(CLIENT_SETTINGS_KEY);
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        setForm({ ...defaultForm, ...parsed });
+      }
+    } catch (error) {
+      console.error('Error loading client settings:', error);
+    }
+  }, []);
+
+  // Load settings from database on component mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      const savedSettings = await loadUserSettings('client_settings');
+      if (savedSettings) {
+        setSettings({
+          notifications: savedSettings.notifications || settings.notifications,
+          privacy: savedSettings.privacy || settings.privacy,
+          preferences: savedSettings.preferences || settings.preferences,
+        });
+      }
+    };
+
+    loadSettings();
+  }, []);
+
   const handleSave = async () => {
-    setSaving(true);
-    // Simulate a save action; wire to API later
-    await new Promise((r) => setTimeout(r, 600));
-    setSaving(false);
+    setIsSaving(true);
+    
+    const success = await saveUserSettings('client_settings', settings);
+    
+    if (success) {
+      toast({
+        title: "Settings saved",
+        description: "Your settings have been saved successfully.",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
+    }
+    
+    setIsSaving(false);
   };
 
   return (

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,8 +8,78 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 
+const ADMIN_SETTINGS_KEY = 'myvillage-admin-settings';
+
 const AdminSettings = () => {
   const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
+  const [settings, setSettings] = useState({
+    platformName: 'MyVillage Talent Platform',
+    supportEmail: 'support@myvillage.com',
+    platformDescription: 'Connect talented students with opportunities from forward-thinking companies',
+    autoApproveStudents: true,
+    requireEmailVerification: true,
+    enableJobPosting: true,
+    enableMessaging: true,
+    enableNotifications: true,
+    maintenanceMode: false
+  });
+
+  // Load saved settings on component mount
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem(ADMIN_SETTINGS_KEY);
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        setSettings(prev => ({ ...prev, ...parsed }));
+      }
+    } catch (error) {
+      console.error('Error loading admin settings:', error);
+    }
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      // Save to localStorage
+      localStorage.setItem(ADMIN_SETTINGS_KEY, JSON.stringify(settings));
+      
+      // Simulate API save
+      await new Promise((r) => setTimeout(r, 600));
+      
+      toast({
+        title: "Settings saved",
+        description: "Admin settings have been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error saving admin settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReset = () => {
+    const defaultSettings = {
+      platformName: 'MyVillage Talent Platform',
+      supportEmail: 'support@myvillage.com',
+      platformDescription: 'Connect talented students with opportunities from forward-thinking companies',
+      autoApproveStudents: true,
+      requireEmailVerification: true,
+      enableJobPosting: true,
+      enableMessaging: true,
+      enableNotifications: true,
+      maintenanceMode: false
+    };
+    setSettings(defaultSettings);
+    localStorage.removeItem(ADMIN_SETTINGS_KEY);
+    toast({ title: 'Reset to default', description: 'Settings reset to default values.' });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-6 py-8">
@@ -29,17 +99,27 @@ const AdminSettings = () => {
             <CardContent className="space-y-4">
               <div className="grid gap-2">
                 <Label htmlFor="platform-name">Platform Name</Label>
-                <Input id="platform-name" defaultValue="MyVillage Talent Platform" />
+                <Input 
+                  id="platform-name" 
+                  value={settings.platformName}
+                  onChange={(e) => setSettings(prev => ({ ...prev, platformName: e.target.value }))}
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="support-email">Support Email</Label>
-                <Input id="support-email" type="email" defaultValue="support@myvillage.com" />
+                <Input 
+                  id="support-email" 
+                  type="email" 
+                  value={settings.supportEmail}
+                  onChange={(e) => setSettings(prev => ({ ...prev, supportEmail: e.target.value }))}
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="platform-description">Platform Description</Label>
                 <Textarea 
                   id="platform-description" 
-                  defaultValue="Connect talented students with opportunities from forward-thinking companies"
+                  value={settings.platformDescription}
+                  onChange={(e) => setSettings(prev => ({ ...prev, platformDescription: e.target.value }))}
                   rows={3}
                 />
               </div>
@@ -59,7 +139,10 @@ const AdminSettings = () => {
                     Automatically approve new student accounts
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch 
+                  checked={settings.autoApproveStudents}
+                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, autoApproveStudents: checked }))}
+                />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -69,7 +152,10 @@ const AdminSettings = () => {
                     Users must verify their email before accessing the platform
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch 
+                  checked={settings.requireEmailVerification}
+                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, requireEmailVerification: checked }))}
+                />
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -151,12 +237,12 @@ const AdminSettings = () => {
           <div className="flex justify-end space-x-2">
             <Button
               variant="outline"
-              onClick={() => toast({ title: 'Reset to default', description: 'Settings reset to default values (UI only).' })}
+              onClick={handleReset}
             >
               Reset to Default
             </Button>
-            <Button onClick={() => toast({ title: 'Settings saved', description: 'Your settings have been saved.' })}>
-              Save Changes
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </div>
