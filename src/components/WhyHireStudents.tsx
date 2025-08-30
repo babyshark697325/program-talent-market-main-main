@@ -26,7 +26,7 @@ export default function WhyHireStudents() {
  
            <ul className="space-y-6 text-lg"> 
              <li className="flex items-start gap-4"> 
-               <Rocket className="text-green-400 w-6 h-6 mt-1 flex-shrink-0" /> 
+               <Rocket className="text-primary w-6 h-6 mt-1 flex-shrink-0" /> 
                <div> 
                  <h3 className="font-semibold">Fresh Ideas</h3> 
                  <p className="text-gray-300"> 
@@ -36,7 +36,7 @@ export default function WhyHireStudents() {
              </li> 
  
              <li className="flex items-start gap-4"> 
-               <DollarSign className="text-green-400 w-6 h-6 mt-1 flex-shrink-0" /> 
+               <DollarSign className="text-primary w-6 h-6 mt-1 flex-shrink-0" /> 
                <div> 
                  <h3 className="font-semibold">Affordable Talent</h3> 
                  <p className="text-gray-300"> 
@@ -46,7 +46,7 @@ export default function WhyHireStudents() {
              </li> 
  
              <li className="flex items-start gap-4"> 
-               <GraduationCap className="text-green-400 w-6 h-6 mt-1 flex-shrink-0" /> 
+               <GraduationCap className="text-primary w-6 h-6 mt-1 flex-shrink-0" /> 
                <div> 
                  <h3 className="font-semibold">Support Future Leaders</h3> 
                  <p className="text-gray-300"> 
