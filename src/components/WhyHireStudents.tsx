@@ -1,78 +1,67 @@
-import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Rocket, DollarSign, GraduationCap } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Rocket, DollarSign, GraduationCap } from 'lucide-react';
 
-const WhyHireStudents: React.FC = () => {
-  const navigate = useNavigate();
-
-  const benefits = [
-    {
-      icon: <Rocket className="w-6 h-6 text-primary" />,
-      title: "Fresh Ideas",
-      description: "Students bring creativity and innovation"
-    },
-    {
-      icon: <DollarSign className="w-6 h-6 text-primary" />,
-      title: "Affordable Talent",
-      description: "High-quality work at student-friendly rates"
-    },
-    {
-      icon: <GraduationCap className="w-6 h-6 text-primary" />,
-      title: "Support Future Leaders",
-      description: "Every project helps students grow"
-    }
-  ];
-
-  return (
-    <Card className="w-full bg-gradient-to-r from-slate-800 to-slate-900 border-slate-700 shadow-2xl mb-12 overflow-hidden">
-      <CardContent className="p-8 md:p-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-          {/* Left side - Student Collaboration Image */}
-          <div className="flex justify-center lg:justify-start">
-            <img 
-              src="/images/StudentsCollab.png" 
-              alt="Students collaborating on laptops" 
-              className="w-full max-w-sm h-auto rounded-lg"
-            />
-          </div>
-
-          {/* Right side - Content */}
-          <div className="text-white space-y-6">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              Why Hire Students?
-            </h2>
-            
-            <div className="space-y-4">
-              {benefits.map((benefit, index) => (
-                <div key={index} className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 mt-1">
-                    {benefit.icon}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-white mb-1">
-                      {benefit.title}
-                    </h3>
-                    <p className="text-slate-300 text-sm">
-                      {benefit.description}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <Button 
-              onClick={() => navigate('/browse-students')}
-              className="bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-lg mt-6 transition-colors duration-200"
-            >
-              Hire Talented Students
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-export default WhyHireStudents;
+export default function WhyHireStudents() { 
+   return ( 
+     <section className="bg-[#0f172a] text-white py-16 px-6 md:px-12 lg:px-24 rounded-xl"> 
+       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center md:items-start gap-12"> 
+         
+         {/* Left Illustration with Optional Glow */} 
+         <div className="relative flex-1 flex justify-center md:justify-start"> 
+           {/* Background Glow Shape */} 
+           <div className="absolute w-[480px] h-[300px] bg-green-500/20 blur-3xl rounded-full -top-8 -left-6"></div> 
+           
+           {/* Illustration */} 
+           <img 
+             src="/images/StudentsCollab.png" 
+             alt="Students collaborating" 
+             className="relative z-10 w-[440px] max-w-full drop-shadow-xl" 
+           /> 
+         </div> 
+ 
+         {/* Right Content */} 
+         <div className="flex-1"> 
+           <h2 className="text-3xl md:text-4xl font-bold mb-6"> 
+             Why Hire Students? 
+           </h2> 
+ 
+           <ul className="space-y-6 text-lg"> 
+             <li className="flex items-start gap-4"> 
+               <Rocket className="text-green-400 w-6 h-6 mt-1 flex-shrink-0" /> 
+               <div> 
+                 <h3 className="font-semibold">Fresh Ideas</h3> 
+                 <p className="text-gray-300"> 
+                   Students bring creativity and innovation. 
+                 </p> 
+               </div> 
+             </li> 
+ 
+             <li className="flex items-start gap-4"> 
+               <DollarSign className="text-green-400 w-6 h-6 mt-1 flex-shrink-0" /> 
+               <div> 
+                 <h3 className="font-semibold">Affordable Talent</h3> 
+                 <p className="text-gray-300"> 
+                   High-quality work at student-friendly rates. 
+                 </p> 
+               </div> 
+             </li> 
+ 
+             <li className="flex items-start gap-4"> 
+               <GraduationCap className="text-green-400 w-6 h-6 mt-1 flex-shrink-0" /> 
+               <div> 
+                 <h3 className="font-semibold">Support Future Leaders</h3> 
+                 <p className="text-gray-300"> 
+                   Every project helps students grow. 
+                 </p> 
+               </div> 
+             </li> 
+           </ul> 
+ 
+           {/* CTA Button */} 
+           <button className="mt-8 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition duration-200"> 
+             Hire Talented Students 
+           </button> 
+         </div> 
+       </div> 
+     </section> 
+   ); 
+ }
