@@ -32,7 +32,7 @@ const WhyHireStudents: React.FC = () => {
           {/* Left side - Student Collaboration Image */}
           <div className="flex justify-center lg:justify-start">
             <img 
-              src="/images/student collab.png" 
+              src="/images/StudentsCollab.png" 
               alt="Students collaborating on laptops" 
               className="w-full max-w-sm h-auto rounded-lg"
             />
