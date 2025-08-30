@@ -7,14 +7,14 @@ export default function WhyHireStudents() {
        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-green-500/15 blur-3xl rounded-full pointer-events-none -z-10" aria-hidden="true"></div>
        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-blue-500/10 blur-3xl rounded-full pointer-events-none -z-10" aria-hidden="true"></div>
        
-       <div className="relative z-10 max-w-5xl mx-auto flex flex-col md:flex-row items-center md:items-start gap-6"> 
+       <div className="relative z-10 max-w-5xl mx-auto flex flex-col md:flex-row items-center md:items-center gap-8"> 
          
          {/* Left Illustration */} 
-         <div className="relative flex-1 flex justify-center md:justify-start"> 
+         <div className="relative flex-1 flex justify-center"> 
            <img 
              src="/images/StudentsCollab.png" 
              alt="Students collaborating" 
-             className="relative z-10 w-[300px] max-w-full drop-shadow-xl" 
+             className="relative z-10 w-[400px] md:w-[450px] max-w-full drop-shadow-xl" 
            /> 
          </div> 
          
