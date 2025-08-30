@@ -436,7 +436,10 @@ const Index: React.FC = () => {
         {/* How It Works Section - First Card */}
         <HowItWorks />
 
-        {/* Featured Student Section */}
+        {/* Why Hire Students Section */}
+        <WhyHireStudents />
+
+        {/* Featured Student Section - Moved after WhyHireStudents */}
         {featured && (
           <FeaturedStudent 
             student={{
@@ -452,9 +455,6 @@ const Index: React.FC = () => {
             onViewProfile={() => navigate(`/student/${featured.student.id}`)}
           />
         )}
-
-        {/* Why Hire Students Section */}
-        <WhyHireStudents />
 
         {/* Browse Students/Jobs Hero Section */}
         <StatsGrid 
