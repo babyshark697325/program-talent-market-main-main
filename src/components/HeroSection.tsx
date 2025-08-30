@@ -196,14 +196,18 @@ const HeroSection: React.FC = () => {
           </div>
           
           {/* Dynamic Celestial Body with Glow */}
-          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 pointer-events-none z-0">
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 pointer-events-none z-10">
             {isDark ? (
               // Moon with crater effects
               <>
-                <div className="absolute w-[500px] h-[500px] -top-12 -left-12 rounded-full opacity-20 blur-3xl" style={{ 
-                  background: 'radial-gradient(circle, #e2e8f0 0%, #cbd5e1 40%, transparent 70%)'
-                }}></div>
-                <div className="w-96 h-96 rounded-full opacity-40 relative" style={{ 
+                {/* Glow wrapper with -z-10 */}
+                <div className="absolute -z-10 pointer-events-none">
+                  <div className="absolute w-[500px] h-[500px] -top-12 -left-12 rounded-full opacity-20 blur-3xl" style={{ 
+                    background: 'radial-gradient(circle, #e2e8f0 0%, #cbd5e1 40%, transparent 70%)'
+                  }}></div>
+                </div>
+                {/* Moon body at z-10 */}
+                <div className="w-96 h-96 rounded-full opacity-40 relative z-10" style={{ 
                   background: 'radial-gradient(circle at 35% 35%, #f1f5f9 0%, #e2e8f0 30%, #cbd5e1 60%, #94a3b8 100%)',
                   boxShadow: 'inset -15px -15px 40px rgba(100, 116, 139, 0.4)'
                 }}>
@@ -216,26 +220,33 @@ const HeroSection: React.FC = () => {
             ) : (
               // Sun with original styling
               <>
-                <div className="absolute w-[500px] h-[500px] -top-12 -left-12 rounded-full opacity-15 blur-3xl" style={{ 
-                  background: 'radial-gradient(circle, #fbbf24 0%, #f59e0b 40%, transparent 70%)'
-                }}></div>
-                <div className="w-96 h-96 rounded-full opacity-30" style={{ 
+                {/* Glow wrapper with -z-10 */}
+                <div className="absolute -z-10 pointer-events-none">
+                  <div className="absolute w-[500px] h-[500px] -top-12 -left-12 rounded-full opacity-15 blur-3xl" style={{ 
+                    background: 'radial-gradient(circle, #fbbf24 0%, #f59e0b 40%, transparent 70%)'
+                  }}></div>
+                </div>
+                {/* Sun body at z-10 */}
+                <div className="w-96 h-96 rounded-full opacity-30 relative z-10" style={{ 
                   background: 'radial-gradient(circle, #fbbf24 0%, #f59e0b 30%, #dc2626 60%, #7c2d12 100%)'
                 }}></div>
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-8">
-                  <div className="w-1 h-20 bg-gradient-to-t from-amber-300/20 to-transparent blur-sm"></div>
-                </div>
-                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 -translate-y-8 rotate-15">
-                  <div className="w-0.5 h-16 bg-gradient-to-t from-orange-300/15 to-transparent blur-sm"></div>
-                </div>
-                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 -translate-y-8 -rotate-15">
-                  <div className="w-0.5 h-16 bg-gradient-to-t from-amber-300/15 to-transparent blur-sm"></div>
-                </div>
-                <div className="absolute top-8 left-1/2 transform -translate-x-1/2 -translate-y-8 rotate-30">
-                  <div className="w-0.5 h-12 bg-gradient-to-t from-rose-300/10 to-transparent blur-sm"></div>
-                </div>
-                <div className="absolute top-8 left-1/2 transform -translate-x-1/2 -translate-y-8 -rotate-30">
-                  <div className="w-0.5 h-12 bg-gradient-to-t from-orange-300/10 to-transparent blur-sm"></div>
+                {/* Sun rays at z-10 */}
+                <div className="relative z-10">
+                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-8">
+                    <div className="w-1 h-20 bg-gradient-to-t from-amber-300/20 to-transparent blur-sm"></div>
+                  </div>
+                  <div className="absolute top-4 left-1/2 transform -translate-x-1/2 -translate-y-8 rotate-15">
+                    <div className="w-0.5 h-16 bg-gradient-to-t from-orange-300/15 to-transparent blur-sm"></div>
+                  </div>
+                  <div className="absolute top-4 left-1/2 transform -translate-x-1/2 -translate-y-8 -rotate-15">
+                    <div className="w-0.5 h-16 bg-gradient-to-t from-amber-300/15 to-transparent blur-sm"></div>
+                  </div>
+                  <div className="absolute top-8 left-1/2 transform -translate-x-1/2 -translate-y-8 rotate-30">
+                    <div className="w-0.5 h-12 bg-gradient-to-t from-rose-300/10 to-transparent blur-sm"></div>
+                  </div>
+                  <div className="absolute top-8 left-1/2 transform -translate-x-1/2 -translate-y-8 -rotate-30">
+                    <div className="w-0.5 h-12 bg-gradient-to-t from-orange-300/10 to-transparent blur-sm"></div>
+                  </div>
                 </div>
               </>
             )}

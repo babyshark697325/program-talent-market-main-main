@@ -433,34 +433,37 @@ const Index: React.FC = () => {
       <HeroSection />
 
       <div className="max-w-6xl mx-auto w-full px-4 md:px-6 pb-16 relative z-10">
-        {/* How It Works Section - First Card */}
-        <HowItWorks />
+        {/* Sections with proper spacing */}
+        <div className="space-y-14">
+          {/* How It Works Section - First Card */}
+          <HowItWorks />
 
-        {/* Why Hire Students Section */}
-        <WhyHireStudents />
+          {/* Why Hire Students Section */}
+          <WhyHireStudents />
 
-        {/* Featured Student Section - Moved after WhyHireStudents */}
-        {featured && (
-          <FeaturedStudent 
-            student={{
-              id: featured.student.id,
-              name: featured.student.name,
-              title: featured.student.title,
-              avatarUrl: featured.student.avatarUrl,
-              skills: featured.student.skills,
-              quote: featured.quote,
-              showcaseImage: featured.showcaseImage,
-              clientReview: featured.clientReview
-            }}
-            onViewProfile={() => navigate(`/student/${featured.student.id}`)}
+          {/* Featured Student Section - Moved after WhyHireStudents */}
+          {featured && (
+            <FeaturedStudent 
+              student={{
+                id: featured.student.id,
+                name: featured.student.name,
+                title: featured.student.title,
+                avatarUrl: featured.student.avatarUrl,
+                skills: featured.student.skills,
+                quote: featured.quote,
+                showcaseImage: featured.showcaseImage,
+                clientReview: featured.clientReview
+              }}
+              onViewProfile={() => navigate(`/student/${featured.student.id}`)}
+            />
+          )}
+
+          {/* Browse Students/Jobs Hero Section */}
+          <StatsGrid 
+            studentsCount={students.length}
+            skillsCount={allSkills.length}
           />
-        )}
-
-        {/* Browse Students/Jobs Hero Section */}
-        <StatsGrid 
-          studentsCount={students.length}
-          skillsCount={allSkills.length}
-        />
+        </div>
 
         <TabNavigation
           activeTab={activeTab}
