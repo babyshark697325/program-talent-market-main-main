@@ -57,7 +57,7 @@ export default function WhyHireStudents() {
            </ul> 
  
            {/* CTA Button */} 
-           <button className="mt-8 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition duration-200"> 
+           <button className="mt-8 px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition duration-200"> 
              Hire Talented Students 
            </button> 
          </div> 
