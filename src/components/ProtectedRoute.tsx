@@ -45,29 +45,44 @@ const ProtectedRoute: React.FC<Props> = ({ children, requiredRole }) => {
   // Treat an existing session as authenticated even if user is still populating
   if (!session && !isGuest) return <Navigate to="/auth" replace />;
 
-  // Role-gated routes (e.g., admin) must match exactly; guests have no role → redirect
+  // Enhanced role-based access control
+  // Admins (and developers) can access everything
+  if (userRole === 'admin' || userRole === 'developer') {
+    return <>{children}</>;
+  }
+
   // If role is still loading/unknown but we have a session, show a small spinner instead of bouncing
-  if (requiredRole) {
-    if (!userRole && !waited) {
-      return (
-        <div className="min-h-screen grid place-items-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-        </div>
-      );
+  if (!userRole && !waited) {
+    return (
+      <div className="min-h-screen grid place-items-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  // Define route access
+  const path = location.pathname;
+  const isClientPage = path.startsWith('/client') || [
+    '/', '/browse-jobs', '/my-applications', '/saved-jobs', '/job', '/profile', '/manage-jobs', '/post-job', '/waitlist', '/browse-students', '/student', '/all-resources', '/resources', '/student/resources'
+  ].some(p => path === p || path.startsWith(p + '/'));
+  const isStudentPage = path.startsWith('/student') || path === '/student-dashboard' || path === '/resources' || path === '/all-resources' || path === '/browse-students';
+
+  if (userRole === 'student') {
+    // Students can access student and client pages
+    if (isStudentPage || isClientPage) {
+      return <>{children}</>;
     }
-    // Treat 'developer' as equivalent to 'admin' for protected admin routes
-    const hasAccess =
-      userRole === requiredRole ||
-      (requiredRole === 'admin' && userRole === 'developer');
-    if (!hasAccess) {
-      return (
-        <Navigate
-          to="/auth"
-          replace
-          state={{ requireRole: requiredRole, from: location.pathname }}
-        />
-      );
+    // Otherwise, block
+    return <Navigate to="/" replace state={{ from: path }} />;
+  }
+
+  if (userRole === 'client') {
+    // Clients can only access client pages
+    if (isClientPage) {
+      return <>{children}</>;
     }
+    // Otherwise, block
+    return <Navigate to="/" replace state={{ from: path }} />;
   }
 
   return <>{children}</>;

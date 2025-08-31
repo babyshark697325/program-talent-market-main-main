@@ -379,21 +379,7 @@ const Index: React.FC = () => {
     setSortBy("name");
   };
 
-  if (role === 'student') {
-    return (
-      <StudentDashboard 
-        setActiveTab={setActiveTab}
-      />
-    );
-  }
-
-  if (role === 'admin') {
-    return (
-      <AdminDashboard 
-        jobs={jobs}
-      />
-    );
-  }
+  // Always show the public/client homepage, regardless of role
 
   // Show loading state
   if (loading) {

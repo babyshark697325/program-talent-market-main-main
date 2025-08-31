@@ -1001,7 +1001,29 @@ const Profile = () => {
                         onChange={(e) => setPwd({ ...pwd, confirm: e.target.value })}
                       />
                       <div className="flex gap-2">
-                        <Button size="sm">Update Password</Button>
+                        <Button size="sm" onClick={async () => {
+                          if (!pwd.current || !pwd.next || !pwd.confirm) {
+                            toast({ title: "All fields required", variant: "destructive" });
+                            return;
+                          }
+                          if (pwd.next !== pwd.confirm) {
+                            toast({ title: "Passwords do not match", variant: "destructive" });
+                            return;
+                          }
+                          if (pwd.next.length < 8) {
+                            toast({ title: "Password must be at least 8 characters", variant: "destructive" });
+                            return;
+                          }
+                          // Supabase only requires new password, but you may want to verify current password by re-authenticating
+                          const { error } = await supabase.auth.updateUser({ password: pwd.next });
+                          if (error) {
+                            toast({ title: "Password update failed", description: error.message, variant: "destructive" });
+                          } else {
+                            toast({ title: "Password updated", description: "Your password has been changed." });
+                            setPwd({ current: "", next: "", confirm: "" });
+                            setShowPassword(false);
+                          }
+                        }}>Update Password</Button>
                         <Button variant="ghost" size="sm" onClick={() => setShowPassword(false)}>
                           Cancel
                         </Button>

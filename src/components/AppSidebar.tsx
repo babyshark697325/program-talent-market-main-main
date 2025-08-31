@@ -157,13 +157,33 @@ export function AppSidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { role } = useRole()
-  const { isGuest } = useAuth()
-
-  const isAdminLike = role === 'admin' || role === 'developer'
-  const navigationItems = role === 'student' ? studentNavigation : 
-                         isAdminLike ? adminNavigation : clientNavigation
-  const quickActions = role === 'student' ? studentQuickActions : 
-                      isAdminLike ? adminQuickActions : clientQuickActions
+  const { isGuest, loading } = useAuth()
+  // Always use client sidebar on homepage
+  const isHome = location.pathname === '/';
+  let navigationItems;
+  let quickActions;
+  if (isHome) {
+    navigationItems = [
+      { title: "Browse Talent", url: "/", icon: Home, tab: "students", scrollTo: "students" },
+      { title: "Post a Job", url: "/post-job", icon: Briefcase },
+      { title: "My Profile", url: "/client/profile", icon: User },
+      { title: "Settings", url: "/client/settings", icon: Settings },
+    ];
+    quickActions = [
+      { title: "Browse Students", url: "/browse-students", icon: Users },
+      { title: "Manage Jobs", url: "/manage-jobs", icon: Settings },
+    ];
+  } else {
+    navigationItems = role === 'student' ? studentNavigation : (role === 'admin' || role === 'developer') ? adminNavigation : clientNavigation;
+    quickActions = role === 'student' ? studentQuickActions : (role === 'admin' || role === 'developer') ? adminQuickActions : clientQuickActions;
+  }
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   const handleNavigation = (item: NavigationItem) => {
     if (item.tab) {

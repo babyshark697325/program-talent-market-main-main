@@ -17,9 +17,6 @@ type Role = "student" | "client" | "admin";
 const normalizeRole = (v: any): Role =>
   v === "student" || v === "client" || v === "admin" ? v : "client";
 
-const getPathForRole = (role?: Role | null) =>
-  role === "admin" ? "/admin-dashboard" :
-  role === "student" ? "/student-dashboard" : "/client-dashboard";
 
 const Auth: React.FC = () => {
   const { signUp, user, userRole, continueAsGuest, loading } = useAuth();
@@ -51,9 +48,9 @@ const Auth: React.FC = () => {
 
   React.useEffect(() => {
     if (!loading && user) {
-      navigate(getPathForRole(userRole), { replace: true });
+      navigate('/', { replace: true });
     }
-  }, [loading, user, userRole, navigate]);
+  }, [loading, user, navigate]);
 
   // If redirected from a restricted guest action, switch to signup tab
   React.useEffect(() => {

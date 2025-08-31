@@ -28,15 +28,17 @@ export const RoleProvider: React.FC<RoleProviderProps> = ({ children }) => {
   const [role, setRoleState] = useState<UserRole>('client');
   const [manual, setManual] = useState(false);
 
-  // Allow manual switching via RoleSelector
+  // Allow manual switching only for admin/developer
   const setRole = (r: UserRole) => {
-    setManual(true);
-    setRoleState(r);
+    if (userRole === 'admin' || userRole === 'developer') {
+      setManual(true);
+      setRoleState(r);
+    }
   };
 
-  // Auto-sync to authenticated user role when not manually overridden
+  // Auto-sync to authenticated user role when not manually overridden (or if not admin/developer)
   useEffect(() => {
-    if (!manual) {
+    if (!manual || !(userRole === 'admin' || userRole === 'developer')) {
       if (userRole) setRoleState(userRole as UserRole);
       else setRoleState('client');
     }
