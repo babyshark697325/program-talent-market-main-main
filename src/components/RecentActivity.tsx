@@ -64,12 +64,15 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
       });
     }
 
+    // Exclude items that were marked as read in this session
+    filtered = filtered.filter(a => !readActivities.has(a.id));
+
     // Sort by timestamp (newest first)
     filtered.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
     // Limit results
     return filtered.slice(0, maxItems);
-  }, [activities, filters, maxItems]);
+  }, [activities, filters, maxItems, readActivities]);
 
   const handleFilterChange = (filterType: string, value: string) => {
     setFilters(prev => ({
@@ -116,8 +119,8 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
   }, [activities, readActivities]);
 
   return (
-    <Card className="p-8 bg-gradient-to-r from-secondary/60 to-accent/10 backdrop-blur-sm border border-accent/10">
-      <h2 className="text-2xl font-bold mb-6 text-accent flex items-center gap-3">
+    <Card className="p-8 bg-secondary/40 backdrop-blur-sm border border-primary/10">
+      <h2 className="text-2xl font-bold mb-6 text-primary flex items-center gap-3">
         <TrendingUp size={28} />
         Recent Activity
       </h2>

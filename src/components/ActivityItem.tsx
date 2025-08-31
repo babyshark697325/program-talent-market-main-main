@@ -82,7 +82,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({
               <MoreHorizontal size={12} />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuContent align="end" className="w-40 border-0 rounded-md shadow-lg">
             <DropdownMenuItem onSelect={handleViewDetails}>
               View Details
             </DropdownMenuItem>

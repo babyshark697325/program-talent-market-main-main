@@ -59,8 +59,7 @@ const transformProfileToStudent = (profile: DatabaseProfile): StudentService => 
     name,
     title: 'Student Developer',
     description: profile.bio || 'Skilled developer ready to help with your projects',
-    avatarUrl: profile.avatar_url || 
-      'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80',
+    avatarUrl: profile.avatar_url || '',
     skills: [],
     price: '$25/hr',
     affiliation: 'student' as const,
@@ -213,8 +212,10 @@ const Index: React.FC = () => {
           .eq('role', 'student');
 
         if (rolesError) {
-          console.error('Error fetching student roles:', rolesError);
-          setError('Failed to load student roles');
+          console.warn('Student roles table missing or access limited. Rendering with no students.');
+          setStudents([]);
+          const featuredData = await getSpotlightFromStorage();
+          setFeatured(featuredData);
           return;
         }
 
@@ -233,8 +234,10 @@ const Index: React.FC = () => {
           .in('user_id', studentUserIds);
 
         if (profilesError) {
-          console.error('Error fetching profiles:', profilesError);
-          setError('Failed to load student profiles');
+          console.warn('Profiles fetch issue; showing empty students.');
+          setStudents([]);
+          const featuredData = await getSpotlightFromStorage();
+          setFeatured(featuredData);
           return;
         }
 

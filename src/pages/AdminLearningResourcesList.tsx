@@ -104,13 +104,14 @@ const AdminLearningResourcesList: React.FC = () => {
     return <BookOpen className="h-4 w-4 text-primary" />;
   };
 
-  const getStatusBadge = (status: ResourceStatus) => {
-    return (
-      <Badge variant={status === "available" ? "default" : "secondary"}>
-        {status === "available" ? "Available" : "Coming Soon"}
-      </Badge>
-    );
-  };
+  const getStatusBadge = (status: ResourceStatus) => (
+    <Badge
+      variant={status === "available" ? "default" : "secondary"}
+      className="text-xs px-2 py-0.5 rounded-full"
+    >
+      {status === "available" ? "Available" : "Soon"}
+    </Badge>
+  );
 
   return (
     <div className="min-h-screen bg-background">

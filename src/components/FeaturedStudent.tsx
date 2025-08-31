@@ -2,7 +2,8 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, Quote, Sparkles } from "lucide-react";
+import { Star, Quote, Sparkles, User } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface FeaturedStudentProps {
   student: {
@@ -24,6 +25,7 @@ interface FeaturedStudentProps {
 }
 
 const FeaturedStudent: React.FC<FeaturedStudentProps> = ({ student, onViewProfile }) => {
+  const initials = React.useMemo(() => student.name.split(' ').map(n => n[0]).join('').toUpperCase(), [student.name]);
   return (
     <section className="relative isolate overflow-hidden rounded-2xl bg-background border border-border/60 shadow-xl pb-20">
       {/* Background glow effects */}
@@ -55,11 +57,15 @@ const FeaturedStudent: React.FC<FeaturedStudentProps> = ({ student, onViewProfil
           <div className="flex flex-col items-center md:items-start text-center md:text-left">
             <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-6 mb-4 md:mb-6">
               <div className="relative group">
-                <img
-                  src={student.avatarUrl}
-                  alt={`${student.name} profile`}
-                  className="relative w-20 md:w-24 h-20 md:h-24 rounded-full object-cover border-4 border-[#C7A836] shadow-xl group-hover:scale-105 transition-transform duration-300"
-                />
+                <Avatar className="relative w-20 md:w-24 h-20 md:h-24 border-4 border-[#C7A836] shadow-xl group-hover:scale-105 transition-transform duration-300">
+                  {student.avatarUrl ? (
+                    <AvatarImage src={student.avatarUrl} alt={`${student.name} profile`} />
+                  ) : (
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center">
+                      <User className="w-7 h-7" />
+                    </AvatarFallback>
+                  )}
+                </Avatar>
                 <div className="absolute -bottom-1 md:-bottom-2 -right-1 md:-right-2 bg-primary text-primary-foreground rounded-full p-1.5 md:p-2 shadow-lg animate-pulse">
                   <Star size={12} className="md:w-[14px] md:h-[14px] fill-current" />
                 </div>

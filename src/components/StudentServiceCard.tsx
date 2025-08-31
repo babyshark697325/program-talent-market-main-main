@@ -2,8 +2,9 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, ExternalLink, Briefcase, GraduationCap } from "lucide-react";
+import { Star, MapPin, ExternalLink, Briefcase, GraduationCap, User } from "lucide-react";
 import { StudentService } from "@/types/student";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface StudentServiceCardProps {
   student: StudentService;
@@ -15,11 +16,15 @@ const StudentServiceCard: React.FC<StudentServiceCardProps> = ({ student, onView
     <div className="flex flex-col h-full bg-background text-foreground border border-border/60 rounded-xl shadow-sm group-hover:shadow-lg transition-all duration-300 p-4 md:p-6 cursor-pointer transform group-hover:-translate-y-0.5">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 md:gap-4 mb-4 text-center sm:text-left">
-        <img
-          src={student.avatarUrl}
-          alt={`${student.name} profile`}
-          className="w-14 md:w-16 h-14 md:h-16 rounded-full object-cover border-2 border-[#C7A836] flex-shrink-0"
-        />
+        <Avatar className="w-14 md:w-16 h-14 md:h-16 border-2 border-[#C7A836] flex-shrink-0">
+          {student.avatarUrl ? (
+            <AvatarImage src={student.avatarUrl} alt={`${student.name} profile`} />
+          ) : (
+            <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center">
+              <User className="w-6 h-6" />
+            </AvatarFallback>
+          )}
+        </Avatar>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-2 flex-wrap">

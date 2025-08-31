@@ -3,19 +3,12 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Video, FileText, Users, Award, Clock } from 'lucide-react';
+import { BookOpen, Award, Clock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const LS_KEY = "student.resources";
 
-function getIconForType(type: string) {
-  switch (type) {
-    case 'video': return Video;
-    case 'guide': return Award;
-    case 'workshop': return FileText;
-    case 'networking': return Users;
-    default: return FileText;
-  }
-}
+// Card icons removed for a cleaner list; keep KPIs/header icons only
 
 function loadResources() {
   try {
@@ -28,6 +21,8 @@ function loadResources() {
 const StudentResources = () => {
   const [resources, setResources] = React.useState(loadResources());
   const [stats, setStats] = React.useState({ completed: 0, hours: 0, certs: 0 });
+  const [statusFilter, setStatusFilter] = React.useState<'all' | 'available' | 'coming-soon' | 'completed'>('all');
+  const [completedSet, setCompletedSet] = React.useState<Set<number>>(new Set());
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -39,9 +34,21 @@ const StudentResources = () => {
     };
 
     const handler = () => setResources(loadResources());
-    const storageHandler = () => { loadStats(); };
+    const storageHandler = () => { loadStats(); loadCompleted(); };
 
     loadStats();
+    const loadCompleted = () => {
+      try {
+        const raw = localStorage.getItem('completedResourceIds');
+        if (raw) {
+          const ids = JSON.parse(raw) as number[];
+          if (Array.isArray(ids)) setCompletedSet(new Set(ids));
+        }
+      } catch {
+        setCompletedSet(new Set());
+      }
+    };
+    loadCompleted();
     window.addEventListener('resources:updated', handler);
     window.addEventListener('storage', storageHandler);
     window.addEventListener('progress:updated', storageHandler);
@@ -52,13 +59,20 @@ const StudentResources = () => {
     };
   }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available': return 'bg-green-100 text-green-800';
-      case 'coming-soon': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const filtered = React.useMemo(() => {
+    if (statusFilter === 'all') return resources;
+    if (statusFilter === 'completed') return resources.filter(r => completedSet.has(r.id));
+    return resources.filter(r => r.status === statusFilter);
+  }, [resources, statusFilter, completedSet]);
+
+  const renderStatusBadge = (status: string) => (
+    <Badge
+      variant={status === 'available' ? 'default' : 'secondary'}
+      className="text-xs px-2 py-0.5 rounded-full"
+    >
+      {status === 'coming-soon' ? 'Soon' : 'Available'}
+    </Badge>
+  );
 
   return (
       <div className="container mx-auto p-6 space-y-6">
@@ -103,6 +117,29 @@ const StudentResources = () => {
         </Card>
       </div>
 
+      {/* Quick filter chips */}
+      <div className="flex flex-wrap items-center gap-2 md:gap-3">
+        {([
+          { key: 'all', label: 'All' },
+          { key: 'available', label: 'Available' },
+          { key: 'coming-soon', label: 'Soon' },
+          { key: 'completed', label: 'Completed' },
+        ] as const).map(({ key, label }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setStatusFilter(key)}
+            className={`cursor-pointer px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 hover:scale-[1.02] shadow-sm border ${
+              statusFilter === key
+                ? 'bg-primary text-primary-foreground border-transparent'
+                : 'bg-secondary/60 text-foreground border-border'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl font-bold">Available Resources</CardTitle>
@@ -110,24 +147,16 @@ const StudentResources = () => {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
-            {resources.map((resource) => {
-              const IconComponent = getIconForType(resource.type);
+            {filtered.map((resource) => {
               return (
                 <Card key={resource.id} className="flex flex-col relative">
                   <CardHeader className="flex-1 pt-3 pb-2">
                     <div className="absolute top-3 right-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(resource.status)}`}>
-                        {resource.status === 'coming-soon' ? 'Soon' : 'Available'}
-                      </span>
+                      {renderStatusBadge(resource.status)}
                     </div>
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                        <IconComponent className="text-primary opacity-80" size={16} />
-                      </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-lg mb-2 leading-tight font-semibold">{resource.title}</CardTitle>
-                        <CardDescription className="text-xs leading-snug line-clamp-3 mb-2">{resource.description}</CardDescription>
-                      </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-lg mb-2 leading-tight font-semibold">{resource.title}</CardTitle>
+                      <CardDescription className="text-xs leading-snug line-clamp-3 mb-2">{resource.description}</CardDescription>
                     </div>
                   </CardHeader>
                   <CardContent className="mt-auto pt-2">

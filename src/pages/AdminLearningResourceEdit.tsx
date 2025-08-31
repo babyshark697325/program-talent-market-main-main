@@ -396,17 +396,16 @@ const AdminLearningResourceEdit: React.FC = () => {
                     <h4 className="font-semibold text-lg mb-1 truncate">{resource.title || 'Untitled resource'}</h4>
                     <p className="text-sm text-muted-foreground mb-3 line-clamp-3">{resource.description || 'Add a short description...'}</p>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <span className="capitalize px-2 py-0.5 rounded bg-muted">{resource.type}</span>
+                      <Badge variant="outline" className="capitalize px-2 py-0.5 rounded-full">{resource.type}</Badge>
                       <span>•</span>
-                      <span className="px-2 py-0.5 rounded bg-muted">{resource.duration || '—'}</span>
+                      <Badge variant="outline" className="px-2 py-0.5 rounded-full">{resource.duration || '—'}</Badge>
                       <span>•</span>
-                      <span className={`px-2 py-0.5 rounded ${
-                        resource.status === 'available'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                      }`}>
-                        {resource.status === 'available' ? 'Available' : 'Coming Soon'}
-                      </span>
+                      <Badge
+                        variant={resource.status === 'available' ? 'default' : 'secondary'}
+                        className="text-xs px-2 py-0.5 rounded-full"
+                      >
+                        {resource.status === 'available' ? 'Available' : 'Soon'}
+                      </Badge>
                     </div>
 
                     {/* Quick links */}

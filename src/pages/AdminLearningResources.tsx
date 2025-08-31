@@ -2,6 +2,7 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Eye, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
 
@@ -144,13 +145,12 @@ const AdminLearningResources: React.FC = () => {
                       <span className="text-sm text-muted-foreground">{r.duration}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        r.status === 'available' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                      }`}>
-                        {r.status === 'available' ? 'Available' : 'Coming Soon'}
-                      </span>
+                      <Badge
+                        variant={r.status === 'available' ? 'default' : 'secondary'}
+                        className="text-xs px-2 py-0.5 rounded-full"
+                      >
+                        {r.status === 'available' ? 'Available' : 'Soon'}
+                      </Badge>
                     </div>
                   </div>
                 </div>

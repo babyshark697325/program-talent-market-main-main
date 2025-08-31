@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 
-type UserRole = 'student' | 'client' | 'admin';
+type UserRole = 'student' | 'client' | 'admin' | 'developer';
 
 interface RoleContextType {
   role: UserRole;

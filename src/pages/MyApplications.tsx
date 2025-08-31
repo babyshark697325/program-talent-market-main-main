@@ -135,21 +135,14 @@ const MyApplications = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      pending: "bg-yellow-100 text-yellow-800",
-      accepted: "bg-green-100 text-green-800",
-      rejected: "bg-red-100 text-red-800",
-    } as const;
-
-    const cls = variants[status as keyof typeof variants] ?? "bg-secondary text-foreground";
-
-    return (
-      <Badge className={cls}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
+  const getStatusBadge = (status: string) => (
+    <Badge
+      variant={status === 'accepted' ? 'default' : status === 'pending' ? 'secondary' : 'destructive'}
+      className="text-xs px-2 py-0.5 rounded-full capitalize"
+    >
+      {status}
+    </Badge>
+  );
 
   const total = applications.length;
   const accepted = applications.filter((a) => a.status === "accepted").length;

@@ -11,8 +11,8 @@ const RoleSelector: React.FC = () => {
   const { userRole } = useAuth();
   const navigate = useNavigate();
 
-  // Only show role selector for admin users
-  if (userRole !== 'admin') {
+  // Only show role selector for admin or developer users
+  if (userRole !== 'admin' && userRole !== 'developer') {
     return null;
   }
 

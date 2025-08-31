@@ -82,7 +82,7 @@ function Layout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex items-center gap-1 md:gap-2">
               <ThemeToggle />
-              {(userRole === 'admin' || isDeveloper) && <RoleSelector />}
+              {(userRole === 'admin' || userRole === 'developer' || isDeveloper) && <RoleSelector />}
               <UserMenu />
             </div>
           </div>

@@ -13,6 +13,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ExternalLink } from "lucide-react";
+import FeaturedStudent from "@/components/FeaturedStudent";
 import { StudentService } from "@/types/student";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -246,15 +247,14 @@ function AdminSpotlightSuccess() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Spotlight Success Story</h1>
-        <p className="text-gray-600">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-2">Spotlight Success Settings</h1>
+        <p className="text-muted-foreground">
           Configure the featured student showcase that appears on the homepage.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Configuration Panel */}
-        <div className="space-y-6">
+      {/* Top: 2x2 grid of settings cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Student Selection</CardTitle>
@@ -263,11 +263,11 @@ function AdminSpotlightSuccess() {
               <div>
                 <Label htmlFor="student-select">Select Student</Label>
                 {loadingStudents ? (
-                  <div className="flex items-center space-x-2 mt-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                    <span className="text-sm text-gray-600">Loading students...</span>
-                  </div>
-                ) : students.length === 0 ? (
+                    <div className="flex items-center space-x-2 mt-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      <span className="text-sm text-muted-foreground">Loading students...</span>
+                    </div>
+                  ) : students.length === 0 ? (
                   <p className="text-sm text-red-600 mt-2">No students found. Please check your database connection.</p>
                 ) : (
                   <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
@@ -279,7 +279,7 @@ function AdminSpotlightSuccess() {
                         <SelectItem key={student.id} value={student.id.toString()}>
                           <div className="flex items-center space-x-2">
                             <span className="font-medium">{student.name}</span>
-                            <span className="text-sm text-gray-600">• {student.title}</span>
+                            <span className="text-sm text-muted-foreground">• {student.title}</span>
                           </div>
                         </SelectItem>
                       ))}
@@ -349,7 +349,7 @@ function AdminSpotlightSuccess() {
                   {loadingReviews ? (
                     <div className="flex items-center space-x-2">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      <span className="text-sm text-gray-600">Loading reviews...</span>
+                      <span className="text-sm text-muted-foreground">Loading reviews...</span>
                     </div>
                   ) : reviews.length > 0 ? (
                     <Select value={selectedReviewId} onValueChange={setSelectedReviewId}>
@@ -365,7 +365,7 @@ function AdminSpotlightSuccess() {
                                 {review.reviewer_name}
                                 {review.reviewer_company && ` - ${review.reviewer_company}`}
                               </span>
-                              <span className="text-sm text-gray-600 truncate max-w-xs">
+                              <span className="text-sm text-muted-foreground truncate max-w-xs">
                                 {"★".repeat(review.rating)} {review.review_text.substring(0, 60)}...
                               </span>
                             </div>
@@ -374,120 +374,50 @@ function AdminSpotlightSuccess() {
                       </SelectContent>
                     </Select>
                   ) : (
-                    <p className="text-sm text-gray-600">No reviews found for this student.</p>
+                    <p className="text-sm text-muted-foreground">No reviews found for this student.</p>
                   )}
                 </div>
               </CardContent>
             </Card>
           )}
+      </div>
 
-          <div className="flex space-x-4">
-            <Button onClick={save} className="flex-1">
-              Save Settings
-            </Button>
-            <Button onClick={reset} variant="outline" className="flex-1">
-              Reset
-            </Button>
+      {/* Actions */}
+      <div className="flex gap-4 mt-6">
+        <Button onClick={save} className="flex-1 sm:flex-none sm:min-w-[180px]">Save Settings</Button>
+        <Button onClick={reset} variant="outline" className="flex-1 sm:flex-none sm:min-w-[120px]">Reset</Button>
+      </div>
+
+      {/* Bottom: Full-width live preview */}
+      <div className="mt-8 space-y-4">
+        <h2 className="text-2xl font-bold text-primary">Live Preview</h2>
+        {selectedStudent ? (
+          <FeaturedStudent
+            student={{
+              id: selectedStudent.id,
+              name: selectedStudent.name,
+              title: selectedStudent.title,
+              avatarUrl: selectedStudent.avatarUrl || '',
+              skills: selectedStudent.skills || [],
+              quote: quote || '',
+              showcaseImage: showcaseImage || undefined,
+              clientReview: selectedReview
+                ? {
+                    text: selectedReview.review_text,
+                    clientName: selectedReview.reviewer_company
+                      ? `${selectedReview.reviewer_name}, ${selectedReview.reviewer_company}`
+                      : selectedReview.reviewer_name,
+                    rating: selectedReview.rating,
+                  }
+                : { text: '', clientName: '', rating: 0 },
+            }}
+            onViewProfile={() => navigate(`/student/${selectedStudent.id}`)}
+          />
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>Select a student to see the preview</p>
           </div>
-        </div>
-
-        {/* Preview Panel */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Preview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {selectedStudent ? (
-                <div className="space-y-6">
-                  {/* Student Info */}
-                  <div className="flex items-start space-x-4">
-                    <Avatar className="h-16 w-16">
-                      <AvatarFallback className="text-lg">
-                        {getInitials(selectedStudent.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold">{selectedStudent.name}</h3>
-                      <p className="text-gray-600">{selectedStudent.title}</p>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {selectedStudent.skills.slice(0, 3).map((skill, index) => (
-                          <Badge key={index} variant="secondary">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Quote */}
-                  {quote && (
-                    <div>
-                      <h4 className="font-semibold mb-2">Personal Statement</h4>
-                      <blockquote className="italic text-gray-700 border-l-4 border-blue-500 pl-4">
-                        "{quote}"
-                      </blockquote>
-                    </div>
-                  )}
-
-                  {/* Client Review */}
-                  {selectedReview && (
-                    <div>
-                      <h4 className="font-semibold mb-2">Client Review</h4>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="flex items-center mb-2">
-                          <div className="flex text-yellow-400">
-                            {[...Array(5)].map((_, i) => (
-                              <span key={i} className={i < selectedReview.rating ? "text-yellow-400" : "text-gray-300"}>
-                                ★
-                              </span>
-                            ))}
-                          </div>
-                          <span className="ml-2 text-sm text-gray-600">({selectedReview.rating}/5)</span>
-                        </div>
-                        <p className="text-gray-700 mb-2">"{selectedReview.review_text}"</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          — {selectedReview.reviewer_name}
-                          {selectedReview.reviewer_company && (
-                            <span className="text-gray-600">, {selectedReview.reviewer_company}</span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Showcase Image */}
-                  {showcaseImage && (
-                    <div>
-                      <h4 className="font-semibold mb-2">Showcase Work</h4>
-                      <img
-                        src={showcaseImage}
-                        alt="Student showcase"
-                        className="w-full h-48 object-cover rounded-lg border"
-                      />
-                    </div>
-                  )}
-
-                  {/* Portfolio Link */}
-                  {selectedStudent.portfolio && selectedStudent.portfolio.length > 0 && (
-                    <div>
-                      <Button variant="outline" className="w-full" onClick={() => navigate(`/student/${selectedStudent.id}`)}>
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        View Full Portfolio
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <p>Select a student to see the preview</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        )}
       </div>
     </div>
   );

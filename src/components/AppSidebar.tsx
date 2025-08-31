@@ -159,10 +159,11 @@ export function AppSidebar() {
   const { role } = useRole()
   const { isGuest } = useAuth()
 
+  const isAdminLike = role === 'admin' || role === 'developer'
   const navigationItems = role === 'student' ? studentNavigation : 
-                         role === 'admin' ? adminNavigation : clientNavigation
+                         isAdminLike ? adminNavigation : clientNavigation
   const quickActions = role === 'student' ? studentQuickActions : 
-                      role === 'admin' ? adminQuickActions : clientQuickActions
+                      isAdminLike ? adminQuickActions : clientQuickActions
 
   const handleNavigation = (item: NavigationItem) => {
     if (item.tab) {
@@ -194,7 +195,9 @@ export function AppSidebar() {
 
   const getRoleColor = () => {
     switch (role) {
-      case 'admin': return 'from-red-500 to-red-600'
+      case 'admin':
+      case 'developer':
+        return 'from-red-500 to-red-600'
       case 'student': return 'from-blue-500 to-blue-600'
       default: return 'from-primary to-accent'
     }
@@ -203,6 +206,7 @@ export function AppSidebar() {
   const getRoleLabel = () => {
     switch (role) {
       case 'admin': return 'Admin Panel'
+      case 'developer': return 'Developer Panel'
       case 'student': return 'Student Portal'
       default: return 'Talent Hub'
     }
@@ -211,6 +215,7 @@ export function AppSidebar() {
   const getDashboardPath = () => {
     switch (role) {
       case 'admin':
+      case 'developer':
         return '/admin-dashboard'
       case 'student':
         return '/student-dashboard'

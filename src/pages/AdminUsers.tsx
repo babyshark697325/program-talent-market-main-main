@@ -17,6 +17,7 @@ const AdminUsers = () => {
   const [adminsCount, setAdminsCount] = React.useState<number | null>(null);
   const [recentUsers, setRecentUsers] = React.useState<any[]>([]);
   const [loadingRecent, setLoadingRecent] = React.useState(true);
+  const WAITLIST_PREVIEW_LIMIT = 5;
 
   // Fetch waitlist entries
   React.useEffect(() => {
@@ -132,6 +133,10 @@ const AdminUsers = () => {
       setLoadingRecent(false);
     }
   };
+
+  const previewWaitlist = React.useMemo(() => {
+    return waitlistEntries.slice(0, WAITLIST_PREVIEW_LIMIT);
+  }, [waitlistEntries]);
 
   const fetchCounts = async () => {
     try {
@@ -350,8 +355,8 @@ const AdminUsers = () => {
                 <div className="text-muted-foreground">No waitlist entries found</div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6">
-                {waitlistEntries.map((entry) => (
+              <div className="grid grid-cols-1 gap-4">
+                {previewWaitlist.map((entry) => (
                   <Card key={entry.id} className="p-4">
                     <div className="space-y-3">
                       {/* Header: Name left, Status right */}
@@ -420,6 +425,11 @@ const AdminUsers = () => {
                     </div>
                   </Card>
                 ))}
+                {waitlistEntries.length > WAITLIST_PREVIEW_LIMIT && (
+                  <div className="text-xs text-muted-foreground text-right">
+                    Showing {WAITLIST_PREVIEW_LIMIT} of {waitlistEntries.length}
+                  </div>
+                )}
               </div>
             )}
           </CardContent>

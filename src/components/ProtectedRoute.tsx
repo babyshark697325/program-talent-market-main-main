@@ -2,7 +2,7 @@ import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
-type Role = "student" | "client" | "admin";
+type Role = "student" | "client" | "admin" | "developer";
 
 type Props = {
   children: React.ReactNode;
@@ -55,7 +55,11 @@ const ProtectedRoute: React.FC<Props> = ({ children, requiredRole }) => {
         </div>
       );
     }
-    if (userRole !== requiredRole) {
+    // Treat 'developer' as equivalent to 'admin' for protected admin routes
+    const hasAccess =
+      userRole === requiredRole ||
+      (requiredRole === 'admin' && userRole === 'developer');
+    if (!hasAccess) {
       return (
         <Navigate
           to="/auth"
@@ -70,4 +74,3 @@ const ProtectedRoute: React.FC<Props> = ({ children, requiredRole }) => {
 };
 
 export default ProtectedRoute;
-

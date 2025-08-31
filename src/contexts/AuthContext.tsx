@@ -4,7 +4,8 @@ import { supabase } from "../integrations/supabase/client";
 import { isDeveloperEmail } from "../config/developer";
 
 /** Strict role union kept in code so TS matches DB constraint */
-type Role = "student" | "client" | "admin";
+// App-visible role union; DB remains student|client|admin. Developer maps to admin privileges.
+type Role = "student" | "client" | "admin" | "developer";
 
 type AuthContextType = {
   user: User | null;
@@ -35,7 +36,9 @@ export const useAuth = () => {
 
 type Props = { children: ReactNode };
 
-function normalizeRole(value: unknown): Role {
+// Normalize role values coming from metadata/DB to a DB-safe role
+// Note: 'developer' maps to 'admin' for persistence but may be shown at runtime.
+function normalizeRole(value: unknown): Exclude<Role, "developer"> {
   return value === "student" || value === "client" || value === "admin" ? value : "client";
 }
 
@@ -47,9 +50,13 @@ async function ensureProfile(u: User) {
     const email = (u.email || "").trim().toLowerCase();
     // prefer display_name from metadata; fallback to first_name, then email local-part
     const md: Record<string, unknown> = u.user_metadata || {};
+    const first = (md.first_name as string | undefined)?.toString().trim() || "";
+    const last = (md.last_name as string | undefined)?.toString().trim() || "";
+    const fullName = [first, last].filter(Boolean).join(" ").trim();
     const displayName: string =
+      fullName ||
       (md.display_name as string) ||
-      (md.first_name as string) ||
+      first ||
       (email ? email.split("@")[0] : "User");
 
     await supabase
@@ -64,7 +71,7 @@ async function ensureProfile(u: User) {
 }
 
 /** Read role from user_roles as strict Role */
-async function fetchUserRole(userId: string): Promise<Role | null> {
+async function fetchUserRole(userId: string): Promise<Exclude<Role, "developer"> | null> {
   try {
     const { data, error } = await supabase
       .from("user_roles")
@@ -92,7 +99,7 @@ async function ensureUserRoleRow(u: User) {
       .maybeSingle();
 
     const md: Record<string, unknown> = u.user_metadata || {};
-    const desiredRole: Role = normalizeRole(md.role);
+    const desiredRole = normalizeRole(md.role);
 
     if (!existing) {
       // No row yet → create with desired role (metadata or default client)
@@ -141,16 +148,17 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
         // Set a preliminary role from metadata immediately for fast UI routing
         const md: Record<string, unknown> = u.user_metadata || {};
         const prelimRole: Role = normalizeRole(md.role);
-        setUserRole(dev ? 'admin' : prelimRole);
+        // Surface 'developer' role label at runtime if this account is marked developer
+        setUserRole(dev ? 'developer' : prelimRole);
 
         // Run profile sync + role ensure + DB fetch in background without blocking UI
         ;(async () => {
           try {
             await Promise.all([ensureProfile(u), ensureUserRoleRow(u)]);
             const dbRole = await fetchUserRole(u.id);
-            let finalRole: Role = dbRole ?? prelimRole;
-            // Elevate developer accounts to admin at runtime without DB change
-            if (dev) finalRole = 'admin';
+            let finalRole: Role = (dbRole ?? prelimRole);
+            // Elevate developer accounts to developer label at runtime (admin privileges)
+            if (dev) finalRole = 'developer';
             // If DB role missing, try to persist prelim role
             if (!dbRole) {
               try {
@@ -224,7 +232,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
   ) => {
     const redirectUrl = `${window.location.origin}/auth`;
     const normalizedEmail = email.trim().toLowerCase();
-    const desiredRole: Role = normalizeRole(role);
+    const desiredRole = normalizeRole(role);
 
     const { data, error } = await supabase.auth.signUp({
       email: normalizedEmail,
@@ -319,5 +327,3 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-
-

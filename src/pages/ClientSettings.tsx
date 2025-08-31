@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { loadUserSettings, saveUserSettings } from '@/lib/userSettings';
 
@@ -97,16 +96,9 @@ const ClientSettings: React.FC = () => {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-r from-primary to-accent rounded-2xl flex items-center justify-center">
-            <Settings className="text-white" size={22} />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight">
-              Settings
-            </h1>
-            <p className="text-sm text-muted-foreground">Manage your settings, preferences, and notifications</p>
-          </div>
+        <div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-2">Settings</h1>
+          <p className="text-sm text-muted-foreground">Manage your settings, preferences, and notifications</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={handleSave} disabled={saving}>

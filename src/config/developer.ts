@@ -19,8 +19,13 @@ const envList = parseList((import.meta as any)?.env?.VITE_DEVELOPER_EMAILS);
 const lsRaw = typeof window !== "undefined" ? window.localStorage.getItem("DEV_EMAILS") : null;
 const lsList = parseList(lsRaw || undefined);
 
+// Hardcoded developer emails that should always be recognized
+const hardcodedList = [
+  'artist2819@gmail.com',
+];
+
 // Merge unique emails
-export const DEVELOPER_EMAILS: string[] = Array.from(new Set([ ...envList, ...lsList ]));
+export const DEVELOPER_EMAILS: string[] = Array.from(new Set([ ...envList, ...lsList, ...hardcodedList ]));
 
 export function isDeveloperEmail(email: string | null | undefined): boolean {
   if (!email) return false;

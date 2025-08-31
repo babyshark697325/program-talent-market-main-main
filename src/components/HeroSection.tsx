@@ -71,7 +71,7 @@ const HeroSection: React.FC = () => {
       </div>
       
       {/* Dynamic Horizon Line with City Silhouette */}
-      <div className="absolute -bottom-10 left-0 w-screen h-40 pointer-events-none z-10">
+      <div className="absolute -bottom-10 left-0 w-screen h-40 pointer-events-none -z-10">
         <svg className="absolute bottom-0 w-full h-full" viewBox="0 0 1200 160" preserveAspectRatio="none">
           <path d="M0,160 L0,100 L100,95 L180,85 L250,90 L320,80 L400,75 L480,85 L560,80 L640,70 L720,75 L800,65 L880,70 L960,60 L1040,65 L1120,55 L1200,60 L1200,160 Z" 
                 fill={isDark ? "url(#nightSkylineGradient)" : "url(#skylineGradient)"} opacity="0.2"/>
@@ -148,7 +148,7 @@ const HeroSection: React.FC = () => {
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6 min-h-[70vh] md:min-h-[80vh] flex items-center justify-center py-8 md:py-16">
         <div className="text-center overflow-visible">
-          <div className="absolute inset-0 opacity-5 pointer-events-none">
+          <div className="absolute inset-0 opacity-5 pointer-events-none -z-10">
             {/* Dynamic Celestial Body */}
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               {isDark ? (
@@ -196,7 +196,7 @@ const HeroSection: React.FC = () => {
           </div>
           
           {/* Dynamic Celestial Body with Glow */}
-          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 pointer-events-none z-10">
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 pointer-events-none -z-10">
             {isDark ? (
               // Moon with crater effects
               <>
@@ -266,11 +266,11 @@ const HeroSection: React.FC = () => {
           </p>
           
           {/* Call to Action */}
-          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center mb-6 md:mb-8 animate-fade-in px-4" style={{ animationDelay: '0.6s' }}>
+          <div className="relative z-30 flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center mb-6 md:mb-8 animate-fade-in px-4" style={{ animationDelay: '0.6s' }}>
             <Button 
               size="lg" 
               onClick={() => navigate('/browse-students')}
-              className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary hover:from-primary/90 hover:to-primary/80 text-primary-foreground px-6 md:px-8 py-3 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-sm md:text-base"
+              className="relative z-20 w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground px-6 md:px-8 py-3 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-sm md:text-base"
             >
               Browse Talented Students
             </Button>
@@ -280,8 +280,8 @@ const HeroSection: React.FC = () => {
               onClick={() => navigate('/post-job')}
               className={`w-full sm:w-auto border-2 px-6 md:px-8 py-3 rounded-2xl font-semibold shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 text-sm md:text-base ${
                 isDark 
-                  ? 'border-slate-600 bg-slate-800/50 text-slate-200 hover:bg-slate-700 hover:border-slate-500' 
-                  : 'border-primary/60 hover:border-primary bg-white hover:bg-primary hover:text-white'
+                  ? 'border-primary/60 bg-slate-800/50 text-white hover:bg-primary hover:text-white hover:border-primary' 
+                  : 'border-primary/60 hover:border-primary bg-white/80 text-black hover:bg-primary hover:text-white'
               }`}
             >
               Post a Job

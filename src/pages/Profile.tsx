@@ -316,7 +316,7 @@ const Profile = () => {
   const PreviewProfile = ({ student }: { student: any }) => (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="p-6 border rounded-lg">
+      <div className="p-6 rounded-lg bg-secondary/30">
         <div className="flex flex-col lg:flex-row items-start gap-6">
           <Avatar className="w-24 h-24">
             <AvatarImage src={student.avatarUrl} alt={student.name} />
@@ -327,11 +327,11 @@ const Profile = () => {
           
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight">{student.name}</h1>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-none">{student.name}</h1>
               {student.affiliation && (
                 <Badge
                   variant={student.affiliation === 'alumni' ? 'secondary' : 'default'}
-                  className="rounded-full text-xs px-2 py-0.5"
+                  className="rounded-full text-xs px-2 py-0.5 self-center"
                 >
                   {student.affiliation === 'alumni' ? 'MyVillage Alumni' : 'MyVillage Student'}
                 </Badge>
@@ -412,7 +412,7 @@ const Profile = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="border rounded-lg p-4">
+                <div className="rounded-lg p-4 bg-secondary/30">
                   <h3 className="font-semibold mb-2">{student.title}</h3>
                   <p className="text-muted-foreground text-sm mb-2">
                     {student.description || 'Professional services available'}
@@ -435,7 +435,7 @@ const Profile = () => {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {student.portfolio.map((item: any, index: number) => (
-                    <div key={index} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                    <div key={index} className="rounded-lg overflow-hidden hover:shadow-md transition-shadow bg-secondary/20">
                       <img 
                         src={item.imageUrl} 
                         alt={item.title}
@@ -479,7 +479,7 @@ const Profile = () => {
                 Preview Profile
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto border-0">
               <DialogHeader>
                 <DialogTitle>Profile Preview - Client View</DialogTitle>
               </DialogHeader>
@@ -1020,4 +1020,3 @@ const Profile = () => {
 };
 
 export default Profile;
-

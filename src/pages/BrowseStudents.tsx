@@ -37,8 +37,7 @@ const transformStudent = (dbStudent: DatabaseStudent): StudentService => {
     name: displayName,
     title: dbStudent.bio || 'Student Developer',
     description: dbStudent.bio || 'Skilled developer ready to help with your projects',
-    avatarUrl: dbStudent.avatar_url || 
-      'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80',
+    avatarUrl: dbStudent.avatar_url || '',
     skills: [],
     price: '$25/hr',
     affiliation: 'student' as const,
@@ -89,8 +88,9 @@ const BrowseStudents = () => {
           .eq('role', 'student');
 
         if (rolesError) {
-          console.error('Error fetching student roles:', rolesError);
-          setError('Failed to load student roles');
+          console.warn('Student roles unavailable; rendering empty list.');
+          setStudents([]);
+          setFilteredStudents([]);
           return;
         }
 
@@ -109,8 +109,9 @@ const BrowseStudents = () => {
           .order('created_at', { ascending: false });
 
         if (fetchError) {
-          console.error('Error fetching students:', fetchError);
-          setError('Failed to load students');
+          console.warn('Profiles unavailable; rendering empty list.');
+          setStudents([]);
+          setFilteredStudents([]);
           return;
         }
 

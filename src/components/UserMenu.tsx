@@ -12,8 +12,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { User as UserIcon } from "lucide-react";
 
 function getInitials(nameOrEmail: string) {
   const text = (nameOrEmail || "").trim();
@@ -26,6 +28,7 @@ function getInitials(nameOrEmail: string) {
 
 const UserMenu: React.FC = () => {
   const { user, userRole, isDeveloper, signOut } = useAuth();
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
   const navigate = useNavigate();
 
   if (!user) {
@@ -36,17 +39,47 @@ const UserMenu: React.FC = () => {
     );
   }
 
+  const md = (user.user_metadata as Record<string, unknown>) || {};
+  const fullName = [md.first_name as string | undefined, md.last_name as string | undefined]
+    .filter(Boolean)
+    .join(" ");
   const displayName =
-    (user.user_metadata?.display_name as string) ||
-    (user.user_metadata?.first_name as string) ||
+    (fullName && fullName.trim()) ||
+    (md.display_name as string) ||
     (user.email as string) ||
     "User";
 
   const normalizeRole = (v: unknown) =>
-    v === "student" || v === "client" || v === "admin" ? v : "client";
+    v === "student" || v === "client" || v === "admin" || v === "developer" ? v : "client";
 
   const metaRole = normalizeRole((user.user_metadata as Record<string, unknown>)?.role);
   const baseRole = metaRole || "client";
+  // For developer accounts, show primary badge as "student" (your day-to-day role)
+  const displayBaseRole = (userRole === 'developer' || isDeveloper) ? 'student' : baseRole;
+
+  // Load avatar from profiles so the menu picture matches the student's profile picture
+  React.useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const uid = user?.id;
+        if (!uid) return;
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('user_id', uid)
+          .maybeSingle();
+        if (!cancelled) {
+          if (!error && data?.avatar_url) setAvatarUrl(data.avatar_url);
+          else setAvatarUrl(null);
+        }
+      } catch {
+        if (!cancelled) setAvatarUrl(null);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   const goProfile = (e?: React.MouseEvent) => {
     e?.preventDefault?.();
@@ -74,35 +107,48 @@ const UserMenu: React.FC = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-9 w-9 p-0 rounded-full" aria-label="Open user menu">
-          <Avatar className="h-9 w-9">
-            <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+        <button
+          type="button"
+          aria-label="Open user menu"
+          className="h-9 w-9 p-0 rounded-full border-0 outline-none ring-0 focus:ring-0 focus-visible:ring-0 ring-offset-0 focus-visible:ring-offset-0 bg-transparent hover:bg-transparent active:bg-transparent"
+        >
+          <Avatar className="h-9 w-9 outline-none ring-0 border-0">
+            {avatarUrl ? (
+              <AvatarImage src={avatarUrl} alt={displayName} />
+            ) : (
+              <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center">
+                <UserIcon className="w-4 h-4" />
+              </AvatarFallback>
+            )}
           </Avatar>
-        </Button>
+        </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel className="flex flex-col gap-1">
-          <span className="font-medium truncate">{displayName}</span>
+      <DropdownMenuContent align="end" className="w-60 border-0 rounded-lg p-2 shadow-lg bg-popover/95 backdrop-blur-sm">
+        <DropdownMenuLabel className="flex flex-col gap-1 pb-2">
+          <span className="font-medium text-sm truncate">{displayName}</span>
           <span className="text-xs text-muted-foreground truncate">{user.email}</span>
-          <div className="mt-1 flex items-center gap-1">
-            <Badge variant="secondary" className="text-[10px] uppercase">
-              {baseRole}
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <Badge
+              variant="secondary"
+              className="uppercase tracking-wide text-[9px] leading-4 px-2.5 py-0.5 rounded-full"
+            >
+              {displayBaseRole}
             </Badge>
             {isDeveloper && (
-              <Badge className="text-[10px] uppercase bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent))]">
+              <Badge className="uppercase tracking-wide text-[9px] leading-4 px-2.5 py-0.5 rounded-full bg-accent text-accent-foreground hover:bg-accent/90">
                 Developer
               </Badge>
             )}
           </div>
         </DropdownMenuLabel>
 
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={goProfile} onClick={goProfile}>Profile</DropdownMenuItem>
-        <DropdownMenuItem onSelect={goSettings} onClick={goSettings}>Settings</DropdownMenuItem>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="my-1.5 bg-border/50" />
+        <DropdownMenuItem className="px-3 py-2 rounded-md leading-5 focus:bg-muted focus:text-foreground hover:bg-muted hover:text-foreground" onSelect={goProfile} onClick={goProfile}>Profile</DropdownMenuItem>
+        <DropdownMenuItem className="px-3 py-2 rounded-md leading-5 focus:bg-muted focus:text-foreground hover:bg-muted hover:text-foreground" onSelect={goSettings} onClick={goSettings}>Settings</DropdownMenuItem>
+        <DropdownMenuSeparator className="my-1.5 bg-border/50" />
         <DropdownMenuItem
-          className="text-red-600 focus:text-red-600"
+          className="px-3 py-2 rounded-md leading-5 text-red-600 focus:text-red-600 hover:text-red-600 focus:bg-destructive/10 hover:bg-destructive/10"
           onSelect={doLogout}
           onClick={doLogout}
         >
@@ -114,5 +160,3 @@ const UserMenu: React.FC = () => {
 };
 
 export default UserMenu;
-
-
