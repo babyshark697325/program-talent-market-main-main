@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,10 +8,61 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
+import { generate2FASecret, verify2FACode } from '@/lib/twoFactor';
+import { QRCodeCanvas } from 'qrcode.react';
 
 const ADMIN_SETTINGS_KEY = 'myvillage-admin-settings';
 
+const ADMIN_2FA_KEY = 'myvillage-admin-2fa';
 const AdminSettings = () => {
+  // 2FA State
+  const [twoFAEnabled, setTwoFAEnabled] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(ADMIN_2FA_KEY) || '{}').enabled || false;
+    } catch {
+      return false;
+    }
+  });
+  const [twoFASecret, setTwoFASecret] = useState<string | null>(null);
+  const [otpAuthUrl, setOtpAuthUrl] = useState<string | null>(null);
+  const [codeInput, setCodeInput] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const [show2FASetup, setShow2FASetup] = useState(false);
+  // 2FA Setup Handlers
+  const handleEnable2FA = () => {
+    const { secret, otpauth } = generate2FASecret('admin@myvillage.com');
+    setTwoFASecret(secret);
+    setOtpAuthUrl(otpauth);
+    setShow2FASetup(true);
+    setVerified(false);
+    setCodeInput('');
+  };
+
+  const handleVerify2FA = () => {
+    setVerifying(true);
+    if (twoFASecret && verify2FACode(twoFASecret, codeInput)) {
+      setTwoFAEnabled(true);
+      setVerified(true);
+      setShow2FASetup(false);
+      localStorage.setItem(ADMIN_2FA_KEY, JSON.stringify({ enabled: true, secret: twoFASecret }));
+      toast({ title: 'Two-Factor Authentication Enabled', description: '2FA is now active for your admin account.' });
+    } else {
+      toast({ title: 'Invalid Code', description: 'The code you entered is incorrect.', variant: 'destructive' });
+    }
+    setVerifying(false);
+  };
+
+  const handleDisable2FA = () => {
+    setTwoFAEnabled(false);
+    setTwoFASecret(null);
+    setOtpAuthUrl(null);
+    setShow2FASetup(false);
+    setVerified(false);
+    setCodeInput('');
+    localStorage.setItem(ADMIN_2FA_KEY, JSON.stringify({ enabled: false }));
+    toast({ title: 'Two-Factor Authentication Disabled', description: '2FA has been turned off for your admin account.' });
+  };
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState({
@@ -91,6 +143,48 @@ const AdminSettings = () => {
         </div>
 
         <div className="grid gap-6">
+          {/* Two-Factor Authentication Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Two-Factor Authentication (2FA)</CardTitle>
+              <CardDescription>Enhance your account security with 2FA</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Enable Two-Factor Authentication</Label>
+                  <p className="text-sm text-muted-foreground">Protect your admin account with an extra layer of security.</p>
+                </div>
+                <Switch checked={twoFAEnabled} onCheckedChange={checked => {
+                  if (checked) handleEnable2FA();
+                  else handleDisable2FA();
+                }} />
+              </div>
+              {show2FASetup && otpAuthUrl && (
+                <div className="mt-4 space-y-4">
+                  <p className="font-medium">Scan this QR code with your authenticator app:</p>
+                  <div className="flex justify-center"><QRCodeCanvas value={otpAuthUrl} size={160} /></div>
+                  <p className="text-sm text-muted-foreground">Or enter this secret manually: <span className="font-mono">{twoFASecret}</span></p>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Enter 6-digit code"
+                      value={codeInput}
+                      onChange={e => setCodeInput(e.target.value)}
+                      maxLength={6}
+                      className="w-40"
+                    />
+                    <Button onClick={handleVerify2FA} disabled={verifying || codeInput.length !== 6}>
+                      {verifying ? 'Verifying...' : 'Verify'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">After verifying, 2FA will be enabled for your account.</p>
+                </div>
+              )}
+              {twoFAEnabled && !show2FASetup && (
+                <div className="mt-2 text-green-600 font-medium">2FA is enabled for your account.</div>
+              )}
+            </CardContent>
+          </Card>
           <Card>
             <CardHeader>
               <CardTitle>General Settings</CardTitle>
