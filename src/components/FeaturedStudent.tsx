@@ -71,7 +71,10 @@ const FeaturedStudent: React.FC<FeaturedStudentProps> = ({ student, onViewProfil
                 </div>
               </div>
               <div className="text-center sm:text-left">
-                <h4 className="text-xl md:text-2xl font-bold text-foreground">
+                <h4
+                  className="text-xl md:text-2xl font-bold text-foreground break-words max-w-full leading-[1.2] pb-1"
+                  style={{ wordBreak: 'break-word', overflowWrap: 'break-word', lineHeight: 1.2, paddingBottom: '0.25rem' }}
+                >
                   {student.name}
                 </h4>
                 <p className="text-muted-foreground font-semibold text-base md:text-lg">{student.title}</p>

@@ -326,7 +326,12 @@ const Profile = () => {
           
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-none">{student.name}</h1>
+              <h1
+                className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight pb-1"
+                style={{ lineHeight: 1.2, paddingBottom: '0.25rem', wordBreak: 'break-word', overflowWrap: 'break-word' }}
+              >
+                {student.name}
+              </h1>
               {student.affiliation && (
                 <Badge
                   variant={student.affiliation === 'alumni' ? 'secondary' : 'default'}
