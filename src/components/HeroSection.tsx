@@ -270,7 +270,7 @@ const HeroSection: React.FC = () => {
             <Button 
               size="lg" 
               onClick={() => navigate('/browse-students')}
-              className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground px-6 md:px-8 py-3 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-sm md:text-base"
+              className="w-full sm:w-auto bg-gradient-to-r from-primary to-primary hover:from-primary/90 hover:to-primary/80 text-primary-foreground px-6 md:px-8 py-3 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-sm md:text-base"
             >
               Browse Talented Students
             </Button>
