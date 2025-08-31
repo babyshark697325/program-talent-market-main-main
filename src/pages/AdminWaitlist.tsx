@@ -113,14 +113,16 @@ const AdminWaitlist = () => {
   const handleDeleteEntry = async (id: string) => {
     if (confirm('Are you sure you want to delete this waitlist entry?')) {
       try {
-        const { error } = await supabase
+
+        const { error, data } = await supabase
           .from('waitlist')
           .delete()
           .eq('id', id);
+        console.log('[Delete] Attempted to delete id:', id, 'Result:', { error, data });
 
         if (error) throw error;
 
-        setWaitlistEntries(prev => prev.filter(entry => entry.id !== id));
+        await fetchWaitlist();
         toast({
           title: "Success",
           description: "Entry deleted successfully",
