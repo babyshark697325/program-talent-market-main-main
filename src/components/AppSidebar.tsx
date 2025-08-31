@@ -26,7 +26,7 @@ interface NavigationItem {
 const studentNavigation = [
   {
     title: "Dashboard",
-    url: "/",
+    url: "/student-dashboard",
     icon: Home,
   },
   {
