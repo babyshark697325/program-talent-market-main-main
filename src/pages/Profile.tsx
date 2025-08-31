@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { User, Mail, Phone, MapPin, Edit, Save, X, Plus, Image, ExternalLink, Trash2, Users, Linkedin, Github, Link, Eye } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 import PageHeader from '@/components/PageHeader';
 import { loadUserSettings, saveUserSettings } from '@/lib/userSettings';
 import { useToast } from '@/hooks/use-toast';

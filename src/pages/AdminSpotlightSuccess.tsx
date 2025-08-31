@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ExternalLink } from "lucide-react";
 import FeaturedStudent from "@/components/FeaturedStudent";
 import { StudentService } from "@/types/student";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 
 const LS_QUOTE_KEY = "spotlight.quote";
 const LS_STUDENT_ID_KEY = "spotlight.studentId";

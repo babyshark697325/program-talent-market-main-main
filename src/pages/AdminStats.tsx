@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { supabase } from '../integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminStats = () => {
   const [platformStats, setPlatformStats] = React.useState<{

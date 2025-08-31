@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Award, Briefcase, TrendingUp } from "lucide-react";

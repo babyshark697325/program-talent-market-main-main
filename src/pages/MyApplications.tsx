@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, CheckCircle, XCircle, Eye } from "lucide-react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 import PageHeader from '@/components/PageHeader';
 
 // Database row type from supabase query
