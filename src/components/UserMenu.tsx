@@ -26,38 +26,13 @@ function getInitials(nameOrEmail: string) {
   return (first + last || first).toUpperCase();
 }
 
+
 const UserMenu: React.FC = () => {
   const { user, userRole, isDeveloper, signOut } = useAuth();
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
   const navigate = useNavigate();
 
-  if (!user) {
-    return (
-      <Button size="sm" variant="outline" onClick={() => navigate("/auth")}>
-        Sign in
-      </Button>
-    );
-  }
-
-  const md = (user.user_metadata as Record<string, unknown>) || {};
-  const fullName = [md.first_name as string | undefined, md.last_name as string | undefined]
-    .filter(Boolean)
-    .join(" ");
-  const displayName =
-    (fullName && fullName.trim()) ||
-    (md.display_name as string) ||
-    (user.email as string) ||
-    "User";
-
-  const normalizeRole = (v: unknown) =>
-    v === "student" || v === "client" || v === "admin" || v === "developer" ? v : "client";
-
-  const metaRole = normalizeRole((user.user_metadata as Record<string, unknown>)?.role);
-  const baseRole = metaRole || "client";
-  // For developer accounts, show primary badge as "student" (your day-to-day role)
-  const displayBaseRole = (userRole === 'developer' || isDeveloper) ? 'student' : baseRole;
-
-  // Load avatar from profiles so the menu picture matches the student's profile picture
+  // All hooks must be called unconditionally
   React.useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -81,9 +56,6 @@ const UserMenu: React.FC = () => {
     return () => { cancelled = true; };
   }, [user?.id]);
 
-
-  // Accept Event for onSelect, cast to MouseEvent if needed
-  // Use correct types for handlers
   const goProfile = React.useCallback((event: Event) => {
     event.preventDefault();
     navigate("/profile");
@@ -127,6 +99,33 @@ const UserMenu: React.FC = () => {
       window.location.replace("/auth");
     }
   }, [signOut]);
+
+  // All hooks above, now do conditional rendering
+  if (!user) {
+    return (
+      <Button size="sm" variant="outline" onClick={() => navigate("/auth")}> 
+        Sign in
+      </Button>
+    );
+  }
+
+  const md = (user.user_metadata as Record<string, unknown>) || {};
+  const fullName = [md.first_name as string | undefined, md.last_name as string | undefined]
+    .filter(Boolean)
+    .join(" ");
+  const displayName =
+    (fullName && fullName.trim()) ||
+    (md.display_name as string) ||
+    (user.email as string) ||
+    "User";
+
+  const normalizeRole = (v: unknown) =>
+    v === "student" || v === "client" || v === "admin" || v === "developer" ? v : "client";
+
+  const metaRole = normalizeRole((user.user_metadata as Record<string, unknown>)?.role);
+  const baseRole = metaRole || "client";
+  // For developer accounts, show primary badge as "student" (your day-to-day role)
+  const displayBaseRole = (userRole === 'developer' || isDeveloper) ? 'student' : baseRole;
 
   return (
     <DropdownMenu>
