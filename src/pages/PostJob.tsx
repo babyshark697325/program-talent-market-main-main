@@ -48,7 +48,7 @@ const PostJob: React.FC = () => {
             </Button>
           </div>
           
-          <Card className="rounded-3xl border-0 shadow-2xl">
+          <Card className="rounded-3xl shadow-2xl border-0">
             <CardHeader className="pb-4">
               <CardTitle className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight mb-6">
                 Post a New Job
