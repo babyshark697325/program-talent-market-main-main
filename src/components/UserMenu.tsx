@@ -81,28 +81,52 @@ const UserMenu: React.FC = () => {
     return () => { cancelled = true; };
   }, [user?.id]);
 
-  const goProfile = (e?: React.MouseEvent) => {
-    e?.preventDefault?.();
-    navigate("/profile");
-  };
 
-  const goSettings = (e?: React.MouseEvent) => {
-    e?.preventDefault?.();
+  // Accept Event for onSelect, cast to MouseEvent if needed
+  // Use correct types for handlers
+  const goProfile = React.useCallback((event: Event) => {
+    event.preventDefault();
+    navigate("/profile");
+  }, [navigate]);
+
+  const goProfileClick = React.useCallback((event: React.MouseEvent) => {
+    event.preventDefault();
+    navigate("/profile");
+  }, [navigate]);
+
+  const goSettings = React.useCallback((event: Event) => {
+    event.preventDefault();
     if (userRole === "admin") navigate("/admin/settings");
     else if (userRole === "client") navigate("/client/settings");
     else navigate("/profile");
-  };
+  }, [navigate, userRole]);
 
-  const doLogout = async (e?: React.MouseEvent) => {
-    e?.preventDefault?.();
+  const goSettingsClick = React.useCallback((event: React.MouseEvent) => {
+    event.preventDefault();
+    if (userRole === "admin") navigate("/admin/settings");
+    else if (userRole === "client") navigate("/client/settings");
+    else navigate("/profile");
+  }, [navigate, userRole]);
+
+  const doLogout = React.useCallback(async (event: Event) => {
+    event.preventDefault();
     console.log("[UserMenu] Logout clicked");
     await signOut();
     console.log("[UserMenu] signOut resolved");
-    // belt & suspenders: if still not on /auth, hard replace
     if (!/\/auth$/.test(window.location.pathname)) {
       window.location.replace("/auth");
     }
-  };
+  }, [signOut]);
+
+  const doLogoutClick = React.useCallback(async (event: React.MouseEvent) => {
+    event.preventDefault();
+    console.log("[UserMenu] Logout clicked");
+    await signOut();
+    console.log("[UserMenu] signOut resolved");
+    if (!/\/auth$/.test(window.location.pathname)) {
+      window.location.replace("/auth");
+    }
+  }, [signOut]);
 
   return (
     <DropdownMenu>
@@ -144,13 +168,13 @@ const UserMenu: React.FC = () => {
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator className="my-1.5 bg-border/50" />
-        <DropdownMenuItem className="px-3 py-2 rounded-md leading-5 focus:bg-muted focus:text-foreground hover:bg-muted hover:text-foreground" onSelect={goProfile} onClick={goProfile}>Profile</DropdownMenuItem>
-        <DropdownMenuItem className="px-3 py-2 rounded-md leading-5 focus:bg-muted focus:text-foreground hover:bg-muted hover:text-foreground" onSelect={goSettings} onClick={goSettings}>Settings</DropdownMenuItem>
+  <DropdownMenuItem className="px-3 py-2 rounded-md leading-5 focus:bg-muted focus:text-foreground hover:bg-muted hover:text-foreground" onSelect={goProfile} onClick={goProfileClick}>Profile</DropdownMenuItem>
+  <DropdownMenuItem className="px-3 py-2 rounded-md leading-5 focus:bg-muted focus:text-foreground hover:bg-muted hover:text-foreground" onSelect={goSettings} onClick={goSettingsClick}>Settings</DropdownMenuItem>
         <DropdownMenuSeparator className="my-1.5 bg-border/50" />
         <DropdownMenuItem
           className="px-3 py-2 rounded-md leading-5 text-red-600 focus:text-red-600 hover:text-red-600 focus:bg-destructive/10 hover:bg-destructive/10"
           onSelect={doLogout}
-          onClick={doLogout}
+          onClick={doLogoutClick}
         >
           Log out
         </DropdownMenuItem>

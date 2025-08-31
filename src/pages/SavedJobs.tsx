@@ -78,7 +78,7 @@ const SavedJobs = () => {
             >
               <JobCard
                 job={job}
-                onView={() => handleJobView(job.id)}
+                onView={() => handleJobView(Number(job.id))}
               />
             </div>
           ))}
