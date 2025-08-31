@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Bookmark } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import JobCard from "@/components/JobCard";
 import { Button } from "@/components/ui/button";
@@ -87,7 +88,7 @@ const SavedJobs = () => {
         <div className="text-center py-20">
           <div className="bg-secondary/60 backdrop-blur-sm rounded-3xl p-16 shadow-xl border border-primary/20 max-w-lg mx-auto">
             <div className="w-24 h-24 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="text-4xl">💾</span>
+              <Bookmark className="w-12 h-12 text-primary/60" />
             </div>
             <h3 className="text-2xl font-bold text-primary mb-4">
               No Saved Jobs Yet

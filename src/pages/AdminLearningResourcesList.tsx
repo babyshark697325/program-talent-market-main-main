@@ -147,7 +147,7 @@ const AdminLearningResourcesList: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 justify-end md:justify-end md:flex md:flex-row md:items-end">
               <div>
                 <Label className="text-sm">Search</Label>
                 <div className="relative">

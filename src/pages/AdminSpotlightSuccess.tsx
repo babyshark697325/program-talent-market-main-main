@@ -337,49 +337,49 @@ function AdminSpotlightSuccess() {
             </CardContent>
           </Card>
 
-          {/* Review Selection */}
-          {selectedStudentId && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Client Review</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <Label htmlFor="review-select">Select Client Review (Optional)</Label>
-                  {loadingReviews ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      <span className="text-sm text-muted-foreground">Loading reviews...</span>
-                    </div>
-                  ) : reviews.length > 0 ? (
-                    <Select value={selectedReviewId} onValueChange={setSelectedReviewId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a review to feature" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">No review selected</SelectItem>
-                        {reviews.map((review) => (
-                          <SelectItem key={review.id} value={review.id}>
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {review.reviewer_name}
-                                {review.reviewer_company && ` - ${review.reviewer_company}`}
-                              </span>
-                              <span className="text-sm text-muted-foreground truncate max-w-xs">
-                                {"★".repeat(review.rating)} {review.review_text.substring(0, 60)}...
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No reviews found for this student.</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Review Selection - always show the card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Client Review</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Label htmlFor="review-select">Select Client Review (Optional)</Label>
+                {!selectedStudentId ? (
+                  <p className="text-sm text-muted-foreground">Select a student to view their reviews.</p>
+                ) : loadingReviews ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <span className="text-sm text-muted-foreground">Loading reviews...</span>
+                  </div>
+                ) : reviews.length > 0 ? (
+                  <Select value={selectedReviewId} onValueChange={setSelectedReviewId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a review to feature" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">No review selected</SelectItem>
+                      {reviews.map((review) => (
+                        <SelectItem key={review.id} value={review.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {review.reviewer_name}
+                              {review.reviewer_company && ` - ${review.reviewer_company}`}
+                            </span>
+                            <span className="text-sm text-muted-foreground truncate max-w-xs">
+                              {"★".repeat(review.rating)} {review.review_text.substring(0, 60)}...
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No reviews found for this student.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
       </div>
 
       {/* Actions */}

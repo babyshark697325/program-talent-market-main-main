@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, CheckCircle, XCircle, Eye } from "lucide-react";
+import { Clock, CheckCircle, XCircle, Eye, ClipboardList } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import PageHeader from '@/components/PageHeader';
 
@@ -232,7 +232,7 @@ const MyApplications = () => {
           <div className="text-center py-20">
             <div className="bg-secondary/60 backdrop-blur-sm rounded-3xl p-16 shadow-xl border border-primary/20 max-w-lg mx-auto">
               <div className="w-24 h-24 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-4xl">📋</span>
+                <ClipboardList className="w-12 h-12 text-primary/60" />
               </div>
               <h3 className="text-2xl font-bold text-primary mb-4">No Applications Yet</h3>
               <p className="text-muted-foreground mb-6">

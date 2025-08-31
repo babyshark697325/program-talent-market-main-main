@@ -117,8 +117,8 @@ const StudentResources = () => {
         </Card>
       </div>
 
-      {/* Quick filter chips */}
-      <div className="flex flex-wrap items-center gap-2 md:gap-3">
+  {/* Quick filter chips */}
+  <div className="flex flex-wrap items-center gap-2 md:gap-3 justify-end">
         {([
           { key: 'all', label: 'All' },
           { key: 'available', label: 'Available' },

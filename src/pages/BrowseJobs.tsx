@@ -101,7 +101,7 @@ const BrowseJobs = () => {
               Clear Filters
             </button>
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search jobs by title, company, or description..."
@@ -199,7 +199,7 @@ const BrowseJobs = () => {
               >
                 <JobCard
                   job={job}
-                  onView={() => handleJobView(job.id)}
+                  onView={() => handleJobView(Number(job.id))}
                 />
               </div>
             ))}
@@ -208,7 +208,7 @@ const BrowseJobs = () => {
           <div className="text-center py-20">
             <div className="rounded-3xl p-16 shadow-md border bg-white border-black/10 dark:bg-[#040b17] dark:border-white/5 max-w-lg mx-auto">
               <div className="w-24 h-24 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-4xl">🔍</span>
+                <Search className="w-12 h-12 text-primary/60" />
               </div>
               <h3 className="text-2xl font-bold text-primary mb-4">
                 No Jobs Found
