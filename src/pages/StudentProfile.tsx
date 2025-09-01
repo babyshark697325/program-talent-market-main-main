@@ -184,11 +184,23 @@ const StudentProfile = () => {
 
   // Prefill from Supabase profile (signup/waitlist info)
   useEffect(() => {
-    // get currently authenticated user id for edit permissions
+    // get currently authenticated user id for edit permissions and prefill profile
     (async () => {
       try {
-        const { data } = await supabase.auth.getUser();
-        setCurrentUserId(data?.user?.id || null);
+        const { data: userRes } = await supabase.auth.getUser();
+        setCurrentUserId(userRes?.user?.id || null);
+        const uid = userRes?.user?.id;
+        if (!uid) return;
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('first_name,last_name,display_name,email')
+          .eq('user_id', uid)
+          .maybeSingle();
+        if (!error && data) {
+          const name = [data.first_name, data.last_name].filter(Boolean).join(' ').trim() || data.display_name || '';
+          setStudent(prev => ({ ...prev, name, email: data.email || '' }));
+          setEdited(prev => ({ ...prev, name, email: data.email || '' }));
+        }
       } catch (e) {
         setCurrentUserId(null);
       }
