@@ -1,25 +1,24 @@
-
-
-
-
 import React, { useRef, useState, useEffect } from 'react';
 import { useRole } from '@/contexts/RoleContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import PageHeader from '@/components/PageHeader';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Mail, Phone, MapPin, Eye, Edit, Image, User, Linkedin, Github } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { Mail, Phone, MapPin, Eye, Edit, Image } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-
+import { Linkedin, Twitter, Facebook, Instagram } from 'lucide-react';
 
 const ClientProfile = () => {
+  const handleSave = () => {
+    setClient(edited);
+    setIsEditing(false);
+  };
+
+  const removeAvatar = () => setEdited({ ...edited, avatarUrl: '' });
   const { role } = useRole();
-  // Treat developer as client for this page
   const effectiveRole = role === 'developer' ? 'client' : role;
   const [isEditing, setIsEditing] = useState(false);
   const [client, setClient] = useState({
@@ -29,13 +28,14 @@ const ClientProfile = () => {
     avatarUrl: '',
     location: '',
     bio: '',
-    platformLinks: { linkedin: '', github: '', upwork: '', fiverr: '' },
-    payments: {
-      method: '',
-      paypalEmail: '',
-      venmo: '',
-      cashapp: '',
-      bankLast4: '',
+    businessName: '',
+    industry: '',
+    businessDescription: '',
+    platformLinks: {
+      linkedin: '',
+      twitter: '',
+      facebook: '',
+      instagram: '',
     },
   });
   const [edited, setEdited] = useState(client);
@@ -48,22 +48,21 @@ const ClientProfile = () => {
     const reader = new FileReader();
     reader.onload = () => setEdited({ ...edited, avatarUrl: String(reader.result || '') });
     reader.readAsDataURL(file);
-  };
-  const removeAvatar = () => setEdited({ ...edited, avatarUrl: '' });
-
-  const handleSave = () => {
-    setClient(edited);
-    setIsEditing(false);
+  // Removed duplicate imports
+  // import { Button } from "@/components/ui/button";
+  // import { Input } from "@/components/ui/input";
+  // import { Textarea } from "@/components/ui/textarea";
+  // import { Label } from "@/components/ui/label";
+  // import { Building2, Globe, Phone, Mail, Edit, Save, X } from "lucide-react";
+  // import { useToast } from "@/components/ui/use-toast";
   };
   const handleCancel = () => {
     setEdited(client);
     setIsEditing(false);
   };
 
-  // Only allow interaction if effectiveRole is 'client'
   const canEdit = effectiveRole === 'client';
 
-  // Prefill from Supabase profile (signup/waitlist info)
   useEffect(() => {
     const loadProfile = async () => {
       try {
@@ -76,7 +75,6 @@ const ClientProfile = () => {
           .eq('user_id', uid)
           .maybeSingle();
         if (error || !data) return;
-
         const name = [data.first_name, data.last_name].filter(Boolean).join(' ').trim() || data.display_name || '';
         const next = {
           name,
@@ -85,14 +83,15 @@ const ClientProfile = () => {
           avatarUrl: data.avatar_url || '',
           location: '',
           bio: data.bio || '',
-          platformLinks: { linkedin: '', github: '', upwork: '', fiverr: '' },
-          payments: {
-            method: '',
-            paypalEmail: '',
-            venmo: '',
-            cashapp: '',
-            bankLast4: '',
-          },
+          businessName: '',
+          industry: '',
+          businessDescription: '',
+              platformLinks: {
+                linkedin: '',
+                twitter: '',
+                facebook: '',
+                instagram: '',
+              },
         };
         setClient(next);
         setEdited(next);
@@ -102,20 +101,6 @@ const ClientProfile = () => {
     };
     loadProfile();
   }, []);
-
-  // Monochrome brand icons to match LinkedIn/GitHub style
-  const UpworkIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg viewBox="0 0 24 24" role="img" aria-label="Upwork" className={className} focusable="false">
-      <circle cx="12" cy="12" r="12" fill="#000" />
-      <text x="50%" y="53%" textAnchor="middle" dominantBaseline="middle" fontSize="13.5" fontWeight="800" fill="#fff" fontFamily="Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif">Up</text>
-    </svg>
-  );
-  const FiverrIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg viewBox="0 0 24 24" role="img" aria-label="Fiverr" className={className} focusable="false">
-      <circle cx="12" cy="12" r="12" fill="#000" />
-      <text x="50%" y="53%" textAnchor="middle" dominantBaseline="middle" fontSize="13.5" fontWeight="800" fill="#fff" fontFamily="Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" letterSpacing="-0.5">fi</text>
-    </svg>
-  );
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -138,10 +123,9 @@ const ClientProfile = () => {
       <Tabs defaultValue="general" className="space-y-6">
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="skills">Skills & Experience</TabsTrigger>
+          <TabsTrigger value="business">Business Profile</TabsTrigger>
           <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
           <TabsTrigger value="connections">Connections</TabsTrigger>
-          <TabsTrigger value="payments">Payment Settings</TabsTrigger>
         </TabsList>
         <TabsContent value="general">
           <Card>
@@ -152,7 +136,6 @@ const ClientProfile = () => {
             <CardContent className="space-y-6">
               {canEdit && isEditing ? (
                 <>
-                  {/* Edit layout (compact form grid) */}
                   <div className="grid grid-cols-1 gap-4 items-center">
                     <div className="flex justify-start">
                       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleAvatarChange(e.target.files?.[0] || null)} />
@@ -162,8 +145,8 @@ const ClientProfile = () => {
                             <AvatarImage src={edited.avatarUrl} alt={edited.name} />
                           </Avatar>
                         ) : (
-                          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                            <User className="text-white" size={28} />
+                          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xl font-bold">
+                            {edited.name ? edited.name[0] : '?'}
                           </div>
                         )}
                         <button type="button" onClick={triggerAvatarPick} aria-label="Change photo" className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full border bg-background shadow hover:bg-secondary flex items-center justify-center">
@@ -174,154 +157,208 @@ const ClientProfile = () => {
                         <button type="button" onClick={removeAvatar} className="ml-3 text-xs text-muted-foreground hover:text-red-600">Remove photo</button>
                       )}
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-4">
-                      <div className="min-h-[72px] flex flex-col justify-start">
-                        <div className="text-sm font-medium text-muted-foreground">Full Name</div>
-                        <Input className="mt-1 h-9" value={edited.name} onChange={(e)=>setEdited({...edited, name: e.target.value})} placeholder="Your full name" />
-                      </div>
-                      <div className="min-h-[72px] flex flex-col justify-start">
-                        <div className="text-sm font-medium text-muted-foreground">Email</div>
-                        <Input className="mt-1 h-9" type="email" value={edited.email} onChange={(e)=>setEdited({...edited, email: e.target.value})} placeholder="name@example.com" />
-                      </div>
+                  {/* End avatar/photo section */}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    <div className="min-h-[72px] flex flex-col justify-start">
+                      <div className="text-sm font-medium text-muted-foreground">Full Name</div>
+                      <Input className="mt-1 h-9" value={edited.name} onChange={(e)=>setEdited({...edited, name: e.target.value})} placeholder="Your full name" />
                     </div>
-                    <div className="space-y-4">
-                      <div className="min-h-[72px] flex flex-col justify-start">
-                        <div className="text-sm font-medium text-muted-foreground">Phone</div>
-                        <Input className="mt-1 h-9" value={edited.phone} onChange={(e)=>setEdited({...edited, phone: e.target.value})} placeholder="(555) 123-4567" />
-                      </div>
-                      <div className="min-h-[72px] flex flex-col justify-start">
-                        <div className="text-sm font-medium text-muted-foreground">Location</div>
-                        <Input className="mt-1 h-9" value={edited.location} onChange={(e)=>setEdited({...edited, location: e.target.value})} placeholder="City, Country" />
-                      </div>
-                    </div>
-                    <div className="md:col-span-2">
-                      <div className="text-sm font-medium text-muted-foreground mb-1">Bio</div>
-                      <Textarea rows={2} className="resize-none text-sm" value={edited.bio} onChange={(e)=>setEdited({...edited, bio: e.target.value})} placeholder="Tell us about yourself" />
+                    <div className="min-h-[72px] flex flex-col justify-start">
+                      <div className="text-sm font-medium text-muted-foreground">Email</div>
+                      <Input className="mt-1 h-9" type="email" value={edited.email} onChange={(e)=>setEdited({...edited, email: e.target.value})} placeholder="name@example.com" />
                     </div>
                   </div>
-                </>
-              ) : (
-                <>
-                  {/* View layout to match StudentProfile */}
-                  <div className="grid md:grid-cols-2 gap-8 items-start">
-                    <div className="flex items-start gap-4">
-                      {client.avatarUrl ? (
-                        <Avatar className="h-16 w-16">
-                          <AvatarImage src={client.avatarUrl} alt={client.name} />
-                        </Avatar>
-                      ) : (
-                        <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                          <User className="text-white" size={28} />
-                        </div>
-                      )}
-                      <div className="space-y-4">
-                        <div>
-                          <div className="text-sm font-medium text-muted-foreground">Full Name</div>
-                          <div className="text-base font-semibold">{client.name || '—'}</div>
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-muted-foreground">Email</div>
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Mail size={16} />
-                            <span>{client.email || '—'}</span>
-                          </div>
-                        </div>
-                      </div>
+                  <div className="space-y-4">
+                    <div className="min-h-[72px] flex flex-col justify-start">
+                      <div className="text-sm font-medium text-muted-foreground">Phone</div>
+                      <Input className="mt-1 h-9" value={edited.phone} onChange={(e)=>setEdited({...edited, phone: e.target.value})} placeholder="(555) 123-4567" />
                     </div>
-                    <div className="space-y-4">
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Phone</div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Phone size={16} />
-                          <span>{client.phone || '—'}</span>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Location</div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <MapPin size={16} />
-                          <span>{client.location || '—'}</span>
-                        </div>
-                      </div>
+                    <div className="min-h-[72px] flex flex-col justify-start">
+                      <div className="text-sm font-medium text-muted-foreground">Location</div>
+                      <Input className="mt-1 h-9" value={edited.location} onChange={(e)=>setEdited({...edited, location: e.target.value})} placeholder="City, Country" />
                     </div>
                   </div>
-                  <div>
+                  <div className="md:col-span-2">
                     <div className="text-sm font-medium text-muted-foreground mb-1">Bio</div>
-                    <p className="text-muted-foreground text-sm">{client.bio || '—'}</p>
+                    <Textarea rows={2} className="resize-none text-sm" value={edited.bio} onChange={(e)=>setEdited({...edited, bio: e.target.value})} placeholder="Tell us about yourself" />
                   </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="connections">
-          <Card>
-            <CardHeader>
-              <CardTitle>Platform Connections</CardTitle>
-              <CardDescription>Link your professional profiles</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium flex items-center gap-2"><Linkedin className="h-4 w-4" /> LinkedIn</label>
-                  {canEdit && isEditing ? (
-                    <Input
-                      placeholder="https://linkedin.com/in/username"
-                      value={edited.platformLinks.linkedin}
-                      onChange={(e)=>setEdited({ ...edited, platformLinks: { ...edited.platformLinks, linkedin: e.target.value } })}
-                    />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{client.platformLinks.linkedin || 'Not connected'}</p>
-                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="grid md:grid-cols-2 gap-8 items-start">
+                  <div className="flex items-start gap-4">
+                    {client.avatarUrl ? (
+                      <Avatar className="h-16 w-16">
+                        <AvatarImage src={client.avatarUrl} alt={client.name} />
+                      </Avatar>
+                    ) : (
+                      <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xl font-bold">
+                        {client.name ? client.name[0] : '?'}
+                      </div>
+                    )}
+                    <div className="space-y-4">
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">Full Name</div>
+                        <div className="text-base font-semibold">{client.name || '—'}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">Email</div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Mail size={16} />
+                          <span>{client.email || '—'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-sm font-medium text-muted-foreground">Phone</div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Phone size={16} />
+                        <span>{client.phone || '—'}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-muted-foreground">Location</div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <MapPin size={16} />
+                        <span>{client.location || '—'}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium flex items-center gap-2"><Github className="h-4 w-4" /> GitHub</label>
-                  {canEdit && isEditing ? (
-                    <Input
-                      placeholder="https://github.com/username"
-                      value={edited.platformLinks.github}
-                      onChange={(e)=>setEdited({ ...edited, platformLinks: { ...edited.platformLinks, github: e.target.value } })}
-                    />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{client.platformLinks.github || 'Not connected'}</p>
-                  )}
+                  <div className="text-sm font-medium text-muted-foreground mb-1">Bio</div>
+                  <p className="text-muted-foreground text-sm">{client.bio || '—'}</p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium flex items-center gap-2"><UpworkIcon className="h-4 w-4" /> Upwork</label>
-                  {canEdit && isEditing ? (
-                    <Input
-                      placeholder="https://upwork.com/freelancers/username"
-                      value={edited.platformLinks.upwork}
-                      onChange={(e)=>setEdited({ ...edited, platformLinks: { ...edited.platformLinks, upwork: e.target.value } })}
-                    />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{client.platformLinks.upwork || 'Not connected'}</p>
-                  )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+      {/* Business Profile Card */}
+      <TabsContent value="business">
+        <Card>
+          <CardHeader>
+            <CardTitle>Business Profile</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {canEdit && isEditing ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <label className="text-sm font-medium">Business Name</label>
+                  <Input
+                    value={edited.businessName || ''}
+                    onChange={e => setEdited({ ...edited, businessName: e.target.value })}
+                    placeholder="Your business name"
+                    className="h-10"
+                  />
                 </div>
-                <div>
-                  <label className="text-sm font-medium flex items-center gap-2"><FiverrIcon className="h-4 w-4" /> Fiverr</label>
-                  {canEdit && isEditing ? (
-                    <Input
-                      placeholder="https://fiverr.com/username"
-                      value={edited.platformLinks.fiverr}
-                      onChange={(e)=>setEdited({ ...edited, platformLinks: { ...edited.platformLinks, fiverr: e.target.value } })}
-                    />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{client.platformLinks.fiverr || 'Not connected'}</p>
-                  )}
+                <div className="space-y-4">
+                  <label className="text-sm font-medium">Industry</label>
+                  <Input
+                    value={edited.industry || ''}
+                    onChange={e => setEdited({ ...edited, industry: e.target.value })}
+                    placeholder="Industry or sector"
+                    className="h-10"
+                  />
+                </div>
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-sm font-medium">Location</label>
+                  <Input
+                    value={edited.location || ''}
+                    onChange={e => setEdited({ ...edited, location: e.target.value })}
+                    placeholder="Business location"
+                    className="h-10"
+                  />
+                </div>
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-sm font-medium">About</label>
+                  <Textarea
+                    value={edited.businessDescription || ''}
+                    onChange={e => setEdited({ ...edited, businessDescription: e.target.value })}
+                    placeholder="Company description & mission"
+                    rows={4}
+                    className="resize-none text-sm"
+                  />
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        {/* Other tabs can be filled in as needed */}
-      </Tabs>
-    </div>
-  );
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <span className="font-medium">Business Name:</span>
+                  <span className="ml-2">{client.businessName || 'Acme, Inc.'}</span>
+                </div>
+                <div>
+                  <span className="font-medium">Industry:</span>
+                  <span className="ml-2">{client.industry || 'Design & Marketing'}</span>
+                </div>
+                <div>
+                  <span className="font-medium">Location:</span>
+                  <span className="ml-2">{client.location || 'Miami, FL'}</span>
+                </div>
+                <div className="md:col-span-2 mt-2">
+                  <span className="font-medium">About:</span>
+                  <span className="ml-2">{client.businessDescription || 'Company description & mission not provided.'}</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+      {/* Connections Card */}
+      <TabsContent value="connections">
+        <Card>
+          <CardHeader>
+            <CardTitle>Platform Connections</CardTitle>
+            <CardDescription>Link your professional profiles</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium flex items-center gap-2"><Linkedin className="h-4 w-4" /> LinkedIn</label>
+                {canEdit && isEditing ? (
+                  <Input placeholder="https://linkedin.com/in/username" value={edited.platformLinks.linkedin || ''} onChange={e => setEdited({ ...edited, platformLinks: { ...edited.platformLinks, linkedin: e.target.value } })} />
+                ) : (
+                  <p className="text-sm text-muted-foreground">{client.platformLinks?.linkedin || 'Not connected'}</p>
+                )}
+              </div>
+              <div>
+                <label className="text-sm font-medium flex items-center gap-2"><Twitter className="h-4 w-4" /> Twitter</label>
+                {canEdit && isEditing ? (
+                  <Input placeholder="https://twitter.com/username" value={edited.platformLinks.twitter || ''} onChange={e => setEdited({ ...edited, platformLinks: { ...edited.platformLinks, twitter: e.target.value } })} />
+                ) : (
+                  <p className="text-sm text-muted-foreground">{client.platformLinks?.twitter || 'Not connected'}</p>
+                )}
+              </div>
+              <div>
+                <label className="text-sm font-medium flex items-center gap-2"><Facebook className="h-4 w-4" /> Facebook</label>
+                {canEdit && isEditing ? (
+                  <Input placeholder="https://facebook.com/username" value={edited.platformLinks.facebook || ''} onChange={e => setEdited({ ...edited, platformLinks: { ...edited.platformLinks, facebook: e.target.value } })} />
+                ) : (
+                  <p className="text-sm text-muted-foreground">{client.platformLinks?.facebook || 'Not connected'}</p>
+                )}
+              </div>
+              <div>
+                <label className="text-sm font-medium flex items-center gap-2"><Instagram className="h-4 w-4" /> Instagram</label>
+                {canEdit && isEditing ? (
+                  <Input placeholder="https://instagram.com/username" value={edited.platformLinks.instagram || ''} onChange={e => setEdited({ ...edited, platformLinks: { ...edited.platformLinks, instagram: e.target.value } })} />
+                ) : (
+                  <p className="text-sm text-muted-foreground">{client.platformLinks?.instagram || 'Not connected'}</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      {/* Portfolio tab can be filled in as needed */}
+    </Tabs>
+  </div>
+ );
 };
 
 export default ClientProfile;

@@ -1,4 +1,4 @@
-import { Calendar, Home, Users, Briefcase, BookOpen, Settings, HelpCircle, User, FileText, Shield, BarChart3, AlertTriangle, Search, Star, UserPlus, Sparkles, LucideIcon } from "lucide-react"
+import { Calendar, Home, Users, Briefcase, BookOpen, Settings, HelpCircle, User, FileText, Shield, BarChart3, AlertTriangle, Search, Star, UserPlus, Sparkles, LucideIcon, DollarSign } from "lucide-react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useRole } from "@/contexts/RoleContext"
 import { useAuth } from "@/contexts/AuthContext"
@@ -38,6 +38,16 @@ const studentNavigation = [
     title: "My Profile",
     url: "/profile",
     icon: User,
+  },
+  {
+    title: "Payouts",
+    url: "/payouts",
+    icon: DollarSign,
+  },
+  {
+    title: "Settings",
+    url: "/student/settings",
+    icon: Settings,
   },
 ]
 
@@ -157,7 +167,7 @@ export function AppSidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { role } = useRole()
-  const { isGuest, loading } = useAuth()
+  const { isGuest, loading, user } = useAuth()
   // Always use client sidebar on homepage
   const isHome = location.pathname === '/';
   let navigationItems;
@@ -174,7 +184,19 @@ export function AppSidebar() {
       { title: "Manage Jobs", url: "/manage-jobs", icon: Settings },
     ];
   } else {
-    navigationItems = role === 'student' ? studentNavigation : (role === 'admin' || role === 'developer') ? adminNavigation : clientNavigation;
+    if (role === 'student') {
+      // Use dynamic route for student's own profile when possible
+      const dynStudentNav = studentNavigation.map((item) =>
+        item.title === 'My Profile' && user?.id
+          ? { ...item, url: `/student/${user.id}` }
+          : item
+      )
+      navigationItems = dynStudentNav
+    } else if (role === 'admin' || role === 'developer') {
+      navigationItems = adminNavigation
+    } else {
+      navigationItems = clientNavigation
+    }
     quickActions = role === 'student' ? studentQuickActions : (role === 'admin' || role === 'developer') ? adminQuickActions : clientQuickActions;
   }
   if (loading) {

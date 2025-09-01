@@ -1,3 +1,4 @@
+import StudentSettings from "./pages/StudentSettings";
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -42,6 +43,7 @@ import StudentResources from "./pages/StudentResources";
 import BrowseStudents from "./pages/BrowseStudents";
 import StudentProfile from "./pages/StudentProfile";
 import AllResources from "./pages/AllResources";
+import Payouts from "./pages/Payouts";
 
 import AdminStats from "./pages/AdminStats";
 import AdminUsers from "./pages/AdminUsers";
@@ -233,6 +235,22 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute>
                     <Layout><BrowseStudents /></Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/settings"
+                element={
+                  <ProtectedRoute>
+                    <Layout><StudentSettings /></Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/payouts"
+                element={
+                  <ProtectedRoute>
+                    <Layout><Payouts /></Layout>
                   </ProtectedRoute>
                 }
               />

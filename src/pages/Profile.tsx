@@ -517,7 +517,6 @@ const Profile = () => {
           <TabsTrigger value="skills">Skills & Experience</TabsTrigger>
           <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
           <TabsTrigger value="connections">Connections</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -934,112 +933,6 @@ const Profile = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="settings">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Email Notifications</CardTitle>
-                <CardDescription>Manage your email preferences</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Job Alerts</p>
-                    <p className="text-sm text-muted-foreground">Receive notifications about new job opportunities</p>
-                  </div>
-                  <Switch
-                    checked={emailSettings.jobAlerts}
-                    onCheckedChange={(checked) => setEmailSettings({ ...emailSettings, jobAlerts: checked })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Messages</p>
-                    <p className="text-sm text-muted-foreground">Receive notifications about new messages</p>
-                  </div>
-                  <Switch
-                    checked={emailSettings.messages}
-                    onCheckedChange={(checked) => setEmailSettings({ ...emailSettings, messages: checked })}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Security</CardTitle>
-                <CardDescription>Manage your account security settings</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Two-Factor Authentication</p>
-                    <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
-                  </div>
-                  <Switch
-                    checked={twoFAEnabled}
-                    onCheckedChange={setTwoFAEnabled}
-                  />
-                </div>
-                <div className="pt-4 border-t">
-                  <Button variant="outline" onClick={() => setShowPassword(!showPassword)}>
-                    Change Password
-                  </Button>
-                  {showPassword && (
-                    <div className="mt-4 space-y-3">
-                      <Input
-                        type="password"
-                        placeholder="Current Password"
-                        value={pwd.current}
-                        onChange={(e) => setPwd({ ...pwd, current: e.target.value })}
-                      />
-                      <Input
-                        type="password"
-                        placeholder="New Password"
-                        value={pwd.next}
-                        onChange={(e) => setPwd({ ...pwd, next: e.target.value })}
-                      />
-                      <Input
-                        type="password"
-                        placeholder="Confirm New Password"
-                        value={pwd.confirm}
-                        onChange={(e) => setPwd({ ...pwd, confirm: e.target.value })}
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={async () => {
-                          if (!pwd.current || !pwd.next || !pwd.confirm) {
-                            toast({ title: "All fields required", variant: "destructive" });
-                            return;
-                          }
-                          if (pwd.next !== pwd.confirm) {
-                            toast({ title: "Passwords do not match", variant: "destructive" });
-                            return;
-                          }
-                          if (pwd.next.length < 8) {
-                            toast({ title: "Password must be at least 8 characters", variant: "destructive" });
-                            return;
-                          }
-                          // Supabase only requires new password, but you may want to verify current password by re-authenticating
-                          const { error } = await supabase.auth.updateUser({ password: pwd.next });
-                          if (error) {
-                            toast({ title: "Password update failed", description: error.message, variant: "destructive" });
-                          } else {
-                            toast({ title: "Password updated", description: "Your password has been changed." });
-                            setPwd({ current: "", next: "", confirm: "" });
-                            setShowPassword(false);
-                          }
-                        }}>Update Password</Button>
-                        <Button variant="ghost" size="sm" onClick={() => setShowPassword(false)}>
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
       </Tabs>
     </div>
   );
