@@ -1,211 +1,327 @@
-
-import React, { useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useTheme } from "next-themes";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Image } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { QRCodeCanvas } from 'qrcode.react';
+import { generate2FASecret, verify2FACode } from '@/lib/twoFactor';
+import { sendPreferenceTest } from '@/lib/notifications';
 import { loadUserSettings, saveUserSettings } from '@/lib/userSettings';
-
-const STUDENT_SETTINGS_KEY = 'myvillage-student-settings';
+import '@/components/ui/settings-dropdown.css';
+import '@/components/ui/accessibility-spacing.css';
 
 const StudentSettings: React.FC = () => {
   const { toast } = useToast();
-  const [emailSettings, setEmailSettings] = useState({ jobAlerts: true, messages: true });
-  const [twoFAEnabled, setTwoFAEnabled] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [pwd, setPwd] = useState({ current: "", next: "", confirm: "" });
-  // Avatar state (local only, not persisted)
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const triggerAvatarPick = () => fileInputRef.current?.click();
-  const handleAvatarChange = (file?: File | null) => {
-    if (!file) return;
-    if (!file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = () => setAvatarUrl(String(reader.result || ''));
-    reader.readAsDataURL(file);
-  };
-  const removeAvatar = () => setAvatarUrl(null);
 
-  // Load settings on mount
-  React.useEffect(() => {
-    const load = async () => {
-      const savedSettingsLocal = localStorage.getItem(STUDENT_SETTINGS_KEY);
-      if (savedSettingsLocal) {
-        const parsed = JSON.parse(savedSettingsLocal);
-        setEmailSettings(parsed.emailSettings || emailSettings);
-        setTwoFAEnabled(parsed.twoFAEnabled || false);
+  // Storage keys
+  const STUDENT_SETTINGS_KEY = 'student-settings';
+  const STUDENT_2FA_KEY = 'myvillage-student-2fa';
+
+  // Form/settings state (aligns with ClientSettings)
+  const defaultForm = {
+    fontSize: 'medium',
+    colorMode: 'system',
+    notifications: {
+      newApplicants: { email: false, sms: false },
+      jobUpdates: { email: true, sms: false },
+      applicationStatus: { email: true, sms: false },
+      recommendations: { email: true, sms: false },
+      billingEmails: { email: true, sms: false },
+    } as Record<string, { email: boolean; sms: boolean }>,
+  };
+  const [form, setForm] = useState(defaultForm);
+  const { setTheme } = useTheme();
+  const [isSaving, setIsSaving] = useState(false);
+  const notifCardRef = useRef<HTMLDivElement | null>(null);
+  const rightColRef = useRef<HTMLDivElement | null>(null);
+
+  const sizeToPx = (s: string | undefined) => {
+    if (s === 'small') return '13px';
+    if (s === 'large') return '18px';
+    return '15px'; // medium/default
+  };
+
+  // Apply accessibility preferences immediately and sync theme via next-themes
+  useEffect(() => {
+    const px = sizeToPx(form.fontSize);
+    document.documentElement.style.setProperty('--font-size', px);
+    document.documentElement.style.setProperty('--font-size-label', form.fontSize || 'medium');
+    setTheme(form.colorMode as 'light' | 'dark' | 'system');
+  }, [form.fontSize, form.colorMode, setTheme]);
+
+  // Load settings (localStorage + backend)
+  useEffect(() => {
+    const loadAll = async () => {
+      try {
+        const local = localStorage.getItem(STUDENT_SETTINGS_KEY);
+        if (local) {
+          const parsed = JSON.parse(local);
+          setForm({
+            ...defaultForm,
+            ...parsed,
+            notifications: { ...defaultForm.notifications, ...(parsed.notifications || {}) },
+          });
+          if (parsed.fontSize) document.documentElement.style.setProperty('--font-size', sizeToPx(parsed.fontSize));
+          if (parsed.colorMode) setTheme(parsed.colorMode);
+        }
+      } catch (e) {
+        console.error('Error parsing local student settings', e);
       }
-      const savedSettings = await loadUserSettings('student_settings');
-      if (savedSettings) {
-        setEmailSettings(savedSettings.emailSettings || emailSettings);
-        setTwoFAEnabled(savedSettings.twoFAEnabled || false);
+      const remote = await loadUserSettings('student_settings');
+      if (remote) {
+        setForm(prev => ({
+          ...prev,
+          ...remote,
+          notifications: { ...defaultForm.notifications, ...(remote.notifications || {}) },
+        }));
+        if (remote.fontSize) document.documentElement.style.setProperty('--font-size', sizeToPx(remote.fontSize));
+        if (remote.colorMode) setTheme(remote.colorMode);
       }
     };
-    load();
+    loadAll();
+  }, []);
+
+  // Match Notifications card height to total right-column height (desktop only)
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 768px)');
+    const syncHeights = () => {
+      if (!notifCardRef.current) return;
+      if (mql.matches && rightColRef.current) {
+        const h = rightColRef.current.getBoundingClientRect().height;
+        notifCardRef.current.style.minHeight = `${h}px`;
+      } else {
+        notifCardRef.current.style.minHeight = '';
+      }
+    };
+    const ro = new ResizeObserver(syncHeights);
+    if (rightColRef.current) ro.observe(rightColRef.current);
+    window.addEventListener('resize', syncHeights);
+    mql.addEventListener?.('change', syncHeights as any);
+    syncHeights();
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', syncHeights);
+      mql.removeEventListener?.('change', syncHeights as any);
+      if (notifCardRef.current) notifCardRef.current.style.minHeight = '';
+    };
   }, []);
 
   const handleSave = async () => {
-    const settingsData = { emailSettings, twoFAEnabled };
-    localStorage.setItem(STUDENT_SETTINGS_KEY, JSON.stringify(settingsData));
-    const success = await saveUserSettings('student_settings', settingsData);
-    if (success) {
-      toast({ title: "Settings saved", description: "Your settings have been saved successfully." });
-    } else {
-      toast({ title: "Error", description: "Failed to save settings. Please try again.", variant: "destructive" });
+    setIsSaving(true);
+    localStorage.setItem(STUDENT_SETTINGS_KEY, JSON.stringify(form));
+    const ok = await saveUserSettings('student_settings', form);
+    if (form.colorMode) setTheme(form.colorMode);
+    // Fire a test notification to confirm channels for the user
+    try {
+      await sendPreferenceTest(form.notifications as any);
+    } catch (e) {
+      console.warn('Notification test failed', e);
     }
+    toast({
+      title: ok ? 'Settings saved' : 'Error',
+      description: ok ? 'Your settings have been saved successfully.' : 'Failed to save settings. Please try again.',
+      variant: ok ? undefined : 'destructive',
+    });
+    setIsSaving(false);
+  };
+
+  // Two-factor auth state
+  const [twoFAEnabled, setTwoFAEnabled] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(STUDENT_2FA_KEY) || '{}').enabled || false;
+    } catch {
+      return false;
+    }
+  });
+  const [twoFASwitchOn, setTwoFASwitchOn] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(STUDENT_2FA_KEY) || '{}').enabled || false;
+    } catch {
+      return false;
+    }
+  });
+  const [twoFASecret, setTwoFASecret] = useState<string | null>(null);
+  const [otpAuthUrl, setOtpAuthUrl] = useState<string | null>(null);
+  const [codeInput, setCodeInput] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [show2FASetup, setShow2FASetup] = useState(false);
+
+  const handleEnable2FA = () => {
+    setTwoFASwitchOn(true);
+    const { secret, otpauth } = generate2FASecret('student@myvillage.com');
+    setTwoFASecret(secret);
+    setOtpAuthUrl(otpauth);
+    setShow2FASetup(true);
+    setCodeInput('');
+  };
+
+  const handleVerify2FA = () => {
+    setVerifying(true);
+    if (twoFASecret && verify2FACode(twoFASecret, codeInput)) {
+      setTwoFAEnabled(true);
+      setTwoFASwitchOn(true);
+      setShow2FASetup(false);
+      localStorage.setItem(STUDENT_2FA_KEY, JSON.stringify({ enabled: true, secret: twoFASecret }));
+      toast({ title: 'Two-Factor Authentication Enabled', description: '2FA is now active for your student account.' });
+    } else {
+      toast({ title: 'Invalid Code', description: 'The code you entered is incorrect.', variant: 'destructive' });
+    }
+    setVerifying(false);
+  };
+
+  const handleDisable2FA = () => {
+    setTwoFAEnabled(false);
+    setTwoFASwitchOn(false);
+    setTwoFASecret(null);
+    setOtpAuthUrl(null);
+    setShow2FASetup(false);
+    setCodeInput('');
+    localStorage.setItem(STUDENT_2FA_KEY, JSON.stringify({ enabled: false }));
+    toast({ title: 'Two-Factor Authentication Disabled', description: '2FA has been turned off for your student account.' });
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-2xl mx-auto">
+    <div className="p-6 max-w-5xl mx-auto">
       <div className="flex flex-col items-center mb-6">
-        <div className="relative">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={e => handleAvatarChange(e.target.files?.[0] || null)}
-          />
-          {avatarUrl ? (
-            <Avatar className="h-20 w-20">
-              <AvatarImage src={avatarUrl} alt="Profile" />
-            </Avatar>
-          ) : (
-            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="text-white w-8 h-8">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 7.5a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 19.125a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21c-2.676 0-5.216-.584-7.499-1.875z" />
-              </svg>
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={triggerAvatarPick}
-            aria-label="Change photo"
-            className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full border bg-background shadow hover:bg-secondary flex items-center justify-center"
-          >
-            <Image className="h-4 w-4" />
-          </button>
-          {avatarUrl && (
-            <button
-              type="button"
-              onClick={removeAvatar}
-              className="mt-2 block text-xs text-muted-foreground hover:text-red-600"
-            >
-              Remove photo
-            </button>
-          )}
-        </div>
         <h1 className="text-3xl font-bold mt-4">Settings</h1>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Email Notifications</CardTitle>
-          <CardDescription>Manage your email preferences</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Job Alerts</p>
-              <p className="text-sm text-muted-foreground">Receive notifications about new job opportunities</p>
-            </div>
-            <Switch
-              checked={emailSettings.jobAlerts}
-              onCheckedChange={(checked) => setEmailSettings({ ...emailSettings, jobAlerts: checked })}
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Messages</p>
-              <p className="text-sm text-muted-foreground">Receive notifications about new messages</p>
-            </div>
-            <Switch
-              checked={emailSettings.messages}
-              onCheckedChange={(checked) => setEmailSettings({ ...emailSettings, messages: checked })}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="space-y-8">
+          {/* Notifications */}
+          <Card ref={notifCardRef}>
+            <CardHeader>
+              <CardTitle>Notifications</CardTitle>
+              <CardDescription>Choose how you want to receive notifications for each type</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[
+                { key: 'applicationStatus', label: 'Application Updates', desc: 'Get notified when clients act on your application' },
+                { key: 'newApplicants', label: 'New Applicants', desc: 'Get notified when someone applies' },
+                { key: 'jobUpdates', label: 'Job Updates', desc: 'Edits or status changes to your posts' },
+                { key: 'recommendations', label: 'Requests', desc: 'Get notified when a student responds to your request' },
+                { key: 'billingEmails', label: 'Billing', desc: 'Invoices and receipts' }
+              ].map(n => (
+                <div key={n.key} className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{n.label}</p>
+                    <p className="text-sm text-muted-foreground">{n.desc}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs">Email</span>
+                      <Switch
+                        checked={form.notifications[n.key]?.email ?? false}
+                        onCheckedChange={v => setForm({
+                          ...form,
+                          notifications: {
+                            ...form.notifications,
+                            [n.key]: { ...form.notifications[n.key], email: v }
+                          }
+                        })}
+                      />
+                      <span className="text-xs">SMS</span>
+                      <Switch
+                        checked={form.notifications[n.key]?.sms ?? false}
+                        onCheckedChange={v => setForm({
+                          ...form,
+                          notifications: {
+                            ...form.notifications,
+                            [n.key]: { ...form.notifications[n.key], sms: v }
+                          }
+                        })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Security</CardTitle>
-          <CardDescription>Manage your account security settings</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Two-Factor Authentication</p>
-              <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
-            </div>
-            <Switch
-              checked={twoFAEnabled}
-              onCheckedChange={setTwoFAEnabled}
-            />
-          </div>
-          <div className="pt-4 border-t">
-            <Button variant="outline" onClick={() => setShowPassword(!showPassword)}>
-              Change Password
-            </Button>
-            {showPassword && (
-              <div className="mt-4 space-y-3">
-                <Input
-                  type="password"
-                  placeholder="Current Password"
-                  value={pwd.current}
-                  onChange={(e) => setPwd({ ...pwd, current: e.target.value })}
+        <div className="space-y-8" ref={rightColRef}>
+          {/* Security */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Security</CardTitle>
+              <CardDescription>Manage your account security settings</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Two-Factor Authentication</p>
+                  <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
+                </div>
+                <Switch
+                  checked={twoFASwitchOn || show2FASetup}
+                  onCheckedChange={checked => {
+                    if (checked) handleEnable2FA();
+                    else handleDisable2FA();
+                  }}
                 />
-                <Input
-                  type="password"
-                  placeholder="New Password"
-                  value={pwd.next}
-                  onChange={(e) => setPwd({ ...pwd, next: e.target.value })}
-                />
-                <Input
-                  type="password"
-                  placeholder="Confirm New Password"
-                  value={pwd.confirm}
-                  onChange={(e) => setPwd({ ...pwd, confirm: e.target.value })}
-                />
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={async () => {
-                    if (!pwd.current || !pwd.next || !pwd.confirm) {
-                      toast({ title: "All fields required", variant: "destructive" });
-                      return;
-                    }
-                    if (pwd.next !== pwd.confirm) {
-                      toast({ title: "Passwords do not match", variant: "destructive" });
-                      return;
-                    }
-                    if (pwd.next.length < 8) {
-                      toast({ title: "Password must be at least 8 characters", variant: "destructive" });
-                      return;
-                    }
-                    const { error } = await supabase.auth.updateUser({ password: pwd.next });
-                    if (error) {
-                      toast({ title: "Password update failed", description: error.message, variant: "destructive" });
-                    } else {
-                      toast({ title: "Password updated", description: "Your password has been changed." });
-                      setPwd({ current: "", next: "", confirm: "" });
-                      setShowPassword(false);
-                    }
-                  }}>Update Password</Button>
-                  <Button variant="ghost" size="sm" onClick={() => setShowPassword(false)}>
-                    Cancel
-                  </Button>
+              </div>
+              {show2FASetup && otpAuthUrl && (
+                <div className="mt-4 space-y-4">
+                  <p className="font-medium">Scan this QR code with your authenticator app:</p>
+                  <div className="flex justify-center"><QRCodeCanvas value={otpAuthUrl} size={160} /></div>
+                  <p className="text-sm text-muted-foreground">Or enter this secret manually: <span className="font-mono">{twoFASecret}</span></p>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Enter 6-digit code"
+                      value={codeInput}
+                      onChange={e => setCodeInput(e.target.value)}
+                      maxLength={6}
+                      className="w-40"
+                    />
+                    <Button onClick={handleVerify2FA} disabled={verifying || codeInput.length !== 6}>
+                      {verifying ? 'Verifying...' : 'Verify'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">After verifying, 2FA will be enabled for your account.</p>
+                </div>
+              )}
+              {twoFAEnabled && !show2FASetup && (
+                <div className="mt-2 text-green-600 font-medium">2FA is enabled for your account.</div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Accessibility & Preferences */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Accessibility & Preferences</CardTitle>
+              <CardDescription>Customize your experience</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 gap-6">
+                <div>
+                  <label className="text-sm font-medium">Text Size</label>
+                  <select className="w-full h-10 rounded px-2 settings-dropdown" value={form.fontSize || 'medium'} onChange={e => setForm({ ...form, fontSize: e.target.value })}>
+                    <option value="small">Small (Compact)</option>
+                    <option value="medium">Medium (Default)</option>
+                    <option value="large">Large (Easier Readability)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Color Mode</label>
+                  <select className="w-full h-10 rounded px-2 settings-dropdown" value={form.colorMode || 'system'} onChange={e => { const v = e.target.value; setForm({ ...form, colorMode: v }); setTheme(v as 'light' | 'dark' | 'system'); }}>
+                    <option value="system">System</option>
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                  </select>
                 </div>
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
-      <div className="flex justify-end">
-        <Button onClick={handleSave}>Save Settings</Button>
+      {/* Save Button */}
+      <div className="flex justify-end mt-8">
+        <Button onClick={handleSave} disabled={isSaving}>
+          {isSaving ? 'Saving...' : 'Save Settings'}
+        </Button>
       </div>
     </div>
   );
