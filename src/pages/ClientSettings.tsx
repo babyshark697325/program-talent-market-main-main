@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,14 +11,12 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { loadUserSettings, saveUserSettings } from '@/lib/userSettings';
 import { generate2FASecret, verify2FACode } from '@/lib/twoFactor';
-import { sendPreferenceTest } from '@/lib/notifications';
 import { QRCodeCanvas } from 'qrcode.react';
 import '@/components/ui/settings-dropdown.css';
 import '@/components/ui/accessibility-spacing.css';
 
 
 const ClientSettings: React.FC = () => {
-  // ...existing code...
   // ...existing code...
   const { toast } = useToast();
   const { setTheme } = useTheme();
@@ -71,15 +69,11 @@ const ClientSettings: React.FC = () => {
     },
   };
   const [form, setForm] = useState(defaultForm);
-  const sizeToPx = (s: string | undefined) => {
-    if (s === 'small') return '13px';
-    if (s === 'large') return '18px';
-    return '15px'; // medium/default
-  };
-
   // Instantly apply font size and sync color mode via next-themes
   useEffect(() => {
-    const px = sizeToPx(form.fontSize);
+    let px = '16px';
+    if (form.fontSize === 'small') px = '14px';
+    else if (form.fontSize === 'large') px = '20px';
     document.documentElement.style.setProperty('--font-size', px);
     document.documentElement.style.setProperty('--font-size-label', form.fontSize || 'medium');
     setTheme(form.colorMode as 'light' | 'dark' | 'system');
@@ -92,9 +86,6 @@ const ClientSettings: React.FC = () => {
   });
   const [saving, setSaving] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  // Alignment refs
-  const notifCardRef = useRef<HTMLDivElement | null>(null);
-  const rightColRef = useRef<HTMLDivElement | null>(null);
 
 
   // Load settings from localStorage and backend on mount
@@ -106,7 +97,7 @@ const ClientSettings: React.FC = () => {
         if (savedLocal) {
           const parsed = JSON.parse(savedLocal);
           setForm({ ...defaultForm, ...parsed });
-          if (parsed.fontSize) document.documentElement.style.setProperty('--font-size', sizeToPx(parsed.fontSize));
+          if (parsed.fontSize) document.documentElement.style.setProperty('--font-size', parsed.fontSize);
           if (parsed.colorMode) setTheme(parsed.colorMode);
         }
       } catch (error) {
@@ -116,52 +107,21 @@ const ClientSettings: React.FC = () => {
       const savedSettings = await loadUserSettings('client_settings');
       if (savedSettings) {
         setForm((prev) => ({ ...prev, ...savedSettings }));
-        if (savedSettings.fontSize) document.documentElement.style.setProperty('--font-size', sizeToPx(savedSettings.fontSize));
+        if (savedSettings.fontSize) document.documentElement.style.setProperty('--font-size', savedSettings.fontSize);
         if (savedSettings.colorMode) setTheme(savedSettings.colorMode);
       }
     };
     loadAllSettings();
   }, []);
 
-  // Match Notifications (left) card height to total right column height on desktop
-  useEffect(() => {
-    const mql = window.matchMedia('(min-width: 768px)');
-    const syncHeights = () => {
-      if (!notifCardRef.current) return;
-      if (mql.matches && rightColRef.current) {
-        const h = rightColRef.current.getBoundingClientRect().height;
-        notifCardRef.current.style.minHeight = `${h}px`;
-      } else {
-        notifCardRef.current.style.minHeight = '';
-      }
-    };
-    const ro = new ResizeObserver(syncHeights);
-    if (rightColRef.current) ro.observe(rightColRef.current);
-    window.addEventListener('resize', syncHeights);
-    mql.addEventListener?.('change', syncHeights as any);
-    syncHeights();
-    return () => {
-      ro.disconnect();
-      window.removeEventListener('resize', syncHeights);
-      mql.removeEventListener?.('change', syncHeights as any);
-      if (notifCardRef.current) notifCardRef.current.style.minHeight = '';
-    };
-  }, []);
-
   const handleSave = async () => {
     setIsSaving(true);
     // Save to localStorage
     localStorage.setItem(CLIENT_SETTINGS_KEY, JSON.stringify(form));
-    if (form.fontSize) document.documentElement.style.setProperty('--font-size', sizeToPx(form.fontSize));
+    if (form.fontSize) document.documentElement.style.setProperty('--font-size', form.fontSize);
     if (form.colorMode) setTheme(form.colorMode);
     // Save to backend
     const success = await saveUserSettings('client_settings', form);
-    // Fire a test notification to confirm channels for the user
-    try {
-      await sendPreferenceTest(form.notifications as any);
-    } catch (e) {
-      console.warn('Notification test failed', e);
-    }
     if (success) {
       toast({
         title: "Settings saved",
@@ -225,7 +185,7 @@ const ClientSettings: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-8">
           {/* Notifications Section */}
-          <Card ref={notifCardRef}>
+          <Card>
             <CardHeader>
               <CardTitle>Notifications</CardTitle>
               <CardDescription>Choose how you want to receive notifications for each type</CardDescription>
@@ -234,7 +194,7 @@ const ClientSettings: React.FC = () => {
               {[
                 { key: 'newApplicants', label: 'New Applicants', desc: 'Get notified when someone applies' },
                 { key: 'jobUpdates', label: 'Job Updates', desc: 'Edits or status changes to your posts' },
-                { key: 'recommendations', label: 'Requests', desc: 'Get notified when a student responds to your request' },
+                { key: 'recommendations', label: 'Recommendations', desc: 'Talent you may want to interview' },
                 { key: 'billingEmails', label: 'Billing', desc: 'Invoices and receipts' }
               ].map(n => (
                 <div key={n.key} className="flex items-center justify-between">
@@ -260,9 +220,36 @@ const ClientSettings: React.FC = () => {
               ))}
             </CardContent>
           </Card>
-          
+          {/* Accessibility & Preferences Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Accessibility & Preferences</CardTitle>
+              <CardDescription>Customize your experience</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Only keep the controlled dropdowns below */}
+                <div className="grid grid-cols-1 gap-6">
+                  <div>
+                    <label className="text-sm font-medium">Text Size</label>
+                    <select className="w-full h-10 rounded px-2 settings-dropdown" value={form.fontSize || "medium"} onChange={e => setForm({ ...form, fontSize: e.target.value })}>
+                      <option value="small">Small (Compact)</option>
+                      <option value="medium">Medium (Default)</option>
+                      <option value="large">Large (Easier Readability)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Color Mode</label>
+                    <select className="w-full h-10 rounded px-2 settings-dropdown" value={form.colorMode || "system"} onChange={e => { const v = e.target.value; setForm({ ...form, colorMode: v }); setTheme(v as 'light' | 'dark' | 'system'); }}>
+                      <option value="system">System</option>
+                      <option value="light">Light</option>
+                      <option value="dark">Dark</option>
+                    </select>
+                  </div>
+                </div>
+              </CardContent>
+          </Card>
         </div>
-        <div className="space-y-8" ref={rightColRef}>
+        <div className="space-y-8">
           {/* Security Section */}
           <Card>
             <CardHeader>
@@ -306,34 +293,6 @@ const ClientSettings: React.FC = () => {
               {twoFAEnabled && !show2FASetup && (
                 <div className="mt-2 text-green-600 font-medium">2FA is enabled for your account.</div>
               )}
-            </CardContent>
-          </Card>
-          
-          {/* Accessibility & Preferences Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Accessibility & Preferences</CardTitle>
-              <CardDescription>Customize your experience</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 gap-6">
-                <div>
-                  <label className="text-sm font-medium">Text Size</label>
-                  <select className="w-full h-10 rounded px-2 settings-dropdown" value={form.fontSize || "medium"} onChange={e => setForm({ ...form, fontSize: e.target.value })}>
-                    <option value="small">Small (Compact)</option>
-                    <option value="medium">Medium (Default)</option>
-                    <option value="large">Large (Easier Readability)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Color Mode</label>
-                  <select className="w-full h-10 rounded px-2 settings-dropdown" value={form.colorMode || "system"} onChange={e => { const v = e.target.value; setForm({ ...form, colorMode: v }); setTheme(v as 'light' | 'dark' | 'system'); }}>
-                    <option value="system">System</option>
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                  </select>
-                </div>
-              </div>
             </CardContent>
           </Card>
         </div>
