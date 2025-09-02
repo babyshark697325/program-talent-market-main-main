@@ -534,7 +534,6 @@ const StudentProfile = () => {
           </Card>
         </TabsContent>
 
-        {/* Settings - Accessibility & Preferences */}
         
 
       </Tabs>

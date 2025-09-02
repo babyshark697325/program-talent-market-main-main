@@ -1,6 +1,6 @@
 /* Force consistent zoom/scaling across all browsers and domains */
 html {
-  font-size: 16px;
+  font-size: var(--font-size, 15px);
   -webkit-text-size-adjust: 100%;
   -moz-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
@@ -10,15 +10,6 @@ html {
 }
 
 /* Make the UI feel less large at 100% zoom on desktops by reducing the base rem size */
-@media (min-width: 1024px) {
-  html { font-size: 15px; }
-}
-@media (min-width: 1280px) {
-  html { font-size: 14.5px; }
-}
-@media (min-width: 1536px) {
-  html { font-size: 14px; }
-}
 
 body {
   font-size: 1rem;
@@ -233,5 +224,4 @@ p, span, div {
 code, pre {
   font-family: 'JetBrains Mono', 'Fira Code', Consolas, 'Liberation Mono', Menlo, monospace;
 }
-
 

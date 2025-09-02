@@ -7,8 +7,8 @@ import { useTheme } from "next-themes";
 
 const HeroSection: React.FC = () => {
   const navigate = useNavigate();
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const { theme, resolvedTheme } = useTheme();
+  const isDark = (resolvedTheme || theme) === 'dark';
 
   return (
     <div className="relative overflow-hidden">
