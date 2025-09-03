@@ -1,13 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Image } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { loadUserSettings, saveUserSettings } from '@/lib/userSettings';
 import { generate2FASecret, verify2FACode } from '@/lib/twoFactor';
@@ -62,29 +59,27 @@ const ClientSettings: React.FC = () => {
     fontSize: "medium",
     colorMode: "system",
     notifications: {
-      newApplicants: true,
-      jobUpdates: true,
-      recommendations: false,
-      billingEmails: true,
-    },
+      newApplicants: { email: true, sms: false },
+      jobUpdates: { email: true, sms: false },
+      recommendations: { email: true, sms: false },
+      billingEmails: { email: true, sms: false },
+    } as Record<string, { email: boolean; sms: boolean }>,
   };
   const [form, setForm] = useState(defaultForm);
+  // Align mapping with StudentSettings for consistency
+  const sizeToPx = (s: string | undefined) => {
+    if (s === 'small') return '13px';
+    if (s === 'large') return '18px';
+    return '15px';
+  };
   // Instantly apply font size and sync color mode via next-themes
   useEffect(() => {
-    let px = '16px';
-    if (form.fontSize === 'small') px = '14px';
-    else if (form.fontSize === 'large') px = '20px';
+    const px = sizeToPx(form.fontSize);
     document.documentElement.style.setProperty('--font-size', px);
     document.documentElement.style.setProperty('--font-size-label', form.fontSize || 'medium');
     setTheme(form.colorMode as 'light' | 'dark' | 'system');
   }, [form.fontSize, form.colorMode, setTheme]);
   // Removed conflicting effect that set non-pixel font sizes
-  const [settings, setSettings] = useState({
-    notifications: defaultForm.notifications,
-    privacy: {},
-    preferences: {}
-  });
-  const [saving, setSaving] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
 
@@ -96,9 +91,13 @@ const ClientSettings: React.FC = () => {
         const savedLocal = localStorage.getItem(CLIENT_SETTINGS_KEY);
         if (savedLocal) {
           const parsed = JSON.parse(savedLocal);
-          setForm({ ...defaultForm, ...parsed });
-          if (parsed.fontSize) document.documentElement.style.setProperty('--font-size', parsed.fontSize);
-          if (parsed.colorMode) setTheme(parsed.colorMode);
+          setForm({
+            ...defaultForm,
+            ...parsed,
+            notifications: { ...defaultForm.notifications, ...(parsed.notifications || {}) },
+          });
+          if (parsed.fontSize) document.documentElement.style.setProperty('--font-size', sizeToPx(parsed.fontSize));
+          if (parsed.colorMode) setTheme(parsed.colorMode as 'light' | 'dark' | 'system');
         }
       } catch (error) {
         console.error('Error loading client settings from localStorage:', error);
@@ -106,9 +105,13 @@ const ClientSettings: React.FC = () => {
       // Load from backend
       const savedSettings = await loadUserSettings('client_settings');
       if (savedSettings) {
-        setForm((prev) => ({ ...prev, ...savedSettings }));
-        if (savedSettings.fontSize) document.documentElement.style.setProperty('--font-size', savedSettings.fontSize);
-        if (savedSettings.colorMode) setTheme(savedSettings.colorMode);
+        setForm(prev => ({
+          ...prev,
+          ...savedSettings,
+          notifications: { ...defaultForm.notifications, ...(savedSettings.notifications || {}) },
+        }));
+        if (savedSettings.fontSize) document.documentElement.style.setProperty('--font-size', sizeToPx(savedSettings.fontSize));
+        if (savedSettings.colorMode) setTheme(savedSettings.colorMode as 'light' | 'dark' | 'system');
       }
     };
     loadAllSettings();
@@ -118,7 +121,7 @@ const ClientSettings: React.FC = () => {
     setIsSaving(true);
     // Save to localStorage
     localStorage.setItem(CLIENT_SETTINGS_KEY, JSON.stringify(form));
-    if (form.fontSize) document.documentElement.style.setProperty('--font-size', form.fontSize);
+    if (form.fontSize) document.documentElement.style.setProperty('--font-size', sizeToPx(form.fontSize));
     if (form.colorMode) setTheme(form.colorMode);
     // Save to backend
     const success = await saveUserSettings('client_settings', form);
@@ -136,6 +139,34 @@ const ClientSettings: React.FC = () => {
     }
     setIsSaving(false);
   };
+
+  // Match Notifications card height to total right-column height (desktop only),
+  // mirroring StudentSettings UX for visual balance
+  const notifCardRef = useRef<HTMLDivElement | null>(null);
+  const rightColRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 768px)');
+    const syncHeights = () => {
+      if (!notifCardRef.current) return;
+      if (mql.matches && rightColRef.current) {
+        const h = rightColRef.current.getBoundingClientRect().height;
+        notifCardRef.current.style.minHeight = `${h}px`;
+      } else {
+        notifCardRef.current.style.minHeight = '';
+      }
+    };
+    const ro = new ResizeObserver(syncHeights);
+    if (rightColRef.current) ro.observe(rightColRef.current);
+    window.addEventListener('resize', syncHeights);
+    mql.addEventListener?.('change', syncHeights as any);
+    syncHeights();
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', syncHeights);
+      mql.removeEventListener?.('change', syncHeights as any);
+      if (notifCardRef.current) notifCardRef.current.style.minHeight = '';
+    };
+  }, []);
 
   // 2FA Setup Handlers
   const handleEnable2FA = () => {
@@ -184,123 +215,123 @@ const ClientSettings: React.FC = () => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-8">
-          {/* Notifications Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Notifications</CardTitle>
-              <CardDescription>Choose how you want to receive notifications for each type</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {[
-                { key: 'newApplicants', label: 'New Applicants', desc: 'Get notified when someone applies' },
-                { key: 'jobUpdates', label: 'Job Updates', desc: 'Edits or status changes to your posts' },
-                { key: 'recommendations', label: 'Recommendations', desc: 'Talent you may want to interview' },
-                { key: 'billingEmails', label: 'Billing', desc: 'Invoices and receipts' }
-              ].map(n => (
-                <div key={n.key} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{n.label}</p>
-                    <p className="text-sm text-muted-foreground">{n.desc}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs">Email</span>
-                      <Switch
-                        checked={form.notifications[n.key]?.email ?? false}
-                        onCheckedChange={v => setForm({ ...form, notifications: { ...form.notifications, [n.key]: { ...form.notifications[n.key], email: v } } })}
-                      />
-                      <span className="text-xs">SMS</span>
-                      <Switch
-                        checked={form.notifications[n.key]?.sms ?? false}
-                        onCheckedChange={v => setForm({ ...form, notifications: { ...form.notifications, [n.key]: { ...form.notifications[n.key], sms: v } } })}
-                      />
+            {/* Notifications Section */}
+            <Card ref={notifCardRef}>
+              <CardHeader>
+                <CardTitle>Notifications</CardTitle>
+                <CardDescription>Choose how you want to receive notifications for each type</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {[
+                  { key: 'newApplicants', label: 'New Applicants', desc: 'Get notified when someone applies' },
+                  { key: 'jobUpdates', label: 'Job Updates', desc: 'Edits or status changes to your posts' },
+                  { key: 'recommendations', label: 'Recommendations', desc: 'Talent you may want to interview' },
+                  { key: 'billingEmails', label: 'Billing', desc: 'Invoices and receipts' }
+                ].map(n => (
+                  <div key={n.key} className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{n.label}</p>
+                      <p className="text-sm text-muted-foreground">{n.desc}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs">Email</span>
+                        <Switch
+                          checked={form.notifications[n.key]?.email ?? false}
+                          onCheckedChange={v => setForm({ ...form, notifications: { ...form.notifications, [n.key]: { ...form.notifications[n.key], email: v } } })}
+                        />
+                        <span className="text-xs">SMS</span>
+                        <Switch
+                          checked={form.notifications[n.key]?.sms ?? false}
+                          onCheckedChange={v => setForm({ ...form, notifications: { ...form.notifications, [n.key]: { ...form.notifications[n.key], sms: v } } })}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-          {/* Accessibility & Preferences Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Accessibility & Preferences</CardTitle>
-              <CardDescription>Customize your experience</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Only keep the controlled dropdowns below */}
-                <div className="grid grid-cols-1 gap-6">
-                  <div>
-                    <label className="text-sm font-medium">Text Size</label>
-                    <select className="w-full h-10 rounded px-2 settings-dropdown" value={form.fontSize || "medium"} onChange={e => setForm({ ...form, fontSize: e.target.value })}>
-                      <option value="small">Small (Compact)</option>
-                      <option value="medium">Medium (Default)</option>
-                      <option value="large">Large (Easier Readability)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Color Mode</label>
-                    <select className="w-full h-10 rounded px-2 settings-dropdown" value={form.colorMode || "system"} onChange={e => { const v = e.target.value; setForm({ ...form, colorMode: v }); setTheme(v as 'light' | 'dark' | 'system'); }}>
-                      <option value="system">System</option>
-                      <option value="light">Light</option>
-                      <option value="dark">Dark</option>
-                    </select>
-                  </div>
-                </div>
+                ))}
               </CardContent>
-          </Card>
+            </Card>
         </div>
-        <div className="space-y-8">
-          {/* Security Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Security</CardTitle>
-              <CardDescription>Manage your account security settings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Two-Factor Authentication</p>
-                  <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
-                </div>
-                <Switch
-                  checked={twoFASwitchOn || show2FASetup}
-                  onCheckedChange={checked => {
-                    if (checked) handleEnable2FA();
-                    else handleDisable2FA();
-                  }}
-                />
-              </div>
-              {show2FASetup && otpAuthUrl && (
-                <div className="mt-4 space-y-4">
-                  <p className="font-medium">Scan this QR code with your authenticator app:</p>
-                  <div className="flex justify-center"><QRCodeCanvas value={otpAuthUrl} size={160} /></div>
-                  <p className="text-sm text-muted-foreground">Or enter this secret manually: <span className="font-mono">{twoFASecret}</span></p>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      placeholder="Enter 6-digit code"
-                      value={codeInput}
-                      onChange={e => setCodeInput(e.target.value)}
-                      maxLength={6}
-                      className="w-40"
-                    />
-                    <Button onClick={handleVerify2FA} disabled={verifying || codeInput.length !== 6}>
-                      {verifying ? 'Verifying...' : 'Verify'}
-                    </Button>
+        <div className="space-y-8" ref={rightColRef}>
+            {/* Security Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Security</CardTitle>
+                <CardDescription>Manage your account security settings</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Two-Factor Authentication</p>
+                    <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
                   </div>
-                  <p className="text-xs text-muted-foreground">After verifying, 2FA will be enabled for your account.</p>
+                  <Switch
+                    checked={twoFASwitchOn || show2FASetup}
+                    onCheckedChange={checked => {
+                      if (checked) handleEnable2FA();
+                      else handleDisable2FA();
+                    }}
+                  />
                 </div>
-              )}
-              {twoFAEnabled && !show2FASetup && (
-                <div className="mt-2 text-green-600 font-medium">2FA is enabled for your account.</div>
-              )}
-            </CardContent>
-          </Card>
+                {show2FASetup && otpAuthUrl && (
+                  <div className="mt-4 space-y-4">
+                    <p className="font-medium">Scan this QR code with your authenticator app:</p>
+                    <div className="flex justify-center"><QRCodeCanvas value={otpAuthUrl} size={160} /></div>
+                    <p className="text-sm text-muted-foreground">Or enter this secret manually: <span className="font-mono">{twoFASecret}</span></p>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder="Enter 6-digit code"
+                        value={codeInput}
+                        onChange={e => setCodeInput(e.target.value)}
+                        maxLength={6}
+                        className="w-40"
+                      />
+                      <Button onClick={handleVerify2FA} disabled={verifying || codeInput.length !== 6}>
+                        {verifying ? 'Verifying...' : 'Verify'}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">After verifying, 2FA will be enabled for your account.</p>
+                  </div>
+                )}
+                {twoFAEnabled && !show2FASetup && (
+                  <div className="mt-2 text-green-600 font-medium">2FA is enabled for your account.</div>
+                )}
+              </CardContent>
+            </Card>
+            {/* Accessibility & Preferences Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Accessibility & Preferences</CardTitle>
+                <CardDescription>Customize your experience</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Only keep the controlled dropdowns below */}
+                  <div className="grid grid-cols-1 gap-6">
+                    <div>
+                      <label className="text-sm font-medium">Text Size</label>
+                      <select className="w-full h-10 rounded px-2 settings-dropdown" value={form.fontSize || "medium"} onChange={e => setForm({ ...form, fontSize: e.target.value })}>
+                        <option value="small">Small (Compact)</option>
+                        <option value="medium">Medium (Default)</option>
+                        <option value="large">Large (Easier Readability)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Color Mode</label>
+                      <select className="w-full h-10 rounded px-2 settings-dropdown" value={form.colorMode || "system"} onChange={e => { const v = e.target.value; setForm({ ...form, colorMode: v }); setTheme(v as 'light' | 'dark' | 'system'); }}>
+                        <option value="system">System</option>
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                      </select>
+                    </div>
+                  </div>
+              </CardContent>
+            </Card>
         </div>
       </div>
       {/* Save Button */}
       <div className="flex justify-end mt-8">
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? "Saving..." : "Save Settings"}
+        <Button onClick={handleSave} disabled={isSaving}>
+          {isSaving ? "Saving..." : "Save Settings"}
         </Button>
       </div>
     </div>
