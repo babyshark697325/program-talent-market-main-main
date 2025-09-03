@@ -341,7 +341,7 @@ const BrowseStudents = () => {
         <div className="text-center py-20">
           <div className="rounded-3xl p-16 shadow-md border bg-white border-black/10 dark:bg-[#040b17] dark:border-white/5 max-w-lg mx-auto">
             <div className="w-24 h-24 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="text-4xl">🔍</span>
+              <Search className="text-4xl text-primary" size={48} />
             </div>
             <h3 className="text-2xl font-bold text-primary mb-4">No Students Found</h3>
             <p className="text-muted-foreground mb-6">

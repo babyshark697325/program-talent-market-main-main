@@ -143,48 +143,6 @@ const AdminSettings = () => {
         </div>
 
         <div className="grid gap-6">
-          {/* Two-Factor Authentication Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Two-Factor Authentication (2FA)</CardTitle>
-              <CardDescription>Enhance your account security with 2FA</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Enable Two-Factor Authentication</Label>
-                  <p className="text-sm text-muted-foreground">Protect your admin account with an extra layer of security.</p>
-                </div>
-                <Switch checked={twoFAEnabled} onCheckedChange={checked => {
-                  if (checked) handleEnable2FA();
-                  else handleDisable2FA();
-                }} />
-              </div>
-              {show2FASetup && otpAuthUrl && (
-                <div className="mt-4 space-y-4">
-                  <p className="font-medium">Scan this QR code with your authenticator app:</p>
-                  <div className="flex justify-center"><QRCodeCanvas value={otpAuthUrl} size={160} /></div>
-                  <p className="text-sm text-muted-foreground">Or enter this secret manually: <span className="font-mono">{twoFASecret}</span></p>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      placeholder="Enter 6-digit code"
-                      value={codeInput}
-                      onChange={e => setCodeInput(e.target.value)}
-                      maxLength={6}
-                      className="w-40"
-                    />
-                    <Button onClick={handleVerify2FA} disabled={verifying || codeInput.length !== 6}>
-                      {verifying ? 'Verifying...' : 'Verify'}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">After verifying, 2FA will be enabled for your account.</p>
-                </div>
-              )}
-              {twoFAEnabled && !show2FASetup && (
-                <div className="mt-2 text-green-600 font-medium">2FA is enabled for your account.</div>
-              )}
-            </CardContent>
-          </Card>
           <Card>
             <CardHeader>
               <CardTitle>General Settings</CardTitle>
