@@ -6,6 +6,7 @@ import { RoleProvider } from "./contexts/RoleContext";
 import { SavedJobsProvider } from "./contexts/SavedJobsContext";
 import StudentDashboard from "./components/StudentDashboard";
 import { mockJobs } from "./data/mockJobs";
+import GlobalPreferencesBoot from "./components/GlobalPreferencesBoot";
 
 // Mock auth context for preview
 const MockAuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -26,6 +27,7 @@ const App: React.FC = () => {
           <RoleProvider>
             <SavedJobsProvider>
               <div className="min-h-screen">
+                <GlobalPreferencesBoot />
                 <StudentDashboard 
                   jobs={mockJobs} 
                   setActiveTab={setActiveTab}

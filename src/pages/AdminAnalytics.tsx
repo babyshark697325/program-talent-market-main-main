@@ -15,6 +15,12 @@ const AdminAnalytics = () => {
     avgResponseHours: null,
   });
   const [isLoading, setIsLoading] = React.useState(true);
+  const [health, setHealth] = React.useState<{ dbLatencyMs: number | null; activeEvents: number | null; errorRatePct: number | null; uptimePct: number | null }>({
+    dbLatencyMs: null,
+    activeEvents: null,
+    errorRatePct: null,
+    uptimePct: null,
+  });
 
   React.useEffect(() => {
     const fetchAnalytics = async () => {
@@ -155,6 +161,88 @@ const AdminAnalytics = () => {
     fetchAnalytics();
   }, []);
 
+  // Platform Health: use live Supabase data where possible
+  React.useEffect(() => {
+    const PINGS_KEY = 'platform.health.pings';
+    const recordPing = (ok: boolean) => {
+      try {
+        const raw = localStorage.getItem(PINGS_KEY);
+        const arr = Array.isArray(raw ? JSON.parse(raw) : []) ? JSON.parse(raw as string) : [];
+        arr.push({ t: Date.now(), ok });
+        while (arr.length > 100) arr.shift();
+        localStorage.setItem(PINGS_KEY, JSON.stringify(arr));
+      } catch {}
+    };
+    const computeUptime = (): number | null => {
+      try {
+        const raw = localStorage.getItem(PINGS_KEY);
+        const arr = Array.isArray(raw ? JSON.parse(raw) : []) ? JSON.parse(raw as string) : [];
+        if (!arr.length) return null;
+        const ok = arr.filter((p: any) => p?.ok).length;
+        return Math.round(((ok / arr.length) * 100) * 10) / 10; // one decimal
+      } catch { return null; }
+    };
+
+    const measureDbLatency = async () => {
+      const start = performance.now();
+      const { error } = await supabase
+        .from('profiles')
+        .select('user_id', { count: 'exact', head: true })
+        .limit(1);
+      const ms = performance.now() - start;
+      recordPing(!error);
+      return { ms, ok: !error };
+    };
+
+    const fetchActivityAndErrors = async () => {
+      const since15m = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+      const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+      const [profilesRes, jobsRes, appsRes, paymentsRecentRes, paymentsDayRes] = await Promise.allSettled([
+        supabase.from('profiles').select('user_id').gte('created_at', since15m),
+        supabase.from('jobs').select('id').gte('posted_at', since15m),
+        supabase.from('applications').select('id').gte('created_at', since15m),
+        supabase.from('payments').select('id').gte('created_at', since15m),
+        supabase.from('payments').select('id, status').gte('created_at', since24h),
+      ]);
+
+      let activeEvents = 0;
+      if (profilesRes.status === 'fulfilled' && !profilesRes.value.error) activeEvents += profilesRes.value.data?.length || 0;
+      if (jobsRes.status === 'fulfilled' && !jobsRes.value.error) activeEvents += jobsRes.value.data?.length || 0;
+      if (appsRes.status === 'fulfilled' && !appsRes.value.error) activeEvents += appsRes.value.data?.length || 0;
+      if (paymentsRecentRes.status === 'fulfilled' && !paymentsRecentRes.value.error) activeEvents += paymentsRecentRes.value.data?.length || 0;
+
+      let errorRatePct: number | null = null;
+      if (paymentsDayRes.status === 'fulfilled' && !paymentsDayRes.value.error) {
+        const rows = (paymentsDayRes.value.data as any[]) || [];
+        const total = rows.length;
+        const failed = rows.filter((r) => r.status && String(r.status).toLowerCase() !== 'completed').length;
+        errorRatePct = total > 0 ? (failed / total) * 100 : 0;
+      }
+
+      return { activeEvents, errorRatePct };
+    };
+
+    const run = async () => {
+      try {
+        const [{ ms }, { activeEvents, errorRatePct }] = await Promise.all([
+          measureDbLatency(),
+          fetchActivityAndErrors(),
+        ]);
+        setHealth({
+          dbLatencyMs: ms,
+          activeEvents,
+          errorRatePct: errorRatePct ?? null,
+          uptimePct: computeUptime(),
+        });
+      } catch {
+        setHealth((h) => ({ ...h, uptimePct: computeUptime() }));
+      }
+    };
+
+    run();
+  }, []);
+
   
   
   const GrowthTooltip = ({ active, payload, label }: any) => {
@@ -267,7 +355,7 @@ const AdminAnalytics = () => {
           </Card>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-8 lg:gap-10 md:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>User Growth</CardTitle>
@@ -320,7 +408,7 @@ const AdminAnalytics = () => {
           </Card>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="mt-8 md:mt-10 grid gap-8 md:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>User Distribution</CardTitle>
@@ -360,19 +448,25 @@ const AdminAnalytics = () => {
             <CardContent className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">Server Uptime</span>
-                <span className="text-sm text-green-600">99.9%</span>
+                <span className={`text-sm ${health.uptimePct != null && health.uptimePct >= 99 ? 'text-green-600' : ''}`}>
+                  {health.uptimePct != null ? `${health.uptimePct.toFixed(1)}%` : '—'}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">Database Response</span>
-                <span className="text-sm text-green-600">45ms</span>
+                <span className={`text-sm ${health.dbLatencyMs != null && health.dbLatencyMs < 200 ? 'text-green-600' : ''}`}>
+                  {health.dbLatencyMs != null ? `${Math.round(health.dbLatencyMs)}ms` : '—'}
+                </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Active Sessions</span>
-                <span className="text-sm">234</span>
+                <span className="text-sm font-medium">Active Events (15m)</span>
+                <span className="text-sm">{health.activeEvents != null ? health.activeEvents : '—'}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Error Rate</span>
-                <span className="text-sm text-green-600">0.01%</span>
+                <span className="text-sm font-medium">Payment Error Rate (24h)</span>
+                <span className={`text-sm ${health.errorRatePct != null && health.errorRatePct <= 1 ? 'text-green-600' : ''}`}>
+                  {health.errorRatePct != null ? `${health.errorRatePct.toFixed(2)}%` : '—'}
+                </span>
               </div>
             </CardContent>
           </Card>

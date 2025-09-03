@@ -16,13 +16,13 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "./components/ui/s
 import { AppSidebar } from "./components/AppSidebar";
 
 // Header widgets
-import { ThemeToggle } from "./components/ThemeToggle";
 import RoleSelector from "./components/RoleSelector";
 import UserMenu from "./components/UserMenu";
 
 // shadcn toasts host
 import { Toaster } from "./components/ui/toaster";
 import BackToTop from "./components/BackToTop";
+import GlobalPreferencesBoot from "./components/GlobalPreferencesBoot";
 
 // ---- Pages that exist in your repo (per screenshot) ----
 import Auth from "./pages/Auth";
@@ -83,7 +83,7 @@ function Layout({ children }: { children: React.ReactNode }) {
               </span>
             </div>
             <div className="flex items-center gap-1 md:gap-2">
-              <ThemeToggle />
+              {/* Theme toggle removed per request */}
               {(userRole === 'admin' || userRole === 'developer' || isDeveloper) && <RoleSelector />}
               <UserMenu />
             </div>
@@ -109,6 +109,7 @@ const App: React.FC = () => {
         <RoleProvider>
           <SavedJobsProvider>
             <Router>
+            <GlobalPreferencesBoot />
             <Routes>
               {/* ---------- PUBLIC ---------- */}
               <Route path="/auth" element={<Auth />} />

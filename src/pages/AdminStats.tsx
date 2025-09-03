@@ -14,6 +14,12 @@ const AdminStats = () => {
   const [recentActivity, setRecentActivity] = React.useState<{ action: string; user: string; time: string }[]>([]);
   const [financial, setFinancial] = React.useState({ revenue: null as number | null, fees: null as number | null, processing: null as number | null, net: null as number | null });
   const [isLoading, setIsLoading] = React.useState(true);
+  const [health, setHealth] = React.useState<{ dbLatencyMs: number | null; activeEvents: number | null; errorRatePct: number | null; uptimePct: number | null }>({
+    dbLatencyMs: null,
+    activeEvents: null,
+    errorRatePct: null,
+    uptimePct: null,
+  });
 
   React.useEffect(() => {
     const fetchAllData = async () => {
@@ -179,46 +185,99 @@ const AdminStats = () => {
             });
           }
           
-          setRecentActivity(events.slice(0, 10).length > 0 ? events.slice(0, 10) : [
-            { action: 'New user registered', user: 'John Doe', time: new Date().toLocaleString() },
-            { action: 'Job posted', user: 'Tech Startup @ Web Developer', time: new Date().toLocaleString() },
-            { action: 'Payment processed', user: '1,200', time: new Date().toLocaleString() },
-            { action: 'Report submitted', user: 'System Alert', time: new Date().toLocaleString() }
-          ]);
+          setRecentActivity(events.slice(0, 10));
         } else {
-          // Fallback demo data when no activity data available
-          setRecentActivity([
-            { action: 'New user registered', user: 'John Doe', time: new Date().toLocaleString() },
-            { action: 'Job posted', user: 'Tech Startup @ Web Developer', time: new Date().toLocaleString() },
-            { action: 'Payment processed', user: '1,200', time: new Date().toLocaleString() },
-            { action: 'Report submitted', user: 'System Alert', time: new Date().toLocaleString() }
-          ]);
+          // Keep empty if no activity data available
+          setRecentActivity([]);
         }
         
       } catch (e) {
         console.error('Error loading admin stats', e);
-        // Set fallback demo data
-        setPlatformStats([
-          { label: 'Total Users', value: 247 },
-          { label: 'Admins', value: 3 },
-          { label: 'Pending Waitlist', value: 12 },
-          { label: 'Active Projects', value: 18 },
-          { label: 'Monthly Revenue', value: '12,450' },
-        ]);
+        // No mock fallback; keep empty/nulls
+        setPlatformStats([]);
         setSkillDemand([]);
-        setRecentActivity([
-          { action: 'New user registered', user: 'John Doe', time: new Date().toLocaleString() },
-          { action: 'Job posted', user: 'Tech Startup @ Web Developer', time: new Date().toLocaleString() },
-          { action: 'Payment processed', user: '1,200', time: new Date().toLocaleString() },
-          { action: 'Report submitted', user: 'System Alert', time: new Date().toLocaleString() }
-        ]);
-        setFinancial({ revenue: 12450, fees: 1245, processing: 360, net: 10845 });
+        setRecentActivity([]);
+        setFinancial({ revenue: null, fees: null, processing: null, net: null });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchAllData();
+  }, []);
+
+  // Live platform health signals (derived from Supabase)
+  React.useEffect(() => {
+    const PINGS_KEY = 'platform.health.pings';
+    const recordPing = (ok: boolean) => {
+      try {
+        const raw = localStorage.getItem(PINGS_KEY);
+        const arr = Array.isArray(raw ? JSON.parse(raw) : []) ? JSON.parse(raw as string) : [];
+        arr.push({ t: Date.now(), ok });
+        while (arr.length > 100) arr.shift();
+        localStorage.setItem(PINGS_KEY, JSON.stringify(arr));
+      } catch {}
+    };
+    const computeUptime = (): number | null => {
+      try {
+        const raw = localStorage.getItem(PINGS_KEY);
+        const arr = Array.isArray(raw ? JSON.parse(raw) : []) ? JSON.parse(raw as string) : [];
+        if (!arr.length) return null;
+        const ok = arr.filter((p: any) => p?.ok).length;
+        return Math.round(((ok / arr.length) * 100) * 10) / 10;
+      } catch { return null; }
+    };
+    const measureDbLatency = async () => {
+      const start = performance.now();
+      const { error } = await supabase
+        .from('profiles')
+        .select('user_id', { count: 'exact', head: true })
+        .limit(1);
+      const ms = performance.now() - start;
+      recordPing(!error);
+      return { ms, ok: !error };
+    };
+    const fetchActivityAndErrors = async () => {
+      const since15m = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+      const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const [profilesRes, jobsRes, appsRes, paymentsRecentRes, paymentsDayRes] = await Promise.allSettled([
+        supabase.from('profiles').select('user_id').gte('created_at', since15m),
+        supabase.from('jobs').select('id').gte('posted_at', since15m),
+        supabase.from('applications').select('id').gte('created_at', since15m),
+        supabase.from('payments').select('id').gte('created_at', since15m),
+        supabase.from('payments').select('id, status').gte('created_at', since24h),
+      ]);
+      let activeEvents = 0;
+      if (profilesRes.status === 'fulfilled' && !profilesRes.value.error) activeEvents += profilesRes.value.data?.length || 0;
+      if (jobsRes.status === 'fulfilled' && !jobsRes.value.error) activeEvents += jobsRes.value.data?.length || 0;
+      if (appsRes.status === 'fulfilled' && !appsRes.value.error) activeEvents += appsRes.value.data?.length || 0;
+      if (paymentsRecentRes.status === 'fulfilled' && !paymentsRecentRes.value.error) activeEvents += paymentsRecentRes.value.data?.length || 0;
+      let errorRatePct: number | null = null;
+      if (paymentsDayRes.status === 'fulfilled' && !paymentsDayRes.value.error) {
+        const rows = (paymentsDayRes.value.data as any[]) || [];
+        const total = rows.length;
+        const failed = rows.filter((r) => r.status && String(r.status).toLowerCase() !== 'completed').length;
+        errorRatePct = total > 0 ? (failed / total) * 100 : 0;
+      }
+      return { activeEvents, errorRatePct };
+    };
+    const run = async () => {
+      try {
+        const [{ ms }, { activeEvents, errorRatePct }] = await Promise.all([
+          measureDbLatency(),
+          fetchActivityAndErrors(),
+        ]);
+        setHealth({
+          dbLatencyMs: ms,
+          activeEvents,
+          errorRatePct: errorRatePct ?? null,
+          uptimePct: computeUptime(),
+        });
+      } catch {
+        setHealth((h) => ({ ...h, uptimePct: computeUptime() }));
+      }
+    };
+    run();
   }, []);
 
   return (
@@ -314,6 +373,8 @@ const AdminStats = () => {
                         <div className="h-3 bg-muted animate-pulse rounded w-16"></div>
                       </div>
                     ))
+                  ) : recentActivity.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No recent activity.</p>
                   ) : (
                     recentActivity.map((activity, index) => (
                       <div key={index} className="flex items-center space-x-3">
@@ -334,29 +395,42 @@ const AdminStats = () => {
           <div className="grid gap-6 md:grid-cols-3">
             <Card>
               <CardHeader>
-                <CardTitle>Server Performance</CardTitle>
+                <CardTitle>Platform Health</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>CPU Usage</span>
-                    <span>23%</span>
+                    <span>Database Response</span>
+                    <span className={health.dbLatencyMs != null && health.dbLatencyMs < 200 ? 'text-green-600' : ''}>
+                      {health.dbLatencyMs != null ? `${Math.round(health.dbLatencyMs)}ms` : '—'}
+                    </span>
                   </div>
-                  <Progress value={23} className="h-2" />
+                  <Progress value={health.dbLatencyMs != null ? Math.min(100, Math.max(0, 100 - (health.dbLatencyMs - 50))) : 0} className="h-2" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>Memory Usage</span>
-                    <span>45%</span>
+                    <span>Uptime (client)</span>
+                    <span className={health.uptimePct != null && health.uptimePct >= 99 ? 'text-green-600' : ''}>
+                      {health.uptimePct != null ? `${health.uptimePct.toFixed(1)}%` : '—'}
+                    </span>
                   </div>
-                  <Progress value={45} className="h-2" />
+                  <Progress value={health.uptimePct != null ? Math.min(100, Math.max(0, health.uptimePct)) : 0} className="h-2" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>Disk Usage</span>
-                    <span>67%</span>
+                    <span>Active Events (15m)</span>
+                    <span>{health.activeEvents != null ? health.activeEvents : '—'}</span>
                   </div>
-                  <Progress value={67} className="h-2" />
+                  <Progress value={health.activeEvents != null ? Math.min(100, health.activeEvents) : 0} className="h-2" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Payment Error Rate (24h)</span>
+                    <span className={health.errorRatePct != null && health.errorRatePct <= 1 ? 'text-green-600' : ''}>
+                      {health.errorRatePct != null ? `${health.errorRatePct.toFixed(2)}%` : '—'}
+                    </span>
+                  </div>
+                  <Progress value={health.errorRatePct != null ? Math.min(100, health.errorRatePct) : 0} className="h-2" />
                 </div>
               </CardContent>
             </Card>
@@ -367,15 +441,15 @@ const AdminStats = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold">8.5/10</div>
+                  <div className="text-2xl font-bold">-</div>
                   <p className="text-sm text-muted-foreground">Average Rating</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold">2.4 hrs</div>
+                  <div className="text-2xl font-bold">-</div>
                   <p className="text-sm text-muted-foreground">Avg Session Time</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold">76%</div>
+                  <div className="text-2xl font-bold">-</div>
                   <p className="text-sm text-muted-foreground">Return Rate</p>
                 </div>
               </CardContent>

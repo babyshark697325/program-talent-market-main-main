@@ -2,8 +2,8 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useRole } from '@/contexts/RoleContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import PageHeader from '@/components/PageHeader';
-import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import { Mail, Phone, MapPin, Eye, Edit, Image } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Mail, Phone, MapPin, Eye, Edit, Image, User } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -140,18 +140,17 @@ const ClientProfile = () => {
                     <div className="flex justify-start">
                       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleAvatarChange(e.target.files?.[0] || null)} />
                       <div className="relative inline-block">
-                        {edited.avatarUrl ? (
-                          <Avatar className="h-16 w-16">
+                        <Avatar className="h-16 w-16">
+                          {edited.avatarUrl ? (
                             <AvatarImage src={edited.avatarUrl} alt={edited.name} />
-                          </Avatar>
-                        ) : (
-                          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xl font-bold">
-                            {edited.name ? edited.name[0] : '?'}
-                          </div>
-                        )}
-                        <button type="button" onClick={triggerAvatarPick} aria-label="Change photo" className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full border bg-background shadow hover:bg-secondary flex items-center justify-center">
-                          <Image className="h-3.5 w-3.5" />
-                        </button>
+                          ) : null}
+                          <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white">
+                            <User size={28} />
+                          </AvatarFallback>
+                        </Avatar>
+                      <button type="button" onClick={triggerAvatarPick} aria-label="Change photo" className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full border bg-background shadow hover:bg-secondary flex items-center justify-center">
+                        <Image className="h-3.5 w-3.5" />
+                      </button>
                       </div>
                       {edited.avatarUrl && (
                         <button type="button" onClick={removeAvatar} className="ml-3 text-xs text-muted-foreground hover:text-red-600">Remove photo</button>
@@ -191,15 +190,14 @@ const ClientProfile = () => {
               <>
                 <div className="grid md:grid-cols-2 gap-8 items-start">
                   <div className="flex items-start gap-4">
-                    {client.avatarUrl ? (
-                      <Avatar className="h-16 w-16">
+                    <Avatar className="h-16 w-16">
+                      {client.avatarUrl ? (
                         <AvatarImage src={client.avatarUrl} alt={client.name} />
-                      </Avatar>
-                    ) : (
-                      <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xl font-bold">
-                        {client.name ? client.name[0] : '?'}
-                      </div>
-                    )}
+                      ) : null}
+                      <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white">
+                        <User size={28} />
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="space-y-4">
                       <div>
                         <div className="text-sm font-medium text-muted-foreground">Full Name</div>

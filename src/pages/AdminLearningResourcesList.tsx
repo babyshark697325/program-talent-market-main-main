@@ -32,41 +32,8 @@ function loadResources(): LearningResource[] {
       if (Array.isArray(parsed)) return parsed;
     }
   } catch {}
-  // Default seed
-  return [
-    {
-      id: 1,
-      title: "Resume Writing Workshop",
-      description: "Learn how to create compelling resumes that get noticed",
-      type: "workshop",
-      duration: "2 hours",
-      status: "available",
-    },
-    {
-      id: 2,
-      title: "Interview Skills Masterclass",
-      description: "Master the art of interviewing with practice sessions",
-      type: "video",
-      duration: "1.5 hours",
-      status: "available",
-    },
-    {
-      id: 3,
-      title: "Portfolio Development Guide",
-      description: "Build a portfolio that showcases your best work",
-      type: "guide",
-      duration: "3 hours",
-      status: "coming-soon",
-    },
-    {
-      id: 4,
-      title: "Networking for Students",
-      description: "Connect with industry professionals and peers",
-      type: "networking",
-      duration: "1 hour",
-      status: "available",
-    },
-  ];
+  // No default seed; start empty until you add your own
+  return [];
 }
 
 function saveResources(r: LearningResource[]) {

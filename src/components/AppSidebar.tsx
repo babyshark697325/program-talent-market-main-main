@@ -168,8 +168,17 @@ export function AppSidebar() {
   const location = useLocation()
   const { role } = useRole()
   const { isGuest, loading, user } = useAuth()
+  // Determine sidebar by current route first, then fall back to role.
+  const path = location.pathname || '/'
   // Always use client sidebar on homepage
-  const isHome = location.pathname === '/';
+  const isHome = path === '/';
+  const isAdminArea = /^\/admin(\b|[-/])/.test(path) || path === '/admin-dashboard'
+  const isStudentArea = /^\/student(\b|[-/])/.test(path) ||
+    path === '/student-dashboard' ||
+    path === '/resources' ||
+    path === '/all-resources' ||
+    path === '/payouts'
+  const isClientArea = !isAdminArea && !isStudentArea // everything else defaults to client
   let navigationItems;
   let quickActions;
   if (isHome) {
@@ -184,7 +193,9 @@ export function AppSidebar() {
       { title: "Manage Jobs", url: "/manage-jobs", icon: Settings },
     ];
   } else {
-    if (role === 'student') {
+    // Prefer route context over role to avoid showing the wrong sidebar on refresh
+    const effectiveRole = isAdminArea ? 'admin' : (isStudentArea ? 'student' : 'client')
+    if (effectiveRole === 'student') {
       // Use dynamic route for student's own profile when possible
       const dynStudentNav = studentNavigation.map((item) =>
         item.title === 'My Profile' && user?.id
@@ -192,12 +203,12 @@ export function AppSidebar() {
           : item
       )
       navigationItems = dynStudentNav
-    } else if (role === 'admin' || role === 'developer') {
+    } else if (effectiveRole === 'admin') {
       navigationItems = adminNavigation
     } else {
       navigationItems = clientNavigation
     }
-    quickActions = role === 'student' ? studentQuickActions : (role === 'admin' || role === 'developer') ? adminQuickActions : clientQuickActions;
+    quickActions = effectiveRole === 'student' ? studentQuickActions : effectiveRole === 'admin' ? adminQuickActions : clientQuickActions;
   }
   if (loading) {
     return (
