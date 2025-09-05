@@ -43,7 +43,15 @@ const ProtectedRoute: React.FC<Props> = ({ children, requiredRole }) => {
 
   // Not authenticated (and not a guest) → go to auth
   // Treat an existing session as authenticated even if user is still populating
-  if (!session && !isGuest) return <Navigate to="/auth" replace />;
+  if (!session && !isGuest) {
+    return (
+      <Navigate
+        to="/auth"
+        replace
+        state={{ signup: true, from: location.pathname }}
+      />
+    );
+  }
 
   // Enhanced role-based access control
   // Admins (and developers) can access everything

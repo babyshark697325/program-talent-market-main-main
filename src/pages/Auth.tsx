@@ -24,7 +24,23 @@ const Auth: React.FC = () => {
   const location = useLocation();
   const { toast } = useToast();
 
-  const [tab, setTab] = React.useState<"signin" | "signup" | "waitlist">("signin");
+  // Derive initial tab from location on first mount to avoid flicker
+  const initialTab = React.useMemo<"signin" | "signup" | "waitlist">(() => {
+    try {
+      const st = location.state as any;
+      const params = new URLSearchParams(location.search);
+      const wantsSignup = Boolean(
+        st?.signup ||
+        st?.tab === "signup" ||
+        params.get("signup") === "1" ||
+        params.get("tab") === "signup"
+      );
+      return wantsSignup ? "signup" : "signin";
+    } catch {
+      return "signin";
+    }
+  }, [location.state, location.search]);
+  const [tab, setTab] = React.useState<"signin" | "signup" | "waitlist">(initialTab);
   const [signInData, setSignInData] = React.useState({ email: "", password: "" });
   const [signUpData, setSignUpData] = React.useState({
     email: "",
