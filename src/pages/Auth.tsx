@@ -55,10 +55,15 @@ const Auth: React.FC = () => {
   // If redirected from a restricted guest action, switch to signup tab
   React.useEffect(() => {
     const st = location.state as any;
-    if (st?.signup) {
-      setTab("signup");
-    }
-  }, [location.state]);
+    const params = new URLSearchParams(location.search);
+    const wantsSignup = Boolean(
+      st?.signup ||
+      st?.tab === "signup" ||
+      params.get("signup") === "1" ||
+      params.get("tab") === "signup"
+    );
+    if (wantsSignup) setTab("signup");
+  }, [location.state, location.search]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -565,4 +570,3 @@ const Auth: React.FC = () => {
 };
 
 export default Auth;
-
