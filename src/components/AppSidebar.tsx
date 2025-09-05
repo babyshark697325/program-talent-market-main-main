@@ -219,6 +219,11 @@ export function AppSidebar() {
   }
 
   const handleNavigation = (item: NavigationItem) => {
+    // If guest, redirect to signup except for 'Browse Talent'
+    if (isGuest && item.title !== "Browse Talent") {
+      navigate('/auth')
+      return
+    }
     if (item.tab) {
       // Navigate to the URL and pass the tab and optional scroll target in state
       navigate(item.url, { state: { activeTab: item.tab, scrollTo: item.scrollTo } })
