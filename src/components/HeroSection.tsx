@@ -269,7 +269,9 @@ const HeroSection: React.FC = () => {
           <div className="relative z-30 flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center mb-6 md:mb-8 animate-fade-in px-4" style={{ animationDelay: '0.6s' }}>
             <Button 
               size="lg" 
-              onClick={() => navigate('/browse-students')}
+              onClick={() =>
+                navigate('/', { state: { activeTab: 'students', scrollTo: 'students' } })
+              }
               className="relative z-20 w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground px-6 md:px-8 py-3 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-sm md:text-base"
             >
               Browse Talented Students
