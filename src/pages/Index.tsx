@@ -448,10 +448,12 @@ const Index: React.FC = () => {
           )}
 
           {/* Browse Students/Jobs Hero Section */}
-          <StatsGrid 
-            studentsCount={students.length}
-            skillsCount={allSkills.length}
-          />
+        <StatsGrid 
+          studentsCount={students.length}
+          skillsCount={allSkills.length}
+        />
+        {/* Anchor for scrolling to just after the Discover card */}
+        <div id="students-section" />
         </div>
 
         <TabNavigation
@@ -461,8 +463,6 @@ const Index: React.FC = () => {
           jobsCount={jobs.length}
         />
 
-        {/* Anchor for scrolling to students list */}
-        <div id="students-section" />
 
         <SearchFilters
           search={search}
