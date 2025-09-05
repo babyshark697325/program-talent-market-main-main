@@ -308,7 +308,11 @@ const Index: React.FC = () => {
       setTimeout(() => {
         if (target === 'students') {
           const el = document.getElementById('students-section');
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          if (el) {
+            const offset = 96; // scroll a bit less so it's not too low
+            const y = el.getBoundingClientRect().top + window.pageYOffset - offset;
+            window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+          }
         }
       }, 0);
       // Clear the state to prevent it from persisting
