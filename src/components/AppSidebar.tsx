@@ -224,7 +224,7 @@ export function AppSidebar() {
     const guestBlockedTitles = ["Browse Talent"];
     const guestBlockedRoutes = ["/client/profile", "/client/settings", "/student/settings", "/profile"];
     if (isGuest && (!guestBlockedTitles.includes(item.title) || guestBlockedRoutes.includes(item.url))) {
-      navigate('/auth');
+      navigate('/auth', { state: { tab: 'signup' } });
       return;
     }
     if (item.tab) {
@@ -366,7 +366,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton 
-                    onClick={() => navigate('/auth')}
+                    onClick={() => navigate('/auth', { state: { tab: 'signup' } })}
                     className="cursor-pointer text-muted-foreground hover:text-foreground"
                   >
                     <UserPlus />
