@@ -219,21 +219,22 @@ export function AppSidebar() {
   }
 
   const handleNavigation = (item: NavigationItem) => {
-    // If guest, redirect to signup except for 'Browse Talent'
-    if (isGuest && item.title !== "Browse Talent") {
-      navigate('/auth')
-      return
+    // If guest, redirect to signup except for 'Browse Talent'.
+    // Also redirect for 'My Profile' and 'Settings' regardless of sidebar section.
+    const guestBlockedTitles = ["Browse Talent"];
+    const guestBlockedRoutes = ["/client/profile", "/client/settings", "/student/settings", "/profile"];
+    if (isGuest && (!guestBlockedTitles.includes(item.title) || guestBlockedRoutes.includes(item.url))) {
+      navigate('/auth');
+      return;
     }
     if (item.tab) {
-      // Navigate to the URL and pass the tab and optional scroll target in state
-      navigate(item.url, { state: { activeTab: item.tab, scrollTo: item.scrollTo } })
+      navigate(item.url, { state: { activeTab: item.tab, scrollTo: item.scrollTo } });
     } else {
-      navigate(item.url)
-      // Scroll to top for routes that go to home/dashboard pages
+      navigate(item.url);
       if (item.url === '/' || item.url.includes('dashboard')) {
         setTimeout(() => {
-          window.scrollTo({ top: 0, behavior: 'smooth' })
-        }, 100)
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
       }
     }
   }
