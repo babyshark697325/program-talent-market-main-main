@@ -193,6 +193,8 @@ const Index: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [featured, setFeatured] = useState<any>(null);
+  const [averageRating, setAverageRating] = useState<number>(0);
+  const [avgResponseHours, setAvgResponseHours] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<"name" | "price" | "rating">("name");
   const navigate = useNavigate();
   const location = useLocation();
@@ -289,6 +291,31 @@ const Index: React.FC = () => {
     };
 
     fetchJobs();
+  }, []);
+
+  // Fetch average rating and set response time (placeholder if no data source yet)
+  useEffect(() => {
+    const fetchAvgRating = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('reviews')
+          .select('rating');
+        if (!error && data) {
+          const ratings = (data as any[]).map((r: any) => Number(r.rating)).filter((n) => !isNaN(n));
+          if (ratings.length > 0) {
+            const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+            setAverageRating(avg);
+          } else {
+            setAverageRating(0);
+          }
+        }
+      } catch (e) {
+        // ignore; keep default
+      }
+    };
+    fetchAvgRating();
+    // If you later have a source, compute dynamically; default to 24h
+    setAvgResponseHours(24);
   }, []);
 
   // Memoized skills calculation
@@ -455,6 +482,8 @@ const Index: React.FC = () => {
         <StatsGrid 
           studentsCount={students.length}
           skillsCount={allSkills.length}
+          averageRating={averageRating}
+          responseTimeHours={avgResponseHours}
         />
         {/* Anchor for scrolling to just after the Discover card */}
         <div id="students-section" />

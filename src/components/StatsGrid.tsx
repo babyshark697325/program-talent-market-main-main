@@ -5,9 +5,17 @@ import { Users } from "lucide-react";
 interface StatsGridProps {
   studentsCount: number;
   skillsCount: number;
+  averageRating?: number | null;
+  responseTimeHours?: number | null;
 }
 
-const StatsGrid: React.FC<StatsGridProps> = ({ studentsCount, skillsCount }) => {
+const StatsGrid: React.FC<StatsGridProps> = ({ studentsCount, skillsCount, averageRating, responseTimeHours }) => {
+  const ratingDisplay = typeof averageRating === 'number' && !isNaN(averageRating)
+    ? `${averageRating.toFixed(1)}★`
+    : '0.0★';
+  const responseDisplay = typeof responseTimeHours === 'number' && !isNaN(responseTimeHours)
+    ? `${Math.max(0, responseTimeHours).toFixed(responseTimeHours % 1 ? 1 : 0)}h`
+    : '24h';
   return (
     <section className="relative isolate overflow-hidden rounded-2xl bg-background py-14 px-6 md:px-12 animate-fade-in shadow-xl border border-border">
       {/* Background glow effects */}
@@ -35,11 +43,11 @@ const StatsGrid: React.FC<StatsGridProps> = ({ studentsCount, skillsCount }) => 
             <div className="text-xs md:text-sm text-muted-foreground">Skills Available</div>
           </div>
           <div className="bg-card/60 rounded-xl md:rounded-2xl p-3 md:p-4 backdrop-blur-sm border border-primary/10">
-            <div className="text-lg md:text-2xl font-bold text-primary">4.9★</div>
+            <div className="text-lg md:text-2xl font-bold text-primary">{ratingDisplay}</div>
             <div className="text-xs md:text-sm text-muted-foreground">Average Rating</div>
           </div>
           <div className="bg-card/60 rounded-xl md:rounded-2xl p-3 md:p-4 backdrop-blur-sm border border-primary/10">
-            <div className="text-lg md:text-2xl font-bold text-primary">24h</div>
+            <div className="text-lg md:text-2xl font-bold text-primary">{responseDisplay}</div>
             <div className="text-xs md:text-sm text-muted-foreground">Response Time</div>
           </div>
         </div>
