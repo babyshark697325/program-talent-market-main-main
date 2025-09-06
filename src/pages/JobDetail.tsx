@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Building, MapPin, Clock, DollarSign, Calendar, Users, Mail, Bookmark } from 'lucide-react';
@@ -25,6 +26,34 @@ const JobDetail = () => {
     if (job && confirm('Are you sure you want to remove this job?')) {
       navigate('/manage-jobs', { state: { removeId: job.id } });
     }
+  };
+
+  const { toast } = useToast();
+
+  const handleApply = () => {
+    // Create application server-side and trigger owner notifications
+    (async () => {
+      try {
+        const body = { jobId: job.id, userId: (await (await fetch('/api/me')).json()).id };
+        const resp = await fetch('/api/apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          toast({ title: 'Application submitted', description: 'Your application was recorded.' });
+          console.log('Application response', data);
+        } else {
+          const err = await resp.json().catch(() => ({}));
+          toast({ title: 'Application failed', description: err.error || 'Unable to submit application.' });
+          console.error('Apply failed', err);
+        }
+      } catch (e) {
+        toast({ title: 'Application failed', description: 'Unable to submit application.' });
+        console.error('Apply error', e);
+      }
+    })();
   };
 
   // Scroll to top when component mounts or job ID changes
@@ -108,7 +137,7 @@ const JobDetail = () => {
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
-                  <Button size="lg" className="bg-gradient-to-r from-primary to-primary/80">
+                  <Button size="lg" className="bg-gradient-to-r from-primary to-primary/80" onClick={handleApply}>
                     <Mail className="mr-2 h-4 w-4" />
                     Apply Now
                   </Button>

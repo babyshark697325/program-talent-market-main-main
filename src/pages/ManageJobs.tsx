@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import PostJobForm from "@/components/PostJobForm";
 import { Plus, Edit, Trash2, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { notifyFromSaved } from '@/lib/notifications';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Database job type - updated to match actual schema
@@ -161,6 +162,16 @@ const ManageJobs = () => {
 
       // Refresh jobs list
       await fetchJobs();
+      // Notify interested users about new job postings (best-effort)
+      try {
+        await notifyFromSaved('jobUpdates', undefined, {
+          subject: `New job posted: ${jobData.title}`,
+          message: `${jobData.title} — ${jobData.description?.slice(0, 200)}`,
+        });
+      } catch (e) {
+        // Ignore notification errors
+        console.debug('notifyFromSaved failed for job post', e);
+      }
       setIsPostJobOpen(false);
     } catch (err) {
       console.error('Error posting job:', err);
@@ -184,6 +195,14 @@ const ManageJobs = () => {
 
       // Remove job from local state
       setJobs(jobs.filter(job => job.id !== id));
+      try {
+        await notifyFromSaved('jobUpdates', undefined, {
+          subject: `Job removed: ${id}`,
+          message: `A job was removed by the owner.`,
+        });
+      } catch (e) {
+        console.debug('notifyFromSaved failed for job remove', e);
+      }
     } catch (err) {
       console.error('Error deleting job:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete job');
