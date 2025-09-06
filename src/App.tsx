@@ -18,6 +18,7 @@ import { AppSidebar } from "./components/AppSidebar";
 // Header widgets
 import RoleSelector from "./components/RoleSelector";
 import UserMenu from "./components/UserMenu";
+import { ThemeToggle } from "./components/ThemeToggle";
 
 // shadcn toasts host
 import { Toaster } from "./components/ui/toaster";
@@ -83,7 +84,7 @@ function Layout({ children }: { children: React.ReactNode }) {
               </span>
             </div>
             <div className="flex items-center gap-1 md:gap-2">
-              {/* Theme toggle removed per request */}
+              <ThemeToggle />
               {(userRole === 'admin' || userRole === 'developer' || isDeveloper) && <RoleSelector />}
               <UserMenu />
             </div>
