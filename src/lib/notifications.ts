@@ -16,9 +16,30 @@ export async function getCurrentUserContact() {
   const { data: auth } = await supabase.auth.getUser();
   const userId = auth?.user?.id;
   const email = auth?.user?.email || undefined;
-  // Extend to fetch phone when column exists
-  // const { data: profile } = await supabase.from('profiles').select('phone').eq('user_id', userId).maybeSingle();
-  const phone = undefined as string | undefined;
+  let phone: string | undefined = undefined;
+  try {
+    // Prefer phone from saved client settings if available
+    const client = await loadUserSettings('client_settings');
+    if (client?.contactPhone && typeof client.contactPhone === 'string') {
+      phone = client.contactPhone as string;
+    }
+    // Fallback to student profile phone if present
+    if (!phone) {
+      const studentProfile = await loadUserSettings('student_profile');
+      if (studentProfile?.phone && typeof studentProfile.phone === 'string') {
+        phone = studentProfile.phone as string;
+      }
+    }
+    // Optional: if profiles has a phone column in future, uncomment below
+    // if (!phone && userId) {
+    //   const { data: profile } = await supabase
+    //     .from('profiles')
+    //     .select('phone')
+    //     .eq('user_id', userId)
+    //     .maybeSingle();
+    //   phone = (profile as any)?.phone;
+    // }
+  } catch {}
   return { userId, email, phone };
 }
 
@@ -31,7 +52,7 @@ async function recordNotification(row: {
   message: string;
   meta?: any;
 }) {
-  const { error } = await supabase.from('notifications').insert({
+  const { data, error } = await supabase.from('notifications').insert({
     user_id: row.user_id,
     channel: row.channel,
     type: row.type,
@@ -39,9 +60,9 @@ async function recordNotification(row: {
     message: row.message,
     meta: row.meta || null,
     status: 'queued',
-  });
+  }).select().single();
   if (error) throw error;
-  return true;
+  return data;
 }
 
 export async function dispatchNotification(
@@ -62,8 +83,33 @@ export async function dispatchNotification(
       results.push({ channel: ch, ok });
     } else if (ch === 'sms') {
       if (!phone) { results.push({ channel: ch, ok: false, reason: 'no-phone' }); continue; }
-      const ok = await recordNotification({ user_id: userId, channel: ch, type, subject, message, meta: { to: phone } });
-      results.push({ channel: ch, ok });
+      // Record queued notification
+      let inserted: any = null;
+      try {
+        inserted = await recordNotification({ user_id: userId, channel: ch, type, subject, message, meta: { to: phone } });
+      } catch (err) {
+        results.push({ channel: ch, ok: false, reason: 'db-insert-failed' });
+        continue;
+      }
+
+      try {
+        const resp = await fetch('/api/send-sms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: phone, subject, message, type })
+        });
+        if (resp.ok) {
+          try { if (inserted?.id) await supabase.from('notifications').update({ status: 'sent' }).eq('id', inserted.id); } catch {}
+          results.push({ channel: ch, ok: true });
+        } else {
+          const errBody = await resp.json().catch(() => ({}));
+          results.push({ channel: ch, ok: false, reason: 'send-failed', ...(errBody ? { details: errBody } : {}) });
+        }
+      } catch (sendErr) {
+        results.push({ channel: ch, ok: false, reason: 'send-error' });
+      }
+    } else {
+      results.push({ channel: ch, ok: false, reason: 'channel-unknown' });
     }
   }
   return results;

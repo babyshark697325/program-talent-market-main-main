@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { loadUserSettings, saveUserSettings } from '@/lib/userSettings';
+import { sendPreferenceTest } from '@/lib/notifications';
 import { generate2FASecret, verify2FACode } from '@/lib/twoFactor';
 import { QRCodeCanvas } from 'qrcode.react';
 import '@/components/ui/settings-dropdown.css';
@@ -130,6 +131,8 @@ const ClientSettings: React.FC = () => {
         title: "Settings saved",
         description: "Your settings have been saved successfully.",
       });
+      // Send a quick test based on current preferences so users know it works
+      try { await sendPreferenceTest(form.notifications as any); } catch {}
     } else {
       toast({
         title: "Error",

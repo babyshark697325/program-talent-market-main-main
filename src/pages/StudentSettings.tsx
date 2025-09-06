@@ -24,7 +24,7 @@ const StudentSettings: React.FC = () => {
     fontSize: 'medium',
     colorMode: 'system',
     notifications: {
-      newApplicants: { email: false, sms: false },
+  newApplicants: { email: true, sms: false },
       jobUpdates: { email: true, sms: false },
       applicationStatus: { email: true, sms: false },
       recommendations: { email: true, sms: false },
