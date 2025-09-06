@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { User as UserIcon } from "lucide-react";
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 function getInitials(nameOrEmail: string) {
   const text = (nameOrEmail || "").trim();
@@ -148,10 +149,11 @@ const UserMenu: React.FC = () => {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-60 border-0 rounded-lg p-2 shadow-lg bg-popover/95 backdrop-blur-sm">
-        <DropdownMenuLabel className="flex flex-col gap-1 pb-2">
-          <span className="font-medium text-sm truncate">{displayName}</span>
-          <span className="text-xs text-muted-foreground truncate">{user.email}</span>
-          <div className="mt-1.5 flex items-center gap-1.5">
+        <div className="flex items-start justify-between">
+          <DropdownMenuLabel className="flex flex-col gap-1 pb-2">
+            <span className="font-medium text-sm truncate">{displayName}</span>
+            <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+            <div className="mt-1.5 flex items-center gap-1.5">
             <Badge
               variant="secondary"
               className="uppercase tracking-wide text-[9px] leading-4 px-2.5 py-0.5 rounded-full"
@@ -164,7 +166,11 @@ const UserMenu: React.FC = () => {
               </Badge>
             )}
           </div>
-        </DropdownMenuLabel>
+          </DropdownMenuLabel>
+          <div className="pt-1 pl-2">
+            <ThemeToggle />
+          </div>
+        </div>
 
         <DropdownMenuSeparator className="my-1.5 bg-border/50" />
   <DropdownMenuItem className="px-3 py-2 rounded-md leading-5 focus:bg-muted focus:text-foreground hover:bg-muted hover:text-foreground" onSelect={goProfile} onClick={goProfileClick}>Profile</DropdownMenuItem>
