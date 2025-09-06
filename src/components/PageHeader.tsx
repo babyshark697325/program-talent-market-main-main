@@ -1,4 +1,5 @@
 import React from 'react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 interface PageHeaderProps {
   title: string;
@@ -19,11 +20,10 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, description, children })
           </p>
         )}
       </div>
-      {children && (
-        <div className="flex gap-2">
-          {children}
-        </div>
-      )}
+      <div className="flex gap-2 items-center">
+        <ThemeToggle />
+        {children}
+      </div>
     </div>
   );
 };
