@@ -5,25 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MyVillage Talent</title>
     <link rel="icon" type="image/png" href="/images/MyVillageIcon.png" />
-    <meta
-      name="description"
-      content="Connect talented students with meaningful opportunities"
-    />
+    <meta name="description" content="Connect talented students with meaningful opportunities" />
     <meta name="author" content="MyVillage Talent" />
 
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <meta property="og:title" content="MyVillage Talent" />
-    <meta
-      property="og:description"
-      content="Connect talented students with meaningful opportunities"
-    />
+    <meta property="og:description" content="Connect talented students with meaningful opportunities" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="/images/MyVillageIcon.png" />
 
@@ -34,43 +25,6 @@
 
   <body>
     <div id="root"></div>
-
-    <!-- Test buttons for email -->
-    <div style="text-align: center; margin-top: 2rem">
-      <button id="applyBtn">📩 Send Application Email</button>
-      <button id="acceptBtn" style="margin-left: 1rem">
-        ✅ Send Acceptance Email
-      </button>
-    </div>
-
     <script type="module" src="/src/main.tsx"></script>
-
-    <script>
-      async function sendEmail(type) {
-        try {
-          const res = await fetch("/api/notify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              to: "youremail@example.com", // replace with your email
-              type: type, // "application" or "accepted"
-              jobTitle: "Logo Design",
-            }),
-          });
-
-          const data = await res.json();
-          alert(data.success ? "✅ Email sent!" : "❌ Error: " + data.error);
-        } catch (err) {
-          alert("❌ Failed: " + err.message);
-        }
-      }
-
-      document
-        .getElementById("applyBtn")
-        .addEventListener("click", () => sendEmail("application"));
-      document
-        .getElementById("acceptBtn")
-        .addEventListener("click", () => sendEmail("accepted"));
-    </script>
   </body>
 </html>
