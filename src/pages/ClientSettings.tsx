@@ -29,13 +29,7 @@ const ClientSettings: React.FC = () => {
     }
   });
   // Controls the visual state of the switch (on during setup or enabled)
-  const [twoFASwitchOn, setTwoFASwitchOn] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(CLIENT_2FA_KEY) || '{}').enabled || false;
-    } catch {
-      return false;
-    }
-  });
+  // Remove separate switch state; always use form or twoFAEnabled for switch checked value
   const [twoFASecret, setTwoFASecret] = useState<string | null>(null);
   const [otpAuthUrl, setOtpAuthUrl] = useState<string | null>(null);
   const [codeInput, setCodeInput] = useState('');
@@ -75,10 +69,11 @@ const ClientSettings: React.FC = () => {
   };
   // Instantly apply font size and sync color mode via next-themes
   useEffect(() => {
-    const px = sizeToPx(form.fontSize);
-    document.documentElement.style.setProperty('--font-size', px);
-    document.documentElement.style.setProperty('--font-size-label', form.fontSize || 'medium');
-    setTheme(form.colorMode as 'light' | 'dark' | 'system');
+  const px = sizeToPx(form.fontSize);
+  document.documentElement.style.setProperty('--font-size', px);
+  document.documentElement.style.setProperty('--font-size-label', form.fontSize || 'medium');
+  setTheme(form.colorMode as 'light' | 'dark' | 'system');
+  // If you have switches for notifications or 2FA, always use form or twoFAEnabled for checked value
   }, [form.fontSize, form.colorMode, setTheme]);
   // Removed conflicting effect that set non-pixel font sizes
   const [isSaving, setIsSaving] = useState(false);
@@ -97,6 +92,7 @@ const ClientSettings: React.FC = () => {
             ...parsed,
             notifications: { ...defaultForm.notifications, ...(parsed.notifications || {}) },
           });
+          // No need to update separate switch state; always use form for checked value
           if (parsed.fontSize) document.documentElement.style.setProperty('--font-size', sizeToPx(parsed.fontSize));
           if (parsed.colorMode) setTheme(parsed.colorMode as 'light' | 'dark' | 'system');
         }
@@ -111,6 +107,7 @@ const ClientSettings: React.FC = () => {
           ...savedSettings,
           notifications: { ...defaultForm.notifications, ...(savedSettings.notifications || {}) },
         }));
+        // No need to update separate switch state; always use form for checked value
         if (savedSettings.fontSize) document.documentElement.style.setProperty('--font-size', sizeToPx(savedSettings.fontSize));
         if (savedSettings.colorMode) setTheme(savedSettings.colorMode as 'light' | 'dark' | 'system');
       }
@@ -173,7 +170,7 @@ const ClientSettings: React.FC = () => {
 
   // 2FA Setup Handlers
   const handleEnable2FA = () => {
-    setTwoFASwitchOn(true);
+  // ...existing code...
     const { secret, otpauth } = generate2FASecret('client@myvillage.com');
     setTwoFASecret(secret);
     setOtpAuthUrl(otpauth);
@@ -186,7 +183,7 @@ const ClientSettings: React.FC = () => {
     setVerifying(true);
     if (twoFASecret && verify2FACode(twoFASecret, codeInput)) {
       setTwoFAEnabled(true);
-      setTwoFASwitchOn(true);
+  // ...existing code...
       setVerified(true);
       setShow2FASetup(false);
       localStorage.setItem(CLIENT_2FA_KEY, JSON.stringify({ enabled: true, secret: twoFASecret }));
@@ -199,7 +196,7 @@ const ClientSettings: React.FC = () => {
 
   const handleDisable2FA = () => {
     setTwoFAEnabled(false);
-    setTwoFASwitchOn(false);
+  // ...existing code...
     setTwoFASecret(null);
     setOtpAuthUrl(null);
     setShow2FASetup(false);
@@ -269,7 +266,7 @@ const ClientSettings: React.FC = () => {
                     <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
                   </div>
                   <Switch
-                    checked={twoFASwitchOn || show2FASetup}
+                    checked={twoFAEnabled || show2FASetup}
                     onCheckedChange={checked => {
                       if (checked) handleEnable2FA();
                       else handleDisable2FA();

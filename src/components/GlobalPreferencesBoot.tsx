@@ -16,8 +16,12 @@ function applyFrom(storageKey: string, setTheme: (t: 'light' | 'dark' | 'system'
     if (!raw) return false;
     const parsed = JSON.parse(raw);
     if (parsed?.fontSize) {
-      document.documentElement.style.setProperty('--font-size', sizeToPx(parsed.fontSize));
-      document.documentElement.style.setProperty('--font-size-label', parsed.fontSize || 'medium');
+      const currentFontSize = document.documentElement.style.getPropertyValue('--font-size');
+      const newFontSize = sizeToPx(parsed.fontSize);
+      if (currentFontSize !== newFontSize) {
+        document.documentElement.style.setProperty('--font-size', newFontSize);
+        document.documentElement.style.setProperty('--font-size-label', parsed.fontSize || 'medium');
+      }
     }
     if (parsed?.colorMode) {
       setTheme(parsed.colorMode as 'light' | 'dark' | 'system');

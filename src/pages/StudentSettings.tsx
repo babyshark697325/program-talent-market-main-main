@@ -63,7 +63,13 @@ const StudentSettings: React.FC = () => {
             ...parsed,
             notifications: { ...defaultForm.notifications, ...(parsed.notifications || {}) },
           });
-          if (parsed.fontSize) document.documentElement.style.setProperty('--font-size', sizeToPx(parsed.fontSize));
+          if (parsed.fontSize) {
+            const currentFontSize = document.documentElement.style.getPropertyValue('--font-size');
+            const newFontSize = sizeToPx(parsed.fontSize);
+            if (currentFontSize !== newFontSize) {
+              document.documentElement.style.setProperty('--font-size', newFontSize);
+            }
+          }
           if (parsed.colorMode) setTheme(parsed.colorMode);
         }
       } catch (e) {
@@ -76,7 +82,13 @@ const StudentSettings: React.FC = () => {
           ...remote,
           notifications: { ...defaultForm.notifications, ...(remote.notifications || {}) },
         }));
-        if (remote.fontSize) document.documentElement.style.setProperty('--font-size', sizeToPx(remote.fontSize));
+        if (remote.fontSize) {
+          const currentFontSize = document.documentElement.style.getPropertyValue('--font-size');
+          const newFontSize = sizeToPx(remote.fontSize);
+          if (currentFontSize !== newFontSize) {
+            document.documentElement.style.setProperty('--font-size', newFontSize);
+          }
+        }
         if (remote.colorMode) setTheme(remote.colorMode);
       }
     };
