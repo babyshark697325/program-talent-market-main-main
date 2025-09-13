@@ -1,0 +1,15 @@
+/* Custom dropdown style for settings */
+.settings-dropdown {
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  box-shadow: none;
+  outline: none;
+  appearance: none;
+}
+
+html.dark .settings-dropdown {
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+}

@@ -1,0 +1,30 @@
+/* Responsive spacing for accessibility font sizes */
+:root {
+  --card-padding: 2rem;
+  --grid-gap: 2rem;
+  --input-height: 2.5rem;
+}
+
+html[style*="--font-size: 18px"] {
+  --card-padding: 2.5rem;
+  --grid-gap: 2.5rem;
+  --input-height: 3rem;
+}
+
+html[style*="--font-size: 20px"] {
+  --card-padding: 3rem;
+  --grid-gap: 3rem;
+  --input-height: 3.5rem;
+}
+
+.card, .Card {
+  padding: var(--card-padding);
+}
+
+.grid, .grid-cols-1, .grid-cols-2, .grid-cols-3 {
+  gap: var(--grid-gap);
+}
+
+input, select, textarea, .settings-dropdown {
+  height: var(--input-height);
+}

@@ -1,0 +1,234 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { mockJobs, JobPosting } from "@/data/mockJobs";
+import JobCard from "@/components/JobCard";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Search, Filter, Heart } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
+
+const BrowseJobs = () => {
+  const navigate = useNavigate();
+  const [filteredJobs, setFilteredJobs] = useState<JobPosting[]>(mockJobs);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [budgetRange, setBudgetRange] = useState<[number, number]>([0, 1000]);
+  const [sortBy, setSortBy] = useState<"title" | "budget" | "company">("title");
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ 
+      top: 0, 
+      behavior: 'smooth' 
+    });
+  }, []);
+
+  // Get all unique skills from jobs
+  const allSkills = Array.from(
+    new Set(mockJobs.flatMap(job => job.skills))
+  ).sort();
+
+  useEffect(() => {
+    let filtered = mockJobs;
+
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (job) =>
+          job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          job.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (selectedSkills.length > 0) {
+      filtered = filtered.filter((job) =>
+        selectedSkills.some((skill) => job.skills.includes(skill))
+      );
+    }
+
+    const minBudget = budgetRange[0];
+    const maxBudget = budgetRange[1];
+    filtered = filtered.filter((job) => {
+      const budget = parseInt(job.budget.replace(/[^0-9]/g, ""));
+      return budget >= minBudget && budget <= maxBudget;
+    });
+
+    // Apply sorting
+    filtered = filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "title":
+          return a.title.localeCompare(b.title);
+        case "budget":
+          const budgetA = parseInt(a.budget.replace(/[^\d]/g, ''));
+          const budgetB = parseInt(b.budget.replace(/[^\d]/g, ''));
+          return budgetA - budgetB;
+        case "company":
+          return a.company.localeCompare(b.company);
+        default:
+          return 0;
+      }
+    });
+
+    setFilteredJobs(filtered);
+  }, [searchQuery, selectedSkills, budgetRange, sortBy]);
+
+  const handleJobView = (id: number) => {
+    navigate(`/job/${id}`);
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setSelectedSkills([]);
+    setBudgetRange([0, 1000]);
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-6 space-y-6">
+        <PageHeader 
+          title="Browse Job Opportunities" 
+          description="Find exciting projects that match your skills and interests"
+        />
+
+        <div className="rounded-3xl p-8 shadow-md border bg-white border-black/10 dark:bg-[#040b17] dark:border-white/5 mb-10">
+          <div className="flex flex-col lg:flex-row gap-6 mb-6 relative">
+            {/* Clear Filters Button - top right */}
+            <button
+              onClick={handleClearFilters}
+              className="absolute right-0 top-0 bg-gradient-to-r from-primary to-primary/80 text-white px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all text-sm font-semibold z-10"
+              style={{ margin: '1rem' }}
+            >
+              Clear Filters
+            </button>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search jobs by title, company, or description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 text-lg rounded-2xl border border-primary/30 dark:border-white/10 focus:border-primary focus:ring-primary/20 bg-white/90 dark:bg-[#040b17] backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground whitespace-nowrap">
+              Sort by:
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { value: "title", label: "Title" },
+                { value: "budget", label: "Budget" },
+                { value: "company", label: "Company" }
+              ].map((sort) => (
+                <button
+                  key={sort.value}
+                  onClick={() => setSortBy(sort.value as any)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
+                    sortBy === sort.value 
+                      ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
+                      : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
+                  }`}
+                >
+                  {sort.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground whitespace-nowrap">
+              Filter by skill:
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedSkills([])}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
+                  selectedSkills.length === 0 
+                    ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
+                    : "bg-secondary/60 dark:bg-[#040b17] text-primary border border-primary/20 dark:border-white/10 hover:bg-primary/5 dark:hover:bg-white/5"
+                }`}
+              >
+                All Skills
+              </button>
+              {allSkills.slice(0, 8).map((skill) => (
+                <button
+                  key={skill}
+                  onClick={() => {
+                    if (selectedSkills.includes(skill)) {
+                      setSelectedSkills(selectedSkills.filter(s => s !== skill));
+                    } else {
+                      setSelectedSkills([...selectedSkills, skill]);
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
+                    selectedSkills.includes(skill)
+                      ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
+                      : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
+                  }`}
+                >
+                  {skill}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-primary/10">
+            <p className="text-sm text-muted-foreground">
+              Found {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''}
+              {selectedSkills.length > 0 && ` with selected skills`}
+              {searchQuery && ` matching "${searchQuery}"`}
+            </p>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-4">
+            {filteredJobs.length} Job{filteredJobs.length !== 1 ? 's' : ''} Available
+          </h2>
+        </div>
+
+        {filteredJobs.length > 0 ? (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            {filteredJobs.map((job, index) => (
+              <div 
+                key={job.id} 
+                className="animate-fade-in hover:scale-[1.02] transition-transform duration-200"
+                style={{ animationDelay: `${0.1 * index}s` }}
+              >
+                <JobCard
+                  job={job}
+                  onView={() => handleJobView(Number(job.id))}
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <div className="rounded-3xl p-16 shadow-md border bg-white border-black/10 dark:bg-[#040b17] dark:border-white/5 max-w-lg mx-auto">
+              <div className="w-24 h-24 bg-gradient-to-r from-primary/10 to-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Search className="w-12 h-12 text-primary/60" />
+              </div>
+              <h3 className="text-2xl font-bold text-primary mb-4">
+                No Jobs Found
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                We couldn't find any jobs matching your criteria. 
+                Try adjusting your search or filters.
+              </p>
+              <button 
+                onClick={handleClearFilters}
+                className="bg-gradient-to-r from-primary to-primary/80 text-white px-6 py-2 rounded-lg hover:shadow-lg transition-shadow"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default BrowseJobs;
