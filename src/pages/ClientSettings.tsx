@@ -87,10 +87,14 @@ const ClientSettings: React.FC = () => {
         const savedLocal = localStorage.getItem(CLIENT_SETTINGS_KEY);
         if (savedLocal) {
           const parsed = JSON.parse(savedLocal);
+          const notifications = { ...defaultForm.notifications, ...(parsed.notifications || {}) };
+          Object.keys(notifications).forEach(key => {
+            notifications[key].email = true;
+          });
           setForm({
             ...defaultForm,
             ...parsed,
-            notifications: { ...defaultForm.notifications, ...(parsed.notifications || {}) },
+            notifications,
           });
           // No need to update separate switch state; always use form for checked value
           if (parsed.fontSize) document.documentElement.style.setProperty('--font-size', sizeToPx(parsed.fontSize));
@@ -102,10 +106,14 @@ const ClientSettings: React.FC = () => {
       // Load from backend
       const savedSettings = await loadUserSettings('client_settings');
       if (savedSettings) {
+        const notifications = { ...defaultForm.notifications, ...(savedSettings.notifications || {}) };
+        Object.keys(notifications).forEach(key => {
+          notifications[key].email = true;
+        });
         setForm(prev => ({
           ...prev,
           ...savedSettings,
-          notifications: { ...defaultForm.notifications, ...(savedSettings.notifications || {}) },
+          notifications,
         }));
         // No need to update separate switch state; always use form for checked value
         if (savedSettings.fontSize) document.documentElement.style.setProperty('--font-size', sizeToPx(savedSettings.fontSize));
