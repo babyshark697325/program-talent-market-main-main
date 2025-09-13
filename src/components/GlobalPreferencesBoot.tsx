@@ -34,6 +34,7 @@ const GlobalPreferencesBoot: React.FC = () => {
   const { role } = useRole();
 
   React.useEffect(() => {
+    // Only run on first mount
     const path = window.location.pathname || '';
     const isStudentArea = /(^\/student\b)|(^\/student-)|(^\/resources$)|(^\/all-resources$)|(^\/browse-students$)/.test(path);
     const isClientArea = /(^\/client\b)|(^\/client-)|(^\/manage-jobs$)|(^\/post-job$)|(^\/browse-jobs$)/.test(path);
@@ -56,7 +57,9 @@ const GlobalPreferencesBoot: React.FC = () => {
       // admin/unknown
       if (!applyFrom('student-settings', setTheme)) applyFrom('client-settings', setTheme);
     }
-  }, [role, setTheme]);
+    // Only run once
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return null;
 };

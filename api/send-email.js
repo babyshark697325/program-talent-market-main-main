@@ -7,6 +7,7 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.RESEND_API_KEY;
   const dryRun = process.env.RESEND_DRY_RUN === "1";
+  const isDev = process.env.NODE_ENV !== "production";
 
   if (!apiKey && !dryRun) {
     return res.status(500).json({ error: "RESEND_API_KEY not configured" });
@@ -15,26 +16,35 @@ export default async function handler(req, res) {
   const resend = dryRun ? null : new Resend(apiKey);
 
   try {
-    const { to, subject, html, text, from } = req.body || {};
+    const { to, subject, html, text } = req.body || {};
     if (!to || !subject || (!html && !text)) {
-      return res
-        .status(400)
-        .json({ error: "Missing required fields: to, subject, and html or text" });
+      return res.status(400).json({
+        error: "Missing required fields: to, subject, and html or text",
+      });
     }
 
-    // ✅ Always use your verified sender
-    const sender = from || process.env.RESEND_FROM || "noreply@myvillagetalent.com";
+    // ✅ Always force noreply@myvillagetalent.com
+    const sender = "noreply@myvillagetalent.com";
 
-    // 🔹 Dry-run mode (simulates send without calling API)
+    // ✅ In dev, redirect to test inbox
+    const recipient = isDev ? "artist2819@gmail.com" : to;
+
+    // 🔹 Dry-run mode (simulate send without API call)
     if (dryRun) {
-      console.log("Dry-run email send:", { to, subject, html, text, from: sender });
+      console.log("Dry-run email send:", {
+        recipient,
+        subject,
+        html,
+        text,
+        from: sender,
+      });
       return res.status(200).json({ success: true, id: "dry_run_id" });
     }
 
     // 🔹 Real send
     const result = await resend.emails.send({
       from: sender,
-      to,
+      to: recipient,
       subject,
       ...(html ? { html } : {}),
       ...(text ? { text } : {}),
@@ -45,6 +55,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       id: result?.id || result?.data?.id || null,
+      ...(isDev ? { raw: result } : {}),
     });
   } catch (err) {
     console.error("Resend send-email error:", err);
