@@ -22,6 +22,7 @@ const lsList = parseList(lsRaw || undefined);
 // Hardcoded developer emails that should always be recognized
 const hardcodedList = [
   'artist2819@gmail.com',
+  'demo@talent.com', // Demo user for trailer
 ];
 
 // Merge unique emails

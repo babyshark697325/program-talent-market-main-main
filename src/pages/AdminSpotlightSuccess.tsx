@@ -411,7 +411,7 @@ function AdminSpotlightSuccess() {
                   }
                 : { text: '', clientName: '', rating: 0 },
             }}
-            onViewProfile={() => navigate(`/student/${selectedStudent.id}`)}
+            onViewProfile={() => navigate(`/view-student/${selectedStudent.id}`)}
           />
         ) : (
           <div className="text-center py-8 text-muted-foreground">

@@ -38,7 +38,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             placeholder={`Search ${activeTab === "students" ? "students..." : "jobs..."}...`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 md:pl-12 py-3 md:py-4 text-base md:text-lg rounded-2xl border border-black/10 dark:border-white/5 bg-white dark:bg-[#040b17] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            className="pl-10 md:pl-12 py-5 md:py-6 text-base md:text-lg rounded-full border border-primary/30 dark:border-white/10 focus:border-primary focus:ring-primary/20 bg-white/90 dark:bg-[#040b17] backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2"
           />
         </div>
         

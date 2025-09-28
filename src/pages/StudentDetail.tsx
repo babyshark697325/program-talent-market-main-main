@@ -10,7 +10,7 @@ import { mockStudents } from '@/data/mockStudents';
 import { mockReviews } from '@/data/mockReviews';
 import { useAuth } from "@/contexts/AuthContext";
 
-const StudentProfile = () => {
+const StudentDetail = () => {
   const { id } = useParams();
   const student = mockStudents.find(s => s.id === parseInt(id || '0'));
   const { userRole } = useAuth();
@@ -448,4 +448,4 @@ const StudentProfile = () => {
   );
 };
 
-export default StudentProfile;
+export default StudentDetail;

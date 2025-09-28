@@ -8,11 +8,11 @@ import { useNavigate } from 'react-router-dom';
 
 const RoleSelector: React.FC = () => {
   const { role, setRole } = useRole();
-  const { userRole } = useAuth();
+  const { userRole, isGuest } = useAuth();
   const navigate = useNavigate();
 
-  // Only show role selector for admin or developer users
-  if (userRole !== 'admin' && userRole !== 'developer') {
+  // Show role selector for admin, developer users, or guests
+  if (userRole !== 'admin' && userRole !== 'developer' && !isGuest) {
     return null;
   }
 

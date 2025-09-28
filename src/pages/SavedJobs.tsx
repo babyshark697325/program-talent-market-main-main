@@ -3,55 +3,34 @@ import { Bookmark } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import JobCard from "@/components/JobCard";
 import { Button } from "@/components/ui/button";
-import { useSavedJobs } from "@/contexts/SavedJobsContext";
-import { supabase } from "@/integrations/supabase/client";
-import { JobPosting } from "@/data/mockJobs";
+import { mockJobs, JobPosting } from "@/data/mockJobs";
+import { mockSavedJobs } from "@/data/mockSavedJobs";
 import PageHeader from '@/components/PageHeader';
 
 const SavedJobs = () => {
   const navigate = useNavigate();
-  const { savedJobIds } = useSavedJobs();
   const [savedJobs, setSavedJobs] = useState<JobPosting[]>([]);
 
   useEffect(() => {
     const load = async () => {
       try {
-        if (!savedJobIds.length) { 
-          setSavedJobs([]); 
-          return; 
-        }
+        // Simulate API delay for realistic demo
+        await new Promise(resolve => setTimeout(resolve, 300));
         
-        // Convert number IDs to strings for UUID comparison
-        const stringIds = savedJobIds.map(id => id.toString());
+        // Use mock saved jobs data for demo - get first 6 saved jobs
+        const savedJobIds = mockSavedJobs.slice(0, 6).map(savedJob => savedJob.jobId);
+        const savedJobsData = mockJobs.filter(job => 
+          savedJobIds.includes(typeof job.id === 'string' ? parseInt(job.id) : job.id)
+        );
         
-        const { data, error } = await supabase
-          .from('jobs')
-          .select('id, title, company, description, skills, budget, duration, status, posted_at, contact_email')
-          .in('id', stringIds);
-          
-        if (error) throw error;
-        
-        // Transform the data to match JobPosting interface
-        const transformedJobs: JobPosting[] = (data || []).map(job => ({
-          id: parseInt(job.id.replace(/-/g, '').substring(0, 8), 16), // Convert UUID to number for compatibility
-          title: job.title,
-          company: job.company || 'Unknown Company',
-          description: job.description || '',
-          skills: job.skills || [],
-          budget: job.budget || 'Not specified',
-          duration: job.duration || 'Not specified',
-          postedDate: job.posted_at ? new Date(job.posted_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          contactEmail: job.contact_email || 'contact@company.com'
-        }));
-        
-        setSavedJobs(transformedJobs);
+        setSavedJobs(savedJobsData);
       } catch (error) {
         console.error('Error loading saved jobs:', error);
         setSavedJobs([]);
       }
     };
     load();
-  }, [savedJobIds]);
+  }, []);
 
   // Scroll to top when component mounts
   useEffect(() => {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Video, FileText, Users, Award, Clock } from 'lucide-react';
+import { BookOpen, Video, FileText, Users, Award, Clock, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const LS_KEY = "student.resources";
@@ -66,7 +66,7 @@ const AllResources = () => {
           <p className="text-muted-foreground text-lg">Explore our complete collection of learning materials</p>
         </div>
         <Button onClick={() => navigate('/student/resources')}>
-          <BookOpen className="mr-2 h-4 w-4" />
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Student Resources
         </Button>
       </div>

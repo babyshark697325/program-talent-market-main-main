@@ -1,4 +1,3 @@
-import StudentSettings from "./pages/StudentSettings";
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -24,6 +23,7 @@ import { ThemeToggle } from "./components/ThemeToggle";
 import { Toaster } from "./components/ui/toaster";
 import BackToTop from "./components/BackToTop";
 import GlobalPreferencesBoot from "./components/GlobalPreferencesBoot";
+import RoleDebug from "./components/RoleDebug";
 
 // ---- Pages that exist in your repo (per screenshot) ----
 import Auth from "./pages/Auth";
@@ -43,6 +43,9 @@ import ClientProfile from "./pages/ClientProfile";
 import StudentResources from "./pages/StudentResources";
 import BrowseStudents from "./pages/BrowseStudents";
 import StudentProfile from "./pages/StudentProfile";
+import ClientStudentView from "./pages/ClientStudentView";
+import HireStudentDemo from "./pages/HireStudentDemo";
+import StudentSettings from "./pages/StudentSettings";
 import AllResources from "./pages/AllResources";
 import Payouts from "./pages/Payouts";
 
@@ -66,7 +69,7 @@ import { AdminDashboardPage, StudentDashboardPage, ClientDashboardPage } from ".
 // ---------- Inline layout with sidebar + header ----------
 function Layout({ children }: { children: React.ReactNode }) {
   const { role } = useRole();
-  const { userRole, isDeveloper } = useAuth();
+  const { userRole, isDeveloper, isGuest } = useAuth();
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -85,7 +88,7 @@ function Layout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex items-center gap-1 md:gap-2">
               <ThemeToggle />
-              {(userRole === 'admin' || userRole === 'developer' || isDeveloper) && <RoleSelector />}
+              {(userRole === 'admin' || userRole === 'developer' || isDeveloper || isGuest) && <RoleSelector />}
               <UserMenu />
             </div>
           </div>
@@ -261,6 +264,22 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute>
                     <Layout><StudentProfile /></Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/view-student/:id"
+                element={
+                  <ProtectedRoute>
+                    <Layout><ClientStudentView /></Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/hire-student"
+                element={
+                  <ProtectedRoute>
+                    <Layout><HireStudentDemo /></Layout>
                   </ProtectedRoute>
                 }
               />

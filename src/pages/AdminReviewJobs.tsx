@@ -8,26 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader as UIDialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search, Eye, Flag, FlagOff, Trash2, Building2, Calendar, DollarSign } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { mockJobs, JobPosting } from "@/data/mockJobs";
 
-// Database job interface matching Supabase schema
-interface DatabaseJob {
-  id: string;
-  user_id: string;
-  title: string;
-  company: string | null;
-  description: string | null;
-  requirements: string[];
-  skills: string[];
-  budget: string | null;
-  duration: string | null;
-  contact_email: string | null;
+// Convert JobPosting to match admin interface
+type AdminJob = JobPosting & {
   status: 'active' | 'flagged' | 'removed' | 'completed';
   posted_at: string;
-  created_at: string;
-  updated_at: string;
-}
-
-type AdminJob = DatabaseJob;
+  user_id: string;
+};
 
 const AdminReviewJobs: React.FC = () => {
   const navigate = useNavigate();
@@ -36,27 +24,23 @@ const AdminReviewJobs: React.FC = () => {
   const [jobs, setJobs] = useState<AdminJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | number | null>(null);
 
   // Fetch jobs from Supabase
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .neq('status', 'removed')
-        .order('posted_at', { ascending: false });
-
-      if (error) {
-        console.warn('Jobs table unavailable; showing empty list.');
-        setJobs([]);
-      } else {
-        setJobs(data || []);
-      }
+      // Convert mock jobs to admin format
+      const adminJobs: AdminJob[] = mockJobs.map(job => ({
+        ...job,
+        status: Math.random() > 0.8 ? 'flagged' : 'active' as 'active' | 'flagged' | 'removed' | 'completed',
+        posted_at: job.postedDate,
+        user_id: `user-${job.id}`
+      }));
+      
+      setJobs(adminJobs);
     } catch (error) {
-      console.error('Error fetching jobs:', error);
-      // Be quiet in empty/dev environments: show empty state instead of an error
+      console.error('Error loading jobs:', error);
       setJobs([]);
     } finally {
       setLoading(false);
@@ -83,15 +67,8 @@ const AdminReviewJobs: React.FC = () => {
     );
   }, [jobs, search]);
 
-  const flagJob = async (id: string) => {
+  const flagJob = async (id: string | number) => {
     try {
-      const { error } = await supabase
-        .from('jobs')
-        .update({ status: 'flagged' })
-        .eq('id', id);
-
-      if (error) throw error;
-
       setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, status: 'flagged' as const } : j)));
       toast({ title: "Job flagged", description: `Job was flagged for review.` });
     } catch (error) {
@@ -104,15 +81,8 @@ const AdminReviewJobs: React.FC = () => {
     }
   };
 
-  const unflagJob = async (id: string) => {
+  const unflagJob = async (id: string | number) => {
     try {
-      const { error } = await supabase
-        .from('jobs')
-        .update({ status: 'active' })
-        .eq('id', id);
-
-      if (error) throw error;
-
       setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, status: 'active' as const } : j)));
       toast({ title: "Job unflagged", description: `Job was restored to active.` });
     } catch (error) {
@@ -125,22 +95,15 @@ const AdminReviewJobs: React.FC = () => {
     }
   };
 
-  const removeJob = async (id: string) => {
+  const removeJob = async (id: string | number) => {
     try {
-      const { error } = await supabase
-        .from('jobs')
-        .update({ status: 'removed' })
-        .eq('id', id);
-
-      if (error) throw error;
-
       setJobs((prev) => prev.filter((j) => j.id !== id));
-      setConfirmId(null);
       toast({ title: "Job removed", description: `Job was removed.` });
+      setConfirmId(null);
     } catch (error) {
       console.error('Error removing job:', error);
       toast({
-        title: "Error",
+        title: "Error", 
         description: "Failed to remove job",
         variant: "destructive",
       });

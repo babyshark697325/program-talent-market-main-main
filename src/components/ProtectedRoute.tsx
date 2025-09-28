@@ -71,9 +71,9 @@ const ProtectedRoute: React.FC<Props> = ({ children, requiredRole }) => {
   // Define route access
   const path = location.pathname;
   const isClientPage = path.startsWith('/client') || [
-    '/', '/browse-jobs', '/my-applications', '/saved-jobs', '/job', '/profile', '/manage-jobs', '/post-job', '/waitlist', '/browse-students', '/student', '/all-resources', '/resources', '/student/resources'
+    '/', '/browse-jobs', '/my-applications', '/saved-jobs', '/job', '/profile', '/manage-jobs', '/post-job', '/waitlist', '/browse-students', '/student', '/view-student', '/all-resources', '/resources', '/student/resources'
   ].some(p => path === p || path.startsWith(p + '/'));
-  const isStudentPage = path.startsWith('/student') || path === '/student-dashboard' || path === '/resources' || path === '/all-resources' || path === '/browse-students';
+  const isStudentPage = path.startsWith('/student') || path.startsWith('/view-student') || path === '/student-dashboard' || path === '/resources' || path === '/all-resources' || path === '/browse-students';
 
   if (userRole === 'student') {
     // Students can access student and client pages

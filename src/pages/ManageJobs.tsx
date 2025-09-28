@@ -9,6 +9,7 @@ import PostJobForm from "@/components/PostJobForm";
 import { Plus, Edit, Trash2, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { mockJobs, JobPosting } from "@/data/mockJobs";
 
 // Database job type - updated to match actual schema
 interface DatabaseJob {
@@ -23,21 +24,6 @@ interface DatabaseJob {
   contact_email: string | null;
   status: string;
   user_id: string;
-}
-
-// JobPosting interface for compatibility
-interface JobPosting {
-  id: number;
-  title: string;
-  company: string;
-  description: string;
-  skills: string[];
-  budget: string;
-  duration: string;
-  postedDate: string;
-  contactEmail: string;
-  location?: string;
-  experienceLevel?: string;
 }
 
 const ManageJobs = () => {
@@ -62,7 +48,7 @@ const ManageJobs = () => {
     contactEmail: dbJob.contact_email || "contact@company.com"
   });
 
-  // Fetch jobs from Supabase
+  // Fetch jobs from mock data (for demo)
   const fetchJobs = async () => {
     if (!user) {
       setLoading(false);
@@ -73,33 +59,32 @@ const ManageJobs = () => {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
-        .from('jobs')
-        .select('*')
-        .eq('user_id', user.id)
-        .neq('status', 'removed')
-        .order('posted_at', { ascending: false });
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      const convertedJobs = (data || []).map(convertDatabaseJobToJobPosting);
-      setJobs(convertedJobs);
+      // Use first 2 jobs from mock data for the demo user
+      const userJobs = mockJobs.slice(0, 2);
+      setJobs(userJobs);
 
       // Calculate budget range
-      if (convertedJobs.length > 0) {
-        const budgets = convertedJobs
+      if (userJobs.length > 0) {
+        const budgets = userJobs
           .map(job => {
-            const match = job.budget.match(/\$(\d+)/);
-            return match ? parseInt(match[1]) : 0;
+            // Extract both min and max from budget ranges like "$2,000 - $3,500"
+            const matches = job.budget.match(/\$(\d+,?\d*)\s*-\s*\$(\d+,?\d*)/);
+            if (matches) {
+              const min = parseInt(matches[1].replace(/,/g, ''));
+              const max = parseInt(matches[2].replace(/,/g, ''));
+              return { min, max };
+            }
+            // Fallback for simple budgets
+            const singleMatch = job.budget.match(/\$(\d+,?\d*)/);
+            const value = singleMatch ? parseInt(singleMatch[1].replace(/,/g, '')) : 0;
+            return { min: value, max: value };
           })
-          .filter(budget => budget > 0);
+          .filter(budget => budget.min > 0);
         
         if (budgets.length > 0) {
-          const minBudget = Math.min(...budgets);
-          const maxBudget = Math.max(...budgets);
-          setTotalBudgetRange(`$${minBudget}-${maxBudget}`);
+          const minBudget = Math.min(...budgets.map(b => b.min));
+          const maxBudget = Math.max(...budgets.map(b => b.max));
+          setTotalBudgetRange(`$${minBudget.toLocaleString()} - $${maxBudget.toLocaleString()}`);
         }
       }
     } catch (err) {
@@ -115,7 +100,7 @@ const ManageJobs = () => {
     fetchJobs();
   }, [user]);
 
-  const handleJobView = (id: number) => {
+  const handleJobView = (id: string | number) => {
     navigate(`/job/${id}`, { state: { clientView: true } });
   };
 
@@ -128,39 +113,23 @@ const ManageJobs = () => {
     try {
       setError(null);
       
-      // Updated to match actual database schema
-      const jobData = {
+      // Create new job for demo
+      const newJob: JobPosting = {
+        id: Date.now(), // Simple ID generation for demo
         title: formData.title,
         company: formData.company || "Your Company",
         description: formData.description,
         skills: formData.skills ? formData.skills.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
         budget: formData.budget,
         duration: formData.duration || "To be discussed",
-        contact_email: formData.contactEmail || user.email || "contact@yourcompany.com",
-        user_id: user.id,
-        status: 'active'
+        contactEmail: formData.contactEmail || user.email || "contact@yourcompany.com",
+        postedDate: new Date().toISOString().split('T')[0],
+        location: "Remote",
+        experienceLevel: "Mid"
       };
 
-      const { error: insertError } = await supabase
-        .from('jobs')
-        .insert({
-          title: jobData.title,
-          company: jobData.company,
-          description: jobData.description,
-          skills: jobData.skills,
-          budget: jobData.budget,
-          duration: jobData.duration,
-          contact_email: jobData.contact_email,
-          user_id: jobData.user_id,
-          status: 'active' as const
-        });
-
-      if (insertError) {
-        throw insertError;
-      }
-
-      // Refresh jobs list
-      await fetchJobs();
+      // Add to local state
+      setJobs([newJob, ...jobs]);
       setIsPostJobOpen(false);
     } catch (err) {
       console.error('Error posting job:', err);
@@ -168,21 +137,11 @@ const ManageJobs = () => {
     }
   };
 
-  const handleDeleteJob = async (id: number) => {
+  const handleDeleteJob = async (id: string | number) => {
     try {
       setError(null);
       
-      const { error: deleteError } = await supabase
-        .from('jobs')
-        .update({ status: 'removed' })
-        .eq('id', id.toString())
-        .eq('user_id', user?.id);
-
-      if (deleteError) {
-        throw deleteError;
-      }
-
-      // Remove job from local state
+      // For demo: just remove from local state
       setJobs(jobs.filter(job => job.id !== id));
     } catch (err) {
       console.error('Error deleting job:', err);

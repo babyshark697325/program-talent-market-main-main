@@ -10,7 +10,8 @@ import TabNavigation from "@/components/TabNavigation";
 import SearchFilters from "@/components/SearchFilters";
 import ContentGrid from "@/components/ContentGrid";
 import { StudentService } from "@/types/student";
-import { JobPosting } from "@/data/mockJobs";
+import { JobPosting, mockJobs } from "@/data/mockJobs";
+import { mockStudents } from "@/data/mockStudents";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useRole } from "@/contexts/RoleContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -200,122 +201,49 @@ const Index: React.FC = () => {
   const location = useLocation();
   const { role } = useRole();
 
-  // Fetch student profiles from Supabase
+  // Use mock students data instead of Supabase
   useEffect(() => {
-    const fetchStudents = async () => {
+    const loadStudents = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        // Get profiles for users with 'student' role
-        const { data: studentRoles, error: rolesError } = await supabase
-          .from('user_roles')
-          .select('user_id')
-          .eq('role', 'student');
-
-        if (rolesError) {
-          console.warn('Student roles table missing or access limited. Rendering with no students.');
-          setStudents([]);
-          const featuredData = await getSpotlightFromStorage();
-          setFeatured(featuredData);
-          return;
-        }
-
-        if (!studentRoles || studentRoles.length === 0) {
-          setStudents([]);
-          const featuredData = await getSpotlightFromStorage();
-          setFeatured(featuredData);
-          return;
-        }
-
-        const studentUserIds = studentRoles.map(role => role.user_id);
+        // Use mock students data
+        setStudents(mockStudents);
         
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*')
-          .in('user_id', studentUserIds);
-
-        if (profilesError) {
-          console.warn('Profiles fetch issue; showing empty students.');
-          setStudents([]);
-          const featuredData = await getSpotlightFromStorage();
-          setFeatured(featuredData);
-          return;
-        }
-
-        const transformedStudents = (profiles || []).map(transformProfileToStudent);
-        setStudents(transformedStudents);
-        
-        // Set featured student after students are loaded
-        const featuredData = await getSpotlightFromStorage();
+        // Create featured student data using Alex Rivera from mock students
+        const featuredStudent = mockStudents.find(student => student.name === "Alex Rivera") || mockStudents[0];
+        const featuredData = {
+          student: featuredStudent,
+          quote: "I'm passionate about creating beautiful, functional web experiences that help businesses establish their online presence and connect with their customers.",
+          showcaseImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=800&h=500&q=80",
+          clientReview: {
+            text: "Alex delivered an exceptional e-commerce website that exceeded our expectations. Professional communication, clean code, and delivered on time!",
+            clientName: "Maria Santos, Boutique Owner",
+            rating: 5
+          }
+        };
         setFeatured(featuredData);
       } catch (err) {
-        console.error('Unexpected error:', err);
-        setError('An unexpected error occurred');
+        console.error('Error loading mock students:', err);
+        setError('Failed to load students');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStudents();
+    loadStudents();
   }, []);
 
-  // Fetch jobs from Supabase
+  // Use mock jobs data instead of Supabase
   useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        // Use created_at instead of posted_at since the column doesn't exist
-        const { data, error: fetchError } = await supabase
-          .from('jobs')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (fetchError) {
-          console.error('Error fetching jobs:', fetchError);
-          // Set empty array if table doesn't exist or has access issues
-          setJobs([]);
-          return;
-        }
-
-        // Filter active jobs in JavaScript if status column exists
-        const filteredData = (data || []).filter(job => 
-          !job.hasOwnProperty('status') || job.status === 'active'
-        );
-        
-        const transformedJobs = filteredData.map(transformDatabaseJobToJobPosting);
-        setJobs(transformedJobs);
-      } catch (err) {
-        console.error('Unexpected error fetching jobs:', err);
-        setJobs([]);
-      }
-    };
-
-    fetchJobs();
+    setJobs(mockJobs);
   }, []);
 
-  // Fetch average rating and set response time (placeholder if no data source yet)
+  // Use mock rating data instead of Supabase
   useEffect(() => {
-    const fetchAvgRating = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('reviews')
-          .select('rating');
-        if (!error && data) {
-          const ratings = (data as any[]).map((r: any) => Number(r.rating)).filter((n) => !isNaN(n));
-          if (ratings.length > 0) {
-            const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
-            setAverageRating(avg);
-          } else {
-            setAverageRating(0);
-          }
-        }
-      } catch (e) {
-        // ignore; keep default
-      }
-    };
-    fetchAvgRating();
-    // If you later have a source, compute dynamically; default to 24h
-    setAvgResponseHours(24);
+    setAverageRating(4.5);
+    setAvgResponseHours(3);
   }, []);
 
   // Memoized skills calculation
@@ -461,22 +389,24 @@ const Index: React.FC = () => {
           {/* Why Hire Students Section */}
           <WhyHireStudents />
 
-          {/* Featured Student Section - Moved after WhyHireStudents */}
-          {featured && (
-            <FeaturedStudent 
-              student={{
-                id: featured.student.id,
-                name: featured.student.name,
-                title: featured.student.title,
-                avatarUrl: featured.student.avatarUrl,
-                skills: featured.student.skills,
-                quote: featured.quote,
-                showcaseImage: featured.showcaseImage,
-                clientReview: featured.clientReview
-              }}
-              onViewProfile={() => navigate(`/student/${featured.student.id}`)}
-            />
-          )}
+          {/* Featured Student Section - Always show with mock data */}
+          <FeaturedStudent 
+            student={{
+              id: featured?.student?.id || 1,
+              name: featured?.student?.name || "Alex Rivera",
+              title: featured?.student?.title || "Full-Stack Web Developer",
+              avatarUrl: featured?.student?.avatarUrl || "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80",
+              skills: featured?.student?.skills || ["Web Development", "Programming", "UI/UX Design"],
+              quote: featured?.quote || "I'm passionate about creating beautiful, functional web experiences that help businesses establish their online presence and connect with their customers.",
+              showcaseImage: featured?.showcaseImage || "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=800&h=500&q=80",
+              clientReview: featured?.clientReview || {
+                text: "Alex delivered an exceptional e-commerce website that exceeded our expectations. Professional communication, clean code, and delivered on time!",
+                clientName: "Maria Santos, Boutique Owner",
+                rating: 5
+              }
+            }}
+            onViewProfile={() => navigate(`/view-student/${featured?.student?.id || 1}`)}
+          />
 
           {/* Browse Students/Jobs Hero Section */}
         <StatsGrid 
@@ -513,7 +443,7 @@ const Index: React.FC = () => {
           activeTab={activeTab}
           filteredStudents={filteredStudents}
           filteredJobs={filteredJobs}
-          onStudentView={(id) => navigate(`/student/${id}`)}
+          onStudentView={(id) => navigate(`/view-student/${id}`)}
           onJobView={(id) => navigate(`/job/${id}`)}
           onClearFilters={handleClearFilters}
         />

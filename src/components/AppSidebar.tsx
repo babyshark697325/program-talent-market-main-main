@@ -121,6 +121,44 @@ const studentQuickActions = [
     icon: Search,
   },
   {
+    title: "Browse Students",
+    url: "/browse-students", 
+    icon: Users,
+  },
+  {
+    title: "Learning Resources",
+    url: "/resources",
+    icon: BookOpen,
+  },
+]
+
+// Guest-specific actions (accessible without auth)
+const guestStudentQuickActions = [
+  {
+    title: "Browse Jobs",
+    url: "/browse-jobs",
+    icon: Search,
+  },
+  {
+    title: "Browse Students",
+    url: "/browse-students",
+    icon: Users,
+  },
+  {
+    title: "Learning Resources", 
+    url: "/resources",
+    icon: BookOpen,
+  },
+]
+
+// Authenticated student actions
+const authStudentQuickActions = [
+  {
+    title: "Browse Jobs",
+    url: "/browse-jobs",
+    icon: Search,
+  },
+  {
     title: "My Applications",
     url: "/my-applications",
     icon: FileText,
@@ -129,11 +167,6 @@ const studentQuickActions = [
     title: "Saved Jobs",
     url: "/saved-jobs",
     icon: Star,
-  },
-  {
-    title: "Post a Job",
-    url: "/post-job",
-    icon: Briefcase,
   },
 ]
 
@@ -193,8 +226,8 @@ export function AppSidebar() {
       { title: "Manage Jobs", url: "/manage-jobs", icon: Settings },
     ];
   } else {
-    // Prefer route context over role to avoid showing the wrong sidebar on refresh
-    const effectiveRole = isAdminArea ? 'admin' : (isStudentArea ? 'student' : 'client')
+    // Use role from context instead of inferring from URL
+    const effectiveRole = role;
     if (effectiveRole === 'student') {
       // Use dynamic route for student's own profile when possible
       const dynStudentNav = studentNavigation.map((item) =>
@@ -208,7 +241,15 @@ export function AppSidebar() {
     } else {
       navigationItems = clientNavigation
     }
-    quickActions = effectiveRole === 'student' ? studentQuickActions : effectiveRole === 'admin' ? adminQuickActions : clientQuickActions;
+    
+    // Choose appropriate quick actions based on role and authentication status
+    if (effectiveRole === 'student') {
+      quickActions = isGuest ? guestStudentQuickActions : authStudentQuickActions;
+    } else if (effectiveRole === 'admin') {
+      quickActions = adminQuickActions;
+    } else {
+      quickActions = clientQuickActions;
+    }
   }
   if (loading) {
     return (
@@ -219,11 +260,9 @@ export function AppSidebar() {
   }
 
   const handleNavigation = (item: NavigationItem) => {
-    // If guest, redirect to signup except for 'Browse Talent'.
-    // Also redirect for 'My Profile' and 'Settings' regardless of sidebar section.
-    const guestBlockedTitles = ["Browse Talent"];
-    const guestBlockedRoutes = ["/client/profile", "/client/settings", "/student/settings", "/profile"];
-    if (isGuest && (!guestBlockedTitles.includes(item.title) || guestBlockedRoutes.includes(item.url))) {
+    // If guest, redirect to signup for blocked routes only
+    const guestBlockedRoutes = ["/client/profile", "/client/settings", "/student/settings", "/profile", "/post-job", "/manage-jobs"];
+    if (isGuest && guestBlockedRoutes.includes(item.url)) {
       navigate('/auth', { state: { signup: true } });
       return;
     }

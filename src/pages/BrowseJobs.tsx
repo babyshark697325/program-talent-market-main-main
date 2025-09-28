@@ -46,12 +46,17 @@ const BrowseJobs = () => {
       );
     }
 
+    // Only apply budget filter if there's a meaningful range set
     const minBudget = budgetRange[0];
     const maxBudget = budgetRange[1];
-    filtered = filtered.filter((job) => {
-      const budget = parseInt(job.budget.replace(/[^0-9]/g, ""));
-      return budget >= minBudget && budget <= maxBudget;
-    });
+    if (minBudget > 0 || maxBudget < 10000) {
+      filtered = filtered.filter((job) => {
+        const budgetMatch = job.budget.match(/\$?(\d+(?:,\d{3})*)/);
+        if (!budgetMatch) return true; // Include jobs without clear budget format
+        const budget = parseInt(budgetMatch[1].replace(/,/g, ""));
+        return budget >= minBudget && budget <= maxBudget;
+      });
+    }
 
     // Apply sorting
     filtered = filtered.sort((a, b) => {
@@ -91,28 +96,25 @@ const BrowseJobs = () => {
         />
 
         <div className="rounded-3xl p-8 shadow-md border bg-white border-black/10 dark:bg-[#040b17] dark:border-white/5 mb-10">
-          <div className="flex flex-col lg:flex-row gap-6 mb-6 relative">
-            {/* Clear Filters Button - top right */}
-            <button
-              onClick={handleClearFilters}
-              className="absolute right-0 top-0 bg-gradient-to-r from-primary to-primary/80 text-white px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all text-sm font-semibold z-10"
-              style={{ margin: '1rem' }}
-            >
-              Clear Filters
-            </button>
+          <div className="flex flex-col lg:flex-row gap-6 mb-6">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-5 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search jobs by title, company, or description..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 text-lg rounded-2xl border border-primary/30 dark:border-white/10 focus:border-primary focus:ring-primary/20 bg-white/90 dark:bg-[#040b17] backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2"
+                className="w-full pl-12 pr-36 py-6 text-lg rounded-full border border-primary/30 dark:border-white/10 focus:border-primary focus:ring-primary/20 bg-white/90 dark:bg-[#040b17] backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2"
               />
+              {/* Clear Filters Button - inside search bar */}
+              <button
+                onClick={handleClearFilters}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 px-4 py-2 text-sm rounded-full bg-primary text-white hover:bg-primary/90 shadow-sm hover:shadow-md transition-all font-semibold whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                Clear Filters
+              </button>
             </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+          </div>          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground whitespace-nowrap">
               Sort by:
             </div>
@@ -190,11 +192,11 @@ const BrowseJobs = () => {
         </div>
 
         {filteredJobs.length > 0 ? (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-stretch">
             {filteredJobs.map((job, index) => (
               <div 
                 key={job.id} 
-                className="animate-fade-in hover:scale-[1.02] transition-transform duration-200"
+                className="animate-fade-in hover:scale-[1.02] transition-transform duration-200 flex"
                 style={{ animationDelay: `${0.1 * index}s` }}
               >
                 <JobCard
