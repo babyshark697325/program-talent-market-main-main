@@ -44,7 +44,6 @@ import StudentResources from "./pages/StudentResources";
 import BrowseStudents from "./pages/BrowseStudents";
 import StudentProfile from "./pages/StudentProfile";
 import ClientStudentView from "./pages/ClientStudentView";
-import HireStudentDemo from "./pages/HireStudentDemo";
 import StudentSettings from "./pages/StudentSettings";
 import AllResources from "./pages/AllResources";
 import Payouts from "./pages/Payouts";
@@ -272,14 +271,6 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute>
                     <Layout><ClientStudentView /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/hire-student"
-                element={
-                  <ProtectedRoute>
-                    <Layout><HireStudentDemo /></Layout>
                   </ProtectedRoute>
                 }
               />

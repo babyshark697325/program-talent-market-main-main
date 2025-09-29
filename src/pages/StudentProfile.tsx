@@ -1,449 +1,587 @@
-import React, { useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import React, { useRef, useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import PageHeader from '@/components/PageHeader';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Building, MapPin, Clock, DollarSign, Calendar, Users, Mail, Bookmark, User, Star, ExternalLink, ArrowLeft, Linkedin, Github, Phone } from 'lucide-react';
-import { mockStudents } from '@/data/mockStudents';
-import { mockReviews } from '@/data/mockReviews';
-import { useAuth } from "@/contexts/AuthContext";
+import { Mail, Phone, MapPin, Eye, Edit, Image, User, X, Plus, Trash2, ExternalLink, Linkedin, Github } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+
+// Brand icons for platform links (prefer official SVGs in /public/brands, fallback to colored badge)
+const UpworkIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    viewBox="0 0 24 24"
+    role="img"
+    aria-label="Upwork"
+    className={className}
+    focusable="false"
+  >
+    <circle cx="12" cy="12" r="12" fill="#000" />
+    <text
+      x="50%"
+      y="53%"
+      textAnchor="middle"
+      dominantBaseline="middle"
+      fontSize="13.5"
+      fontWeight="800"
+      fill="#fff"
+      fontFamily="Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
+    >
+      Up
+    </text>
+  </svg>
+);
+
+const FiverrIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <svg
+    viewBox="0 0 24 24"
+    role="img"
+    aria-label="Fiverr"
+    className={className}
+    focusable="false"
+  >
+    <circle cx="12" cy="12" r="12" fill="#000" />
+    <text
+      x="50%"
+      y="53%"
+      textAnchor="middle"
+      dominantBaseline="middle"
+      fontSize="13.5"
+      fontWeight="800"
+      fill="#fff"
+      fontFamily="Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
+      letterSpacing="-0.5"
+    >
+      fi
+    </text>
+  </svg>
+);
+import { useParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+
+// ----- Strong types for local state -----
+type PaymentStatus = 'paid' | 'pending';
+type PaymentMethod = '' | 'paypal' | 'venmo' | 'cashapp' | 'bank';
+interface PaymentHistoryItem { id: number; date: string; description: string; amount: string; status: PaymentStatus }
+interface ExperienceItem { title: string; company: string; duration?: string; description?: string }
+interface PortfolioItem { id: number; title: string; description?: string; link?: string; imageUrl?: string }
+interface PlatformLinks { linkedin: string; github: string; upwork: string; fiverr: string }
+interface PaymentsState {
+  method: PaymentMethod;
+  paypalEmail: string;
+  venmo: string;
+  cashapp: string;
+  bankLast4: string;
+  taxW9Submitted: boolean;
+  history: PaymentHistoryItem[];
+}
+interface StudentState {
+  name: string;
+  email: string;
+  phone: string;
+  avatarUrl: string;
+  location: string;
+  bio: string;
+  skills: string[];
+  experience: ExperienceItem[];
+  portfolio: PortfolioItem[];
+  platformLinks: PlatformLinks;
+  payments: PaymentsState;
+}
 
 const StudentProfile = () => {
-  const { id } = useParams();
-  const student = mockStudents.find(s => s.id === parseInt(id || '0'));
-  const { userRole } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const isClientRole = userRole === 'client';
-  const isClientContext = isClientRole || Boolean((location.state as any)?.clientView);
+  // --- Skills state and handlers ---
+  const [newSkill, setNewSkill] = useState('');
+  const removeSkill = (skill: string) => {
+    setEdited(prev => ({ ...prev, skills: prev.skills.filter(s => s !== skill) }));
+  };
+  const addSkill = () => {
+    if (newSkill.trim() && !edited.skills.includes(newSkill.trim())) {
+      setEdited(prev => ({ ...prev, skills: [...prev.skills, newSkill.trim()] }));
+      setNewSkill('');
+    }
+  };
 
-  // Scroll to top when component mounts or student ID changes
+  // --- Experience state and handlers ---
+  const [newExp, setNewExp] = useState({ title: '', company: '', duration: '', description: '' });
+  const removeExperience = (idx: number) => {
+    setEdited(prev => ({ ...prev, experience: prev.experience.filter((_, i) => i !== idx) }));
+  };
+  const addExperience = () => {
+    if (newExp.title.trim() && newExp.company.trim()) {
+      setEdited(prev => ({ ...prev, experience: [...prev.experience, { ...newExp }] }));
+      setNewExp({ title: '', company: '', duration: '', description: '' });
+    }
+  };
+
+  // --- Portfolio state and handlers ---
+  const [newPortfolio, setNewPortfolio] = useState({ title: '', link: '', description: '' });
+  const removePortfolio = (id: number) => {
+    setEdited(prev => ({ ...prev, portfolio: prev.portfolio.filter(item => item.id !== id) }));
+  };
+  const addPortfolio = () => {
+    if (newPortfolio.title.trim()) {
+      setEdited(prev => ({ ...prev, portfolio: [...prev.portfolio, { ...newPortfolio, id: Date.now() }] }));
+      setNewPortfolio({ title: '', link: '', description: '' });
+    }
+  };
+  const { id } = useParams();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const canEdit = !id || (currentUserId && id === currentUserId);
+  const [isEditing, setIsEditing] = useState(false);
+  const initialStudent: StudentState = {
+    name: '',
+    email: '',
+    phone: '',
+    avatarUrl: '',
+    location: '',
+    bio: '',
+    skills: [] as string[],
+    experience: [] as ExperienceItem[],
+    portfolio: [] as PortfolioItem[],
+    platformLinks: { linkedin: '', github: '', upwork: '', fiverr: '' },
+    payments: {
+      method: '' as PaymentMethod,
+      paypalEmail: '',
+      venmo: '',
+      cashapp: '',
+      bankLast4: '',
+      taxW9Submitted: false,
+      history: [
+        { id: 1, date: '2024-08-15', description: 'Project payout', amount: '$250.00', status: 'paid' },
+        { id: 2, date: '2024-08-02', description: 'Milestone payment', amount: '$120.00', status: 'paid' },
+        { id: 3, date: '2024-07-28', description: 'Invoice #1042', amount: '$75.00', status: 'pending' },
+      ],
+    },
+  };
+  const [student, setStudent] = useState<StudentState>(initialStudent);
+  const [edited, setEdited] = useState<StudentState>(initialStudent);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const triggerAvatarPick = () => fileInputRef.current?.click();
+  const handleAvatarChange = (file?: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = () => setEdited({ ...edited, avatarUrl: String(reader.result || '') });
+    reader.readAsDataURL(file);
+  };
+  const removeAvatar = () => setEdited({ ...edited, avatarUrl: '' });
+
+  const handleSave = () => {
+    setStudent(edited);
+    setIsEditing(false);
+  };
+  const handleCancel = () => {
+    setEdited(student);
+    setIsEditing(false);
+  };
+
+  // Prefill from Supabase profile (signup/waitlist info) or mock data for viewing other students
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // get currently authenticated user id for edit permissions and prefill profile
+    (async () => {
+      try {
+        const { data: userRes } = await supabase.auth.getUser();
+        setCurrentUserId(userRes?.user?.id || null);
+        const uid = userRes?.user?.id;
+        
+        // If we have an ID in the URL, we're viewing another student's profile
+        if (id && id !== uid) {
+          // Find the student in mock data
+          const mockStudent = mockStudents.find(s => s.id === parseInt(id));
+          if (mockStudent) {
+            const studentData: StudentState = {
+              name: mockStudent.name,
+              email: mockStudent.contact?.email || '',
+              phone: mockStudent.contact?.phone || '',
+              avatarUrl: mockStudent.avatarUrl || '',
+              location: '', // Not available in mock data
+              bio: mockStudent.aboutMe || mockStudent.description,
+              skills: mockStudent.skills || [],
+              experience: [], // Not available in mock data
+              portfolio: mockStudent.portfolio?.map(p => ({
+                id: p.id,
+                title: p.title,
+                description: p.description,
+                link: p.link,
+                imageUrl: p.imageUrl
+              })) || [],
+              platformLinks: {
+                linkedin: mockStudent.contact?.linkedinUrl || '',
+                github: mockStudent.contact?.githubUrl || '',
+                upwork: mockStudent.contact?.upworkUrl || '',
+                fiverr: mockStudent.contact?.fiverrUrl || ''
+              },
+              payments: {
+                method: '' as PaymentMethod,
+                paypalEmail: '',
+                venmo: '',
+                cashapp: '',
+                bankLast4: '',
+                taxW9Submitted: false,
+                history: [],
+              },
+            };
+            setStudent(studentData);
+            setEdited(studentData);
+          }
+          return;
+        }
+        
+        // Otherwise, load current user's profile
+        if (!uid) return;
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('first_name,last_name,display_name,email')
+          .eq('user_id', uid)
+          .maybeSingle();
+        if (!error && data) {
+          const name = [data.first_name, data.last_name].filter(Boolean).join(' ').trim() || data.display_name || '';
+          setStudent(prev => ({ ...prev, name, email: data.email || '' }));
+          setEdited(prev => ({ ...prev, name, email: data.email || '' }));
+        }
+      } catch (e) {
+        setCurrentUserId(null);
+      }
+    })();
   }, [id]);
 
-  const handleContactStudent = () => {
-    // TODO: Implement contact functionality
-    console.log('Contact student:', student?.name);
-  };
-
-  const handleHireStudent = () => {
-    // TODO: Implement hire functionality
-    console.log('Hire student:', student?.name);
-  };
-
-  const handleBookmark = () => {
-    // TODO: Implement bookmark functionality
-    console.log('Bookmark student:', student?.name);
-  };
-
-  if (!student) {
-    return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="text-center py-12">
-            <h2 className="text-2xl font-bold">Student Not Found</h2>
-            <p className="text-muted-foreground">The student profile you're looking for doesn't exist.</p>
-            <Button onClick={() => navigate('/browse-students')} className="mt-4">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Browse Students
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6 space-y-6">
-      {/* Header Section */}
-      <Card>
-        <CardHeader className="pb-4">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-            <div className="flex items-start gap-4">
-              {/* Student Avatar */}
-              <div className="relative">
-                <Avatar className={`w-20 h-20 border-4 ${student.affiliation === 'alumni' ? 'border-[#D4AF37]' : 'border-primary'}`}>
-                  {student.avatarUrl ? (
-                    <AvatarImage src={student.avatarUrl} alt={`${student.name} profile`} />
-                  ) : (
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-xl">
-                      <User className="w-8 h-8" />
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                
-                {student.affiliation && (
-                  <Badge
-                    variant={student.affiliation === 'alumni' ? 'secondary' : 'default'}
-                    className={`absolute -bottom-1 -right-1 ${student.affiliation === 'alumni' ? 'bg-[#D4AF37] text-black border border-[#D4AF37]' : ''}`}
-                  >
-                    {student.affiliation === 'alumni' ? 'Alumni' : 'Student'}
-                  </Badge>
-                )}
-              </div>
-
-              <div className="flex-1">
-                <CardTitle className="text-2xl lg:text-3xl mb-2">{student.name}</CardTitle>
-                <CardDescription className="text-lg mb-3">{student.title}</CardDescription>
-                
-                {/* Contact Info */}
-                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  {student.contact?.email && (
-                    <div className="flex items-center gap-1">
-                      <Mail className="w-4 h-4" />
-                      <span>{student.contact.email}</span>
-                    </div>
-                  )}
-                  {student.contact?.phone && (
-                    <div className="flex items-center gap-1">
-                      <Phone className="w-4 h-4" />
-                      <span>{student.contact.phone}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 lg:flex-col">
-              <div className="text-right mb-2">
-                <span className="text-2xl font-bold text-primary">{student.price}</span>
-              </div>
-              
-              <div className="flex gap-3">
-                <Button onClick={handleHireStudent} size="lg">
-                  <Users className="mr-2 h-4 w-4" />
-                  Hire Student
-                </Button>
-                <Button variant="outline" onClick={handleContactStudent} size="lg">
-                  <Mail className="mr-2 h-4 w-4" />
-                  Contact
-                </Button>
-                <Button variant="outline" size="lg" onClick={handleBookmark}>
-                  <Bookmark className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* About */}
-          <Card>
-            <CardHeader>
-              <CardTitle>About</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground leading-relaxed">
-                {student.aboutMe || student.description}
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Skills */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Skills</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {student.skills?.map((skill) => (
-                  <Badge key={skill} variant="secondary" className="px-3 py-1">
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Portfolio */}
-          {student.portfolio && student.portfolio.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Portfolio</CardTitle>
-                <CardDescription>Recent work and projects</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {student.portfolio.map((item) => (
-                    <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                      {item.imageUrl && (
-                        <div className="aspect-video overflow-hidden">
-                          <img 
-                            src={item.imageUrl} 
-                            alt={item.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <CardContent className="p-4">
-                        <h4 className="font-semibold mb-2">{item.title}</h4>
-                        {item.description && (
-                          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                            {item.description}
-                          </p>
-                        )}
-                        {item.link && (
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={item.link} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="mr-2 h-4 w-4" />
-                              View Project
-                            </a>
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Reviews */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Star className="w-5 h-5" />
-                Reviews
-                <Badge variant="secondary" className="ml-2">
-                  {mockReviews.filter(r => r.targetId === student.id && r.targetType === 'student').length}
-                </Badge>
-              </CardTitle>
-              <CardDescription>
-                What clients say about {student.name}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {/* Overall Rating Summary */}
-                {(() => {
-                  const studentReviews = mockReviews.filter(r => r.targetId === student.id && r.targetType === 'student');
-                  const averageRating = studentReviews.length > 0 
-                    ? studentReviews.reduce((sum, review) => sum + review.rating, 0) / studentReviews.length 
-                    : 0;
-                  
-                  return studentReviews.length > 0 ? (
-                    <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-                      <div className="text-center">
-                        <div className="text-3xl font-bold">{averageRating.toFixed(1)}</div>
-                        <div className="flex items-center gap-1 justify-center">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`w-4 h-4 ${
-                                star <= averageRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {studentReviews.length} review{studentReviews.length !== 1 ? 's' : ''}
-                        </div>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Based on feedback from previous projects
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center p-8 text-muted-foreground">
-                      <Star className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No reviews yet</p>
-                      <p className="text-sm">Be the first to work with {student.name}!</p>
-                    </div>
-                  );
-                })()}
-
-                {/* Individual Reviews */}
-                {mockReviews
-                  .filter(review => review.targetId === student.id && review.targetType === 'student')
-                  .slice(0, 3) // Show first 3 reviews
-                  .map((review) => (
-                    <div key={review.id} className="border-l-4 border-primary/20 pl-4 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={review.reviewerAvatar} alt={review.reviewerName} />
-                            <AvatarFallback>
-                              {review.reviewerName.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{review.reviewerName}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {new Date(review.date).toLocaleDateString()}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`w-4 h-4 ${
-                                star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <h4 className="font-medium mb-1">{review.title}</h4>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                          {review.comment}
-                        </p>
-                      </div>
-                      
-                      {review.projectTitle && (
-                        <div className="text-xs text-muted-foreground">
-                          Project: {review.projectTitle}
-                        </div>
-                      )}
-                      
-                      {review.verified && (
-                        <Badge variant="outline" className="text-xs">
-                          Verified Project
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
-
-                {/* Show more reviews button */}
-                {mockReviews.filter(r => r.targetId === student.id && r.targetType === 'student').length > 3 && (
-                  <Button variant="outline" className="w-full">
-                    View All Reviews ({mockReviews.filter(r => r.targetId === student.id && r.targetType === 'student').length})
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+    <div className="container mx-auto p-6 space-y-6">
+      <PageHeader
+        title={canEdit ? "My Profile" : `${student.name}'s Profile`}
+        description={canEdit ? "Manage your profile information and settings" : "View student profile and information"}
+      >
+        <div className="flex gap-2">
+          {canEdit && <Button variant="outline" size="default"><Eye className="mr-2 h-4 w-4" /> Preview Profile</Button>}
+          {canEdit && (!isEditing ? (
+            <Button size="default" onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>
+          ) : (
+            <>
+              {canEdit && (
+                <>
+                  <Button onClick={handleSave}><span className="mr-2">Save</span></Button>
+                  <Button variant="outline" onClick={handleCancel}><span className="mr-2">Cancel</span></Button>
+                </>
+              )}
+            </>
+          ))}
         </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Quick Info */}
+      </PageHeader>
+      <Tabs defaultValue="general" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="skills">Skills & Experience</TabsTrigger>
+          <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
+          <TabsTrigger value="connections">Connections</TabsTrigger>
+        </TabsList>
+        <TabsContent value="general">
           <Card>
             <CardHeader>
-              <CardTitle>Quick Info</CardTitle>
+              <CardTitle>Personal Information</CardTitle>
+              <CardDescription>Update your personal details</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Rate:</span>
-                <span className="font-semibold">{student.price}</span>
-              </div>
-              
-              {(() => {
-                const studentReviews = mockReviews.filter(r => r.targetId === student.id && r.targetType === 'student');
-                const averageRating = studentReviews.length > 0 
-                  ? studentReviews.reduce((sum, review) => sum + review.rating, 0) / studentReviews.length 
-                  : 0;
-                
-                return studentReviews.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Rating:</span>
-                    <div className="flex items-center gap-1">
-                      <span className="font-semibold">{averageRating.toFixed(1)}</span>
-                      <div className="flex items-center">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`w-3 h-3 ${
-                              star <= averageRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
+            <CardContent className="space-y-6">
+              {isEditing ? (
+                <>
+                  {/* Edit layout (compact form grid) */}
+                  <div className="grid grid-cols-1 gap-4 items-center">
+                    <div className="flex justify-start">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => handleAvatarChange(e.target.files?.[0] || null)}
+                      />
+                      <div className="relative inline-block">
+                        {edited.avatarUrl ? (
+                          <Avatar className="h-16 w-16">
+                            <AvatarImage src={edited.avatarUrl} alt={edited.name} />
+                          </Avatar>
+                        ) : (
+                          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                            <User className="text-white" size={28} />
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={triggerAvatarPick}
+                          aria-label="Change photo"
+                          className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full border bg-background shadow hover:bg-secondary flex items-center justify-center"
+                        >
+                          <Image className="h-3.5 w-3.5" />
+                        </button>
                       </div>
-                      <span className="text-xs text-muted-foreground">({studentReviews.length})</span>
+                      {edited.avatarUrl && (
+                        <button
+                          type="button"
+                          onClick={removeAvatar}
+                          className="ml-3 text-xs text-muted-foreground hover:text-red-600"
+                        >
+                          Remove photo
+                        </button>
+                      )}
                     </div>
                   </div>
-                );
-              })()}
-              
-              {student.affiliation && (
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Status:</span>
-                  <Badge variant={student.affiliation === 'alumni' ? 'secondary' : 'default'}>
-                    {student.affiliation === 'alumni' ? 'Alumni' : 'Student'}
-                  </Badge>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-4">
+                      <div className="min-h-[72px] flex flex-col justify-start">
+                        <div className="text-sm font-medium text-muted-foreground">Full Name</div>
+                        <Input className="mt-1 h-9" value={edited.name} onChange={(e)=>setEdited({...edited, name: e.target.value})} placeholder="Your full name" />
+                      </div>
+                      <div className="min-h-[72px] flex flex-col justify-start">
+                        <div className="text-sm font-medium text-muted-foreground">Email</div>
+                        <Input className="mt-1 h-9" type="email" value={edited.email} onChange={(e)=>setEdited({...edited, email: e.target.value})} placeholder="name@example.com" />
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="min-h-[72px] flex flex-col justify-start">
+                        <div className="text-sm font-medium text-muted-foreground">Phone</div>
+                        <Input className="mt-1 h-9" value={edited.phone} onChange={(e)=>setEdited({...edited, phone: e.target.value})} placeholder="(555) 123-4567" />
+                      </div>
+                      <div className="min-h-[72px] flex flex-col justify-start">
+                        <div className="text-sm font-medium text-muted-foreground">Location</div>
+                        <Input className="mt-1 h-9" value={edited.location} onChange={(e)=>setEdited({...edited, location: e.target.value})} placeholder="City, Country" />
+                      </div>
+                    </div>
+                    <div className="md:col-span-2">
+                      <div className="text-sm font-medium text-muted-foreground mb-1">Bio</div>
+                      <Textarea rows={2} className="resize-none text-sm" value={edited.bio} onChange={(e)=>setEdited({...edited, bio: e.target.value})} placeholder="Tell us about yourself" />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* View layout like the screenshot */}
+                  <div className="grid md:grid-cols-2 gap-8 items-start">
+                    <div className="flex items-start gap-4">
+                      {student.avatarUrl ? (
+                        <Avatar className="h-16 w-16">
+                          <AvatarImage src={student.avatarUrl} alt={student.name} />
+                        </Avatar>
+                      ) : (
+                        <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                          <User className="text-white" size={28} />
+                        </div>
+                      )}
+                      <div className="space-y-4">
+                        <div>
+                          <div className="text-sm font-medium text-muted-foreground">Full Name</div>
+                          <div className="text-base font-semibold">{student.name || '—'}</div>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-muted-foreground">Email</div>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Mail size={16} />
+                            <span>{student.email || '—'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">Phone</div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Phone size={16} />
+                          <span>{student.phone || '—'}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-muted-foreground">Location</div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <MapPin size={16} />
+                          <span>{student.location || '—'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground mb-1">Bio</div>
+                    <p className="text-muted-foreground text-sm">{student.bio || '—'}</p>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Skills & Experience */}
+        <TabsContent value="skills">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Skills</CardTitle>
+                <CardDescription>Technologies and tools you use</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {(edited.skills || []).map((skill) => (
+                    <div key={skill} className="flex items-center gap-1">
+                      <Badge>{skill}</Badge>
+                      {isEditing && (
+                        <Button size="sm" variant="ghost" onClick={() => removeSkill(skill)} aria-label={`Remove ${skill}`}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {isEditing && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <Input
+                      placeholder="Add a skill"
+                      value={newSkill}
+                      onChange={(e)=>setNewSkill(e.target.value)}
+                      className="h-9 max-w-xs"
+                    />
+                    <Button variant="outline" className="h-9 px-3" onClick={addSkill}>
+                      <Plus className="mr-1 h-3 w-3" /> Add
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Experience</CardTitle>
+                <CardDescription>Your recent roles and projects</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {edited.experience.length === 0 && !isEditing && (
+                  <p className="text-sm text-muted-foreground">No experience added yet.</p>
+                )}
+                {edited.experience.map((exp, idx) => (
+                  <div key={idx} className="flex items-start justify-between gap-3 border border-border/60 rounded-lg p-3">
+                    <div>
+                      <div className="font-medium">{exp.title}</div>
+                      <div className="text-sm text-muted-foreground">{exp.company} {exp.duration ? `• ${exp.duration}` : ''}</div>
+                      {exp.description && <div className="text-sm mt-1 text-muted-foreground">{exp.description}</div>}
+                    </div>
+                    {isEditing && (
+                      <Button size="sm" variant="ghost" className="text-red-500" onClick={()=>removeExperience(idx)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {isEditing && (
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
+                    <Input placeholder="Title" value={newExp.title} onChange={(e)=>setNewExp({...newExp, title: e.target.value})} />
+                    <Input placeholder="Company" value={newExp.company} onChange={(e)=>setNewExp({...newExp, company: e.target.value})} />
+                    <Input placeholder="Duration (optional)" value={newExp.duration} onChange={(e)=>setNewExp({...newExp, duration: e.target.value})} />
+                    <Button onClick={addExperience}><Plus className="h-4 w-4 mr-1" /> Add</Button>
+                    <div className="md:col-span-4">
+                      <Input placeholder="Short description (optional)" value={newExp.description} onChange={(e)=>setNewExp({...newExp, description: e.target.value})} />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Portfolio */}
+        <TabsContent value="portfolio">
+          <Card>
+            <CardHeader>
+              <CardTitle>Portfolio</CardTitle>
+              <CardDescription>Showcase your best work</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {edited.portfolio.length === 0 && !isEditing && (
+                <p className="text-sm text-muted-foreground">No portfolio items yet.</p>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {edited.portfolio.map((item) => (
+                  <div key={item.id} className="rounded-lg border border-border/60 p-3">
+                    <div className="font-medium">{item.title}</div>
+                    {item.description && <div className="text-sm text-muted-foreground mt-1">{item.description}</div>}
+                    {item.link && (
+                      <a href={item.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-primary mt-2">
+                        <ExternalLink className="h-3 w-3" /> View
+                      </a>
+                    )}
+                    {isEditing && (
+                      <div className="mt-2">
+                        <Button size="sm" variant="ghost" className="text-red-500" onClick={()=>removePortfolio(item.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {isEditing && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
+                  <Input placeholder="Title" value={newPortfolio.title} onChange={(e)=>setNewPortfolio({...newPortfolio, title: e.target.value})} />
+                  <Input placeholder="Link (optional)" value={newPortfolio.link} onChange={(e)=>setNewPortfolio({...newPortfolio, link: e.target.value})} />
+                  <Button onClick={addPortfolio}><Plus className="h-4 w-4 mr-1" /> Add</Button>
+                  <div className="md:col-span-3">
+                    <Input placeholder="Short description (optional)" value={newPortfolio.description} onChange={(e)=>setNewPortfolio({...newPortfolio, description: e.target.value})} />
+                  </div>
                 </div>
               )}
             </CardContent>
           </Card>
+        </TabsContent>
 
-          {/* Professional Links */}
-          {student.contact && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Professional Links</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {student.contact.linkedinUrl && (
-                  <Button variant="outline" className="w-full justify-start" asChild>
-                    <a href={student.contact.linkedinUrl} target="_blank" rel="noopener noreferrer">
-                      <Linkedin className="mr-2 h-4 w-4" />
-                      LinkedIn
-                    </a>
-                  </Button>
-                )}
-                {student.contact.githubUrl && (
-                  <Button variant="outline" className="w-full justify-start" asChild>
-                    <a href={student.contact.githubUrl} target="_blank" rel="noopener noreferrer">
-                      <Github className="mr-2 h-4 w-4" />
-                      GitHub
-                    </a>
-                  </Button>
-                )}
-                {student.contact.upworkUrl && (
-                  <Button variant="outline" className="w-full justify-start" asChild>
-                    <a href={student.contact.upworkUrl} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      Upwork Profile
-                    </a>
-                  </Button>
-                )}
-                {student.contact.fiverrUrl && (
-                  <Button variant="outline" className="w-full justify-start" asChild>
-                    <a href={student.contact.fiverrUrl} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      Fiverr Profile
-                    </a>
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Contact Actions */}
+        {/* Connections */}
+        <TabsContent value="connections">
           <Card>
             <CardHeader>
-              <CardTitle>Get In Touch</CardTitle>
+              <CardTitle>Platform Connections</CardTitle>
+              <CardDescription>Link your professional profiles</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <Button onClick={handleHireStudent} className="w-full">
-                <Users className="mr-2 h-4 w-4" />
-                Hire This Student
-              </Button>
-              <Button variant="outline" onClick={handleContactStudent} className="w-full">
-                <Mail className="mr-2 h-4 w-4" />
-                Send Message
-              </Button>
-              <Separator />
-              <Button variant="outline" onClick={handleBookmark} className="w-full">
-                <Bookmark className="mr-2 h-4 w-4" />
-                Save for Later
-              </Button>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium flex items-center gap-2"><Linkedin className="h-4 w-4" /> LinkedIn</label>
+                  {isEditing ? (
+                    <Input placeholder="https://linkedin.com/in/username" value={edited.platformLinks.linkedin || ''} onChange={(e)=>setEdited({...edited, platformLinks: { ...edited.platformLinks, linkedin: e.target.value }})} />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">{edited.platformLinks.linkedin || 'Not connected'}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-sm font-medium flex items-center gap-2"><Github className="h-4 w-4" /> GitHub</label>
+                  {isEditing ? (
+                    <Input placeholder="https://github.com/username" value={edited.platformLinks.github || ''} onChange={(e)=>setEdited({...edited, platformLinks: { ...edited.platformLinks, github: e.target.value }})} />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">{edited.platformLinks.github || 'Not connected'}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-sm font-medium flex items-center gap-2"><UpworkIcon className="h-4 w-4" /> Upwork</label>
+                  {isEditing ? (
+                    <Input placeholder="https://upwork.com/freelancers/username" value={edited.platformLinks.upwork || ''} onChange={(e)=>setEdited({...edited, platformLinks: { ...edited.platformLinks, upwork: e.target.value }})} />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">{edited.platformLinks.upwork || 'Not connected'}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-sm font-medium flex items-center gap-2"><FiverrIcon className="h-4 w-4" /> Fiverr</label>
+                  {isEditing ? (
+                    <Input placeholder="https://fiverr.com/username" value={edited.platformLinks.fiverr || ''} onChange={(e)=>setEdited({...edited, platformLinks: { ...edited.platformLinks, fiverr: e.target.value }})} />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">{edited.platformLinks.fiverr || 'Not connected'}</p>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
+        </TabsContent>
+
+        
+
+      </Tabs>
     </div>
   );
 };

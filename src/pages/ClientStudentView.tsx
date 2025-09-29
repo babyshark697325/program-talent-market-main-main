@@ -1,61 +1,69 @@
-import React, { useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Building, MapPin, Clock, DollarSign, Calendar, Users, Mail, Bookmark, User, Star, ExternalLink, ArrowLeft, Linkedin, Github, Phone } from 'lucide-react';
+import { ArrowLeft, Star, Clock, User, Mail, Phone, ExternalLink, Briefcase, MessageCircle, FileText, Video, Code } from 'lucide-react';
 import { mockStudents } from '@/data/mockStudents';
 import { mockReviews } from '@/data/mockReviews';
-import { useAuth } from "@/contexts/AuthContext";
+import { StudentService } from '@/types/student';
 
-const ClientStudentView = () => {
+function getIconForProjectType(type: string) {
+  switch (type) {
+    case 'web': return Code;
+    case 'design': return FileText;
+    case 'video': return Video;
+    case 'mobile': return Code;
+    default: return FileText;
+  }
+}
+
+function getProjectStatusColor(status: string) {
+  switch (status) {
+    case 'completed': return 'bg-green-100 text-green-800';
+    case 'in-progress': return 'bg-blue-100 text-blue-800';
+    case 'featured': return 'bg-purple-100 text-purple-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+}
+
+const StudentView: React.FC = () => {
   const { id } = useParams();
-  const student = mockStudents.find(s => s.id === parseInt(id || '0'));
-  const { userRole } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const isClientRole = userRole === 'client';
-  const isClientContext = isClientRole || Boolean((location.state as any)?.clientView);
+  const [student, setStudent] = useState<StudentService | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Scroll to top when component mounts or student ID changes
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (id) {
+      const foundStudent = mockStudents.find(s => s.id === parseInt(id));
+      setStudent(foundStudent || null);
+    }
+    setLoading(false);
   }, [id]);
 
-  const handleContactStudent = () => {
-    // TODO: Implement contact functionality
-    console.log('Contact student:', student?.name);
-  };
-
-  const handleHireStudent = () => {
-    // Navigate to the hire student demo page
-    navigate('/hire-student', { 
-      state: { 
-        student: student
-      } 
-    });
-  };
-
-  const handleBookmark = () => {
-    // TODO: Implement bookmark functionality
-    console.log('Bookmark student:', student?.name);
-  };
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="text-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading student profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!student) {
     return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="text-center py-12">
-            <h2 className="text-2xl font-bold">Student Not Found</h2>
-            <p className="text-muted-foreground">The student profile you're looking for doesn't exist.</p>
-            <Button onClick={() => navigate('/browse-students')} className="mt-4">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Browse Students
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="text-center py-20">
+          <h2 className="text-2xl font-bold text-muted-foreground">Student Not Found</h2>
+          <p className="mt-4 text-muted-foreground">The student profile you're looking for doesn't exist.</p>
+          <Button onClick={() => navigate('/browse-students')} className="mt-6">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Browse Students
+          </Button>
+        </div>
       </div>
     );
   }
@@ -66,459 +74,244 @@ const ClientStudentView = () => {
     ? studentReviews.reduce((sum, review) => sum + review.rating, 0) / studentReviews.length 
     : 0;
 
+  const handleHireStudent = () => {
+    // TODO: Implement hire functionality
+    console.log('Hire student:', student.name);
+  };
+
+  const handleContactStudent = () => {
+    // TODO: Implement contact functionality
+    console.log('Contact student:', student.name);
+  };
+
   return (
-    <div className="container mx-auto p-4 space-y-4">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Back Navigation */}
       <Button 
         variant="outline" 
         size="sm"
         onClick={() => navigate('/browse-students')}
-        className="mb-4"
+        className="mb-6"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Students
       </Button>
 
       {/* Main Student Card */}
-      <Card className="overflow-hidden">
-        <CardHeader className="pb-4">
-          <div className="flex items-start gap-4">
+      <Card className="overflow-hidden bg-gradient-to-br from-card via-card to-muted/20">
+        <CardHeader className="pb-6">
+          <div className="flex items-start gap-6">
             {/* Student Avatar and Status */}
             <div className="relative">
-              <Avatar className={`w-16 h-16 border-2 ${student.affiliation === 'alumni' ? 'border-green-500' : 'border-primary'}`}>
+              <Avatar className={`w-20 h-20 border-4 ${student.affiliation === 'alumni' ? 'border-green-500' : 'border-primary'}`}>
                 {student.avatarUrl ? (
                   <AvatarImage src={student.avatarUrl} alt={`${student.name} profile`} />
                 ) : (
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white">
-                    <User className="w-6 h-6" />
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-xl">
+                    <User className="w-8 h-8" />
                   </AvatarFallback>
                 )}
               </Avatar>
+              
+              {/* Status Badge */}
+              <Badge 
+                className={`absolute -top-2 -right-2 ${
+                  student.affiliation === 'alumni' 
+                    ? 'bg-green-500 text-white hover:bg-green-600' 
+                    : 'bg-primary text-primary-foreground'
+                }`}
+              >
+                Available
+              </Badge>
             </div>
 
             {/* Student Info */}
-            <div className="flex-1 space-y-2">
+            <div className="flex-1 space-y-3">
               <div>
-                <CardTitle className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-1 tracking-tight">{student.name}</CardTitle>
-                <p className="text-gray-600 dark:text-gray-400 mb-2 font-medium">{student.title}</p>
-                <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                <CardTitle className="text-2xl mb-1">{student.name}</CardTitle>
+                <p className="text-lg text-muted-foreground mb-2">{student.title}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   {student.aboutMe || student.description}
                 </p>
               </div>
 
+              {/* Contact Info */}
+              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                {student.contact?.email && (
+                  <div className="flex items-center gap-1">
+                    <Mail className="w-4 h-4" />
+                    <span>{student.contact.email}</span>
+                  </div>
+                )}
+                {student.contact?.phone && (
+                  <div className="flex items-center gap-1">
+                    <Phone className="w-4 h-4" />
+                    <span>{student.contact.phone}</span>
+                  </div>
+                )}
+              </div>
 
+              {/* Rating */}
+              {averageRating > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-4 h-4 ${
+                          star <= averageRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm font-medium">{averageRating.toFixed(1)}</span>
+                  <span className="text-sm text-muted-foreground">({studentReviews.length} reviews)</span>
+                </div>
+              )}
             </div>
 
             {/* Rate and Actions */}
-            <div className="text-right space-y-3">
+            <div className="text-right space-y-4">
               <div>
-                <div className="text-xl font-bold text-primary mb-1">{student.price}</div>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="w-3 h-3" />
+                <div className="text-2xl font-bold text-primary mb-1">{student.price}</div>
+                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <Clock className="w-4 h-4" />
                   <span>per project</span>
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Button onClick={handleHireStudent} className="w-full" size="sm">
-                  <Users className="mr-2 h-3 w-3" />
+                <Button onClick={handleHireStudent} className="w-full" size="lg">
+                  <Briefcase className="mr-2 h-4 w-4" />
                   Hire Student
                 </Button>
-                <Button variant="outline" onClick={handleContactStudent} className="w-full" size="sm">
-                  <Mail className="mr-2 h-3 w-3" />
+                <Button variant="outline" onClick={handleContactStudent} className="w-full" size="lg">
+                  <MessageCircle className="mr-2 h-4 w-4" />
                   Contact
                 </Button>
               </div>
             </div>
           </div>
         </CardHeader>
-      </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Skills */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Skills</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {student.skills?.map((skill) => (
-                  <Badge 
-                    key={skill} 
-                    variant="secondary" 
-                    className="px-3 py-2 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
-                  >
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        <CardContent className="space-y-6">
+          {/* Skills Section */}
+          <div>
+            <h3 className="font-semibold mb-3">Skills & Technologies</h3>
+            <div className="flex flex-wrap gap-2">
+              {student.skills?.map((skill) => (
+                <Badge key={skill} variant="secondary" className="px-3 py-1">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+          </div>
 
-          {/* Portfolio */}
+          {/* Portfolio Section */}
           {student.portfolio && student.portfolio.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Portfolio</CardTitle>
-                <CardDescription className="text-xs">Recent work and projects</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {student.portfolio.map((item) => (
-                    <Card key={item.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                      {item.imageUrl && (
-                        <div className="aspect-video overflow-hidden">
-                          <img 
-                            src={item.imageUrl} 
-                            alt={item.title}
-                            className="w-full h-full object-cover"
-                          />
+            <div>
+              <h3 className="font-semibold mb-3">Recent Work</h3>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
+                {student.portfolio.slice(0, 3).map((item) => {
+                  const IconComponent = getIconForProjectType('web'); // Default to web project type
+                  return (
+                    <Card key={item.id} className="flex flex-col relative">
+                      <CardHeader className="flex-1 pt-3 pb-2">
+                        <div className="absolute top-3 right-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getProjectStatusColor('completed')}`}>
+                            Completed
+                          </span>
                         </div>
-                      )}
-                      <CardContent className="p-3">
-                        <h4 className="font-medium mb-1 text-sm">{item.title}</h4>
-                        {item.description && (
-                          <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-                            {item.description}
-                          </p>
-                        )}
-                        {item.link && (
-                          <Button variant="outline" size="sm" asChild className="text-xs h-7">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                            <IconComponent className="text-primary opacity-80" size={16} />
+                          </div>
+                          <div className="flex-1">
+                            <CardTitle className="text-lg mb-2 leading-tight font-semibold">{item.title}</CardTitle>
+                            {item.description && (
+                              <CardDescription className="text-xs leading-snug line-clamp-3 mb-2">
+                                {item.description}
+                              </CardDescription>
+                            )}
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="mt-auto pt-2">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Clock size={12} />
+                            1-2 weeks
+                          </div>
+                        </div>
+                        {item.link ? (
+                          <Button 
+                            className="w-full h-8 text-xs"
+                            asChild
+                          >
                             <a href={item.link} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="mr-1 h-3 w-3" />
+                              <ExternalLink className="mr-2 h-3 w-3" />
                               View Project
                             </a>
+                          </Button>
+                        ) : (
+                          <Button 
+                            className="w-full h-8 text-xs"
+                            disabled
+                          >
+                            Private Project
                           </Button>
                         )}
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  );
+                })}
+              </div>
+            </div>
           )}
 
-          {/* Reviews */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Star className="w-4 h-4" />
-                Reviews
-                <Badge variant="secondary" className="ml-1 text-xs">
-                  {mockReviews.filter(r => r.targetId === student.id && r.targetType === 'student').length}
-                </Badge>
-              </CardTitle>
-              <CardDescription className="text-xs">
-                What clients say about {student.name}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-3">
-                {/* Overall Rating Summary */}
-                {(() => {
-                  const studentReviews = mockReviews.filter(r => r.targetId === student.id && r.targetType === 'student');
-                  const averageRating = studentReviews.length > 0 
-                    ? studentReviews.reduce((sum, review) => sum + review.rating, 0) / studentReviews.length 
-                    : 0;
-                  
-                  return studentReviews.length > 0 ? (
-                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold">{averageRating.toFixed(1)}</div>
-                        <div className="flex items-center gap-1 justify-center">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`w-3 h-3 ${
-                                star <= averageRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {studentReviews.length} review{studentReviews.length !== 1 ? 's' : ''}
-                        </div>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Based on feedback from previous projects
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center p-6 text-muted-foreground">
-                      <Star className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No reviews yet</p>
-                      <p className="text-xs">Be the first to work with {student.name}!</p>
-                    </div>
-                  );
-                })()}
-
-                {/* Individual Reviews */}
-                {mockReviews
-                  .filter(review => review.targetId === student.id && review.targetType === 'student')
-                  .slice(0, 3)
-                  .map((review) => (
-                    <div key={review.id} className="border-l-2 border-primary/20 pl-3 space-y-2">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="w-6 h-6">
-                            <AvatarImage src={review.reviewerAvatar} alt={review.reviewerName} />
-                            <AvatarFallback className="text-xs">
-                              {review.reviewerName.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium text-sm">{review.reviewerName}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {new Date(review.date).toLocaleDateString()}
-                            </div>
+          {/* Reviews Section */}
+          {studentReviews.length > 0 && (
+            <div>
+              <h3 className="font-semibold mb-3">Client Reviews</h3>
+              <div className="space-y-4">
+                {studentReviews.slice(0, 2).map((review) => (
+                  <Card key={review.id} className="p-4">
+                    <div className="flex items-start gap-3">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={review.reviewerAvatar} alt={review.reviewerName} />
+                        <AvatarFallback>
+                          {review.reviewerName.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium">{review.reviewerName}</span>
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`w-3 h-3 ${
+                                  star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
                           </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`w-3 h-3 ${
-                                star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                              }`}
-                            />
-                          ))}
-                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">"{review.comment}"</p>
+                        {review.projectTitle && (
+                          <p className="text-xs text-muted-foreground">Project: {review.projectTitle}</p>
+                        )}
                       </div>
-                      
-                      <div>
-                        <h4 className="font-medium mb-1 text-sm">{review.title}</h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
-                          {review.comment}
-                        </p>
-                      </div>
-                      
-                      {review.projectTitle && (
-                        <div className="text-xs text-muted-foreground">
-                          Project: {review.projectTitle}
-                        </div>
-                      )}
-                      
-                      {review.verified && (
-                        <Badge variant="outline" className="text-xs h-5">
-                          Verified Project
-                        </Badge>
-                      )}
                     </div>
-                  ))}
-
-                {/* Show more reviews button */}
-                {mockReviews.filter(r => r.targetId === student.id && r.targetType === 'student').length > 3 && (
-                  <Button variant="outline" className="w-full text-xs h-8">
-                    View All Reviews ({mockReviews.filter(r => r.targetId === student.id && r.targetType === 'student').length})
-                  </Button>
-                )}
+                  </Card>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Quick Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Student Overview</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-3">
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Rate:</span>
-                  </div>
-                  <span className="font-bold text-primary">{student.price}</span>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Delivery:</span>
-                  </div>
-                  <span className="font-medium">2-5 days</span>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Status:</span>
-                  </div>
-                  <Badge variant={student.affiliation === 'alumni' ? 'secondary' : 'default'}>
-                    {student.affiliation === 'alumni' ? 'Alumni' : 'Student'}
-                  </Badge>
-                </div>
-              </div>
-              
-              {(() => {
-                const studentReviews = mockReviews.filter(r => r.targetId === student.id && r.targetType === 'student');
-                const averageRating = studentReviews.length > 0 
-                  ? studentReviews.reduce((sum, review) => sum + review.rating, 0) / studentReviews.length 
-                  : 0;
-                
-                return studentReviews.length > 0 && (
-                  <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Star className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Rating:</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold">{averageRating.toFixed(1)}</span>
-                      <div className="flex items-center">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`w-3 h-3 ${
-                              star <= averageRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-xs text-muted-foreground">({studentReviews.length})</span>
-                    </div>
-                  </div>
-                );
-              })()}
-              
-              <div className="pt-2">
-                <h4 className="font-semibold mb-2">Recent Activity</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Last active:</span>
-                    <span>2 hours ago</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Projects this month:</span>
-                    <span>{Math.floor(Math.random() * 5) + 1}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Success rate:</span>
-                    <span>98%</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Professional Links & Contact */}
-          {student.contact && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Professional Links & Contact</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-semibold mb-3">Professional Profiles</h4>
-                  <div className="space-y-2">
-                    {student.contact.linkedinUrl && (
-                      <Button variant="outline" className="w-full justify-start" asChild>
-                        <a href={student.contact.linkedinUrl} target="_blank" rel="noopener noreferrer">
-                          <Linkedin className="mr-2 h-4 w-4" />
-                          LinkedIn Profile
-                        </a>
-                      </Button>
-                    )}
-                    {student.contact.githubUrl && (
-                      <Button variant="outline" className="w-full justify-start" asChild>
-                        <a href={student.contact.githubUrl} target="_blank" rel="noopener noreferrer">
-                          <Github className="mr-2 h-4 w-4" />
-                          GitHub Portfolio
-                        </a>
-                      </Button>
-                    )}
-                    {student.contact.upworkUrl && (
-                      <Button variant="outline" className="w-full justify-start" asChild>
-                        <a href={student.contact.upworkUrl} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          Upwork Profile
-                        </a>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="font-semibold mb-3">Contact Information</h4>
-                  <div className="space-y-2 text-sm">
-                    {student.contact?.email && (
-                      <div className="flex items-center gap-2 p-2 bg-muted/30 rounded">
-                        <Mail className="w-4 h-4 text-muted-foreground" />
-                        <span>{student.contact.email}</span>
-                      </div>
-                    )}
-                    {student.contact?.phone && (
-                      <div className="flex items-center gap-2 p-2 bg-muted/30 rounded">
-                        <Phone className="w-4 h-4 text-muted-foreground" />
-                        <span>{student.contact.phone}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            </div>
           )}
-
-          {/* Quick Actions & Hire */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Ready to Get Started?</CardTitle>
-              <CardDescription>Take action and connect with this talented student</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h4 className="font-semibold mb-3">Primary Actions</h4>
-                <div className="space-y-3">
-                  <Button onClick={handleHireStudent} className="w-full" size="lg">
-                    <Users className="mr-2 h-4 w-4" />
-                    Hire This Student
-                  </Button>
-                  <Button variant="outline" onClick={handleContactStudent} className="w-full" size="lg">
-                    <Mail className="mr-2 h-4 w-4" />
-                    Send Message
-                  </Button>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              <div>
-                <h4 className="font-semibold mb-3">Additional Options</h4>
-                <div className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Schedule a Call
-                    <span className="ml-auto text-xs text-muted-foreground">15-30 min</span>
-                  </Button>
-                  <Button variant="outline" onClick={handleBookmark} className="w-full justify-start">
-                    <Bookmark className="mr-2 h-4 w-4" />
-                    Save for Later
-                    <span className="ml-auto text-xs text-muted-foreground">Add to list</span>
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="bg-muted/30 rounded-lg p-3">
-                <div className="text-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="font-medium">Quick Response Guarantee</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    This student typically responds to messages within 2-4 hours during business hours.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
-export default ClientStudentView;
+export default StudentView;
