@@ -47,6 +47,7 @@ import ClientStudentView from "./pages/ClientStudentView";
 import StudentSettings from "./pages/StudentSettings";
 import AllResources from "./pages/AllResources";
 import Payouts from "./pages/Payouts";
+import JobPostSuccess from "./pages/JobPostSuccess";
 
 import AdminStats from "./pages/AdminStats";
 import AdminUsers from "./pages/AdminUsers";
@@ -140,6 +141,14 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute>
                     <Layout><PostJob /></Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/job-posted"
+                element={
+                  <ProtectedRoute>
+                    <Layout><JobPostSuccess /></Layout>
                   </ProtectedRoute>
                 }
               />

@@ -4,6 +4,7 @@ import PageHeader from '@/components/PageHeader';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Mail, Phone, MapPin, Eye, Edit, Image, User, X, Plus, Trash2, ExternalLink, Linkedin, Github } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { mockStudents } from '@/data/mockStudents';
 
 // Brand icons for platform links (prefer official SVGs in /public/brands, fallback to colored badge)
 const UpworkIcon: React.FC<{ className?: string }> = ({ className }) => (

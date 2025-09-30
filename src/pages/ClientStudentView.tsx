@@ -130,7 +130,7 @@ const StudentView: React.FC = () => {
               <div>
                 <CardTitle className="text-2xl mb-1">{student.name}</CardTitle>
                 <p className="text-lg text-muted-foreground mb-2">{student.title}</p>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <p className="text-sm text-muted-foreground leading-relaxed outline-none focus:outline-none">
                   {student.aboutMe || student.description}
                 </p>
               </div>

@@ -67,7 +67,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onView, hideBookmark = false }) 
       
       <CardFooter className="p-4 pt-3 flex items-center">
         <Button asChild variant="default" className="w-full !bg-[#2E7D32] !text-white shadow-none hover:brightness-95 text-center">
-          <Link to={`/jobs/${job.id}`} onClick={onView}>
+          <Link to={`/job/${job.id}`} onClick={onView}>
             View Details
           </Link>
         </Button>
