@@ -105,13 +105,13 @@ const AdminLearningResources: React.FC = () => {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-lg leading-tight mb-2">{r.title}</CardTitle>
-                    <div className="flex items-center gap-2 mb-2">
+                    <CardTitle className="text-lg leading-tight mb-2 h-14 flex items-start line-clamp-2">{r.title}</CardTitle>
+                    <div className="flex items-center gap-2 mb-2 h-6">
                       <span className="text-sm text-muted-foreground capitalize">{r.type}</span>
                       <span className="text-muted-foreground">•</span>
                       <span className="text-sm text-muted-foreground">{r.duration}</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 h-8">
                       <Badge
                         variant={r.status === 'available' ? 'default' : 'secondary'}
                         className="text-xs px-2 py-0.5 rounded-full"
@@ -124,7 +124,9 @@ const AdminLearningResources: React.FC = () => {
               </CardHeader>
               
               <CardContent className="flex-1 flex flex-col">
-                <p className="text-sm text-muted-foreground mb-4 flex-1">{r.description}</p>
+                <div className="text-sm text-muted-foreground mb-4 flex-1 h-20 overflow-hidden flex items-start">
+                  <p className="line-clamp-4 leading-relaxed">{r.description}</p>
+                </div>
                 
                 <div className="flex items-center justify-between pt-3 border-t">
                   <span className="text-xs text-muted-foreground">ID: {r.id}</span>

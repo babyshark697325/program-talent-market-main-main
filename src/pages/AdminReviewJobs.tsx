@@ -179,52 +179,53 @@ const AdminReviewJobs: React.FC = () => {
 
         {/* Jobs list */}
         {filtered.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((job) => (
               <Card key={job.id} className="h-full flex flex-col">
-                <CardContent className="pt-6 flex-1 flex flex-col overflow-visible">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <h3 className="text-lg font-semibold leading-snug">{job.title}</h3>
+                <CardContent className="pt-6 flex-1 flex flex-col">
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <h3 className="text-lg font-semibold leading-tight line-clamp-2 flex-1 h-14 flex items-start">{job.title}</h3>
                     <Badge
-                      className={
-                        job.status === "flagged"
-                          ? "bg-red-600 hover:bg-red-600"
-                          : "bg-green-600 hover:bg-green-600"
-                      }
+                      variant={job.status === "flagged" ? "destructive" : "default"}
+                      className="shrink-0"
                     >
                       {job.status === "flagged" ? "flagged" : "active"}
                     </Badge>
                   </div>
 
-                  <div className="text-sm text-muted-foreground flex items-center gap-2 mb-1">
-                    <Building2 size={14} />
-                    <span>{job.company || 'No company specified'}</span>
-                  </div>
-                  <div className="text-sm text-muted-foreground flex items-center gap-2 mb-1">
-                    <DollarSign size={14} />
-                    <span>{job.budget || 'Budget not specified'}</span>
-                  </div>
-                  <div className="text-sm text-muted-foreground flex items-center gap-2 mb-4">
-                    <Calendar size={14} />
-                    <span>Posted {formatDate(job.posted_at)}</span>
+                  <div className="space-y-2 mb-4 h-20 flex flex-col justify-start">
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Building2 size={14} className="shrink-0" />
+                      <span className="truncate">{job.company || 'No company specified'}</span>
+                    </div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <DollarSign size={14} className="shrink-0" />
+                      <span className="truncate">{job.budget || 'Budget not specified'}</span>
+                    </div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Calendar size={14} className="shrink-0" />
+                      <span>Posted {formatDate(job.posted_at)}</span>
+                    </div>
                   </div>
 
-                  <div className="text-sm text-muted-foreground line-clamp-3 mb-4">
-                    {job.description || 'No description provided'}
+                  <div className="text-sm text-muted-foreground mb-6 h-20 overflow-hidden flex items-start">
+                    <p className="line-clamp-4 leading-relaxed">
+                      {job.description || 'No description provided'}
+                    </p>
                   </div>
 
                   {/* Actions */}
-                  <div className="mt-auto flex items-center justify-between gap-2 pt-2 flex-wrap sm:flex-nowrap">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button size="sm" variant="outline" onClick={() => navigate(`/job/${job.id}`)}>
+                  <div className="mt-auto flex flex-col gap-3">
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" className="flex-1" onClick={() => navigate(`/job/${job.id}`)}>
                         <Eye className="mr-2" size={14} /> View
                       </Button>
                       {job.status === "flagged" ? (
-                        <Button size="sm" variant="outline" onClick={() => unflagJob(job.id)}>
+                        <Button size="sm" variant="outline" className="flex-1" onClick={() => unflagJob(job.id)}>
                           <FlagOff className="mr-2" size={14} /> Unflag
                         </Button>
                       ) : (
-                        <Button size="sm" variant="outline" onClick={() => flagJob(job.id)}>
+                        <Button size="sm" variant="outline" className="flex-1" onClick={() => flagJob(job.id)}>
                           <Flag className="mr-2" size={14} /> Flag
                         </Button>
                       )}
@@ -232,7 +233,7 @@ const AdminReviewJobs: React.FC = () => {
                     <Button
                       size="sm"
                       variant="destructive"
-                      className="shrink-0"
+                      className="w-full"
                       onClick={() => setConfirmId(job.id)}
                     >
                       <Trash2 className="mr-2" size={14} /> Remove
