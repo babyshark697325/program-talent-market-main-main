@@ -260,6 +260,45 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
 
   const signIn = async (email: string, password: string) => {
     const normalized = email.trim().toLowerCase();
+    
+    // Handle demo login specially
+    if (normalized === 'demo@talent.com' && password === 'demo123') {
+      // Create a mock user object for demo
+      const mockUser = {
+        id: 'demo-user-id',
+        email: 'demo@talent.com',
+        user_metadata: { 
+          firstName: 'Demo',
+          lastName: 'User',
+          role: 'developer'
+        },
+        app_metadata: {},
+        aud: 'authenticated',
+        created_at: new Date().toISOString(),
+        email_confirmed_at: new Date().toISOString(),
+        last_sign_in_at: new Date().toISOString(),
+        role: 'authenticated',
+        updated_at: new Date().toISOString()
+      } as User;
+
+      const mockSession = {
+        access_token: 'demo-token',
+        refresh_token: 'demo-refresh',
+        expires_in: 3600,
+        token_type: 'bearer',
+        user: mockUser
+      } as Session;
+
+      // Set the mock user and session
+      setUser(mockUser);
+      setSession(mockSession);
+      setUserRole('developer');
+      setIsGuest(false);
+
+      return { error: null };
+    }
+    
+    // Regular Supabase authentication for other users
     const { error } = await supabase.auth.signInWithPassword({
       email: normalized,
       password,

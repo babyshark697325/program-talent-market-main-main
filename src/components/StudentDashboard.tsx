@@ -4,26 +4,15 @@ import { Award, Briefcase, TrendingUp } from "lucide-react";
 import JobCard from "@/components/JobCard";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { mockJobs, JobPosting } from "@/data/mockJobs";
+import { mockStudentApplications } from "@/data/mockStudentApplications";
+import { mockSavedJobs } from "@/data/mockSavedJobs";
 import BackToTop from "./BackToTop";
 
 // Updated interface - removed jobs prop
 
-// Job interface matching Supabase schema
-interface Job {
-  id: string;
-  title: string;
-  company: string;
-  description: string;
-  skills: string[];
-  budget: string;
-  duration: string;
-  contact_email: string;
-  status: string;
-  posted_at: string;
-  created_at: string;
-  updated_at: string;
-}
+// Job interface matching mock data
+interface Job extends JobPosting {}
 
 const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -33,30 +22,20 @@ const StudentDashboard: React.FC = () => {
   const [jobsLoading, setJobsLoading] = React.useState(true);
   const [jobsError, setJobsError] = React.useState<string | null>(null);
 
-  // Fetch jobs from Supabase
+  // Use mock data instead of Supabase
   React.useEffect(() => {
     const fetchJobs = async () => {
       try {
         setJobsLoading(true);
         setJobsError(null);
         
-        const { data, error } = await supabase
-          .from('jobs')
-          .select('*')
-          .eq('status', 'active')
-          .order('posted_at', { ascending: false })
-          .limit(20); // Get more jobs for better recommendations
+        // Simulate API delay for realistic demo
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        if (error) {
-          console.error('Error fetching jobs:', error);
-          // Don't set jobsError - just use empty array so it shows empty state
-          setJobs([]);
-        } else {
-          setJobs(data || []);
-        }
+        // Use mock data
+        setJobs(mockJobs);
       } catch (err) {
-        console.error('Error fetching jobs:', err);
-        // Don't set jobsError - just use empty array so it shows empty state
+        console.error('Error loading mock jobs:', err);
         setJobs([]);
       } finally {
         setJobsLoading(false);
@@ -66,25 +45,17 @@ const StudentDashboard: React.FC = () => {
     fetchJobs();
   }, []);
 
-  // Fetch user's skills from their profile
+    // Use mock user skills for demo
   React.useEffect(() => {
     const fetchUserSkills = async () => {
       if (!user) return;
       
       try {
-        // Since there's no students table with skills, we'll use a placeholder approach
-        // You can either:
-        // 1. Add skills to the profiles table, or
-        // 2. Create a proper students table, or 
-        // 3. Use localStorage/user metadata for now
-        
-        // Option 3: Use user metadata or localStorage as fallback
-        const skillsFromMetadata = user.user_metadata?.skills as string[] || [];
-        const skillsFromStorage = JSON.parse(localStorage.getItem(`user_skills_${user.id}`) || '[]');
-        
-        setUserSkills(skillsFromMetadata.length > 0 ? skillsFromMetadata : skillsFromStorage);
+        // Use mock skills for demo - representing a student interested in web development
+        const demoSkills = ["Web Development", "Programming", "UI/UX Design", "React", "JavaScript"];
+        setUserSkills(demoSkills);
       } catch (err) {
-        console.error('Error fetching user skills:', err);
+        console.error('Error loading user skills:', err);
         setUserSkills([]);
       }
     };
@@ -126,13 +97,21 @@ const StudentDashboard: React.FC = () => {
   const [stats, setStats] = React.useState({ skills: 0, projects: 0, earnings: 0 });
   React.useEffect(() => {
     const load = () => {
-      const skills = Number(localStorage.getItem('skillsMastered') || '0');
-      const projects = Number(localStorage.getItem('projectsCompleted') || '0');
-      const earnings = Number(localStorage.getItem('earningsThisMonth') || '0');
+      // Use mock data for demo stats based on our student applications
+      const hiredApplications = mockStudentApplications.filter(app => app.status === 'hired');
+      const completedProjects = hiredApplications.length;
+      // Calculate estimated earnings from hired projects (parsing budget strings)
+      const totalEarnings = hiredApplications.reduce((sum, app) => {
+        const budgetMatch = app.proposedBudget.match(/\$?(\d+(?:,\d{3})*)/);
+        const amount = budgetMatch ? parseInt(budgetMatch[1].replace(/,/g, '')) : 0;
+        return sum + amount;
+      }, 0);
+      const skillsCount = 12; // Representing various skills learned
+      
       setStats({
-        skills: isNaN(skills) ? 0 : skills,
-        projects: isNaN(projects) ? 0 : projects,
-        earnings: isNaN(earnings) ? 0 : earnings,
+        skills: skillsCount,
+        projects: completedProjects,
+        earnings: totalEarnings,
       });
     };
     load();
@@ -185,8 +164,8 @@ const StudentDashboard: React.FC = () => {
     skills: job.skills,
     budget: job.budget,
     duration: job.duration,
-    postedDate: new Date(job.posted_at).toLocaleDateString(),
-    contactEmail: job.contact_email,
+    postedDate: job.postedDate,
+    contactEmail: job.contactEmail,
     location: "Remote", // Default since not in schema
     experienceLevel: "All Levels" // Default since not in schema
   });

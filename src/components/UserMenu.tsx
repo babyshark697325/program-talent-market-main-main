@@ -16,7 +16,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { User as UserIcon } from "lucide-react";
-import { ThemeToggle } from '@/components/ThemeToggle';
 
 function getInitials(nameOrEmail: string) {
   const text = (nameOrEmail || "").trim();
@@ -167,9 +166,6 @@ const UserMenu: React.FC = () => {
             )}
           </div>
           </DropdownMenuLabel>
-          <div className="pt-1 pl-2">
-            <ThemeToggle />
-          </div>
         </div>
 
         <DropdownMenuSeparator className="my-1.5 bg-border/50" />

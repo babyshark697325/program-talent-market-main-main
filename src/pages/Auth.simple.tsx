@@ -6,11 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 
 const Auth: React.FC = () => {
-  const { continueAsGuest, signIn } = useAuth();
+  const { continueAsGuest } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -29,25 +29,27 @@ const Auth: React.FC = () => {
     const password = signInData.password;
 
     try {
-      // Use the AuthContext signIn method
-      const { error } = await signIn(email, password);
-      
-      if (error) {
-        toast({
-          title: "Invalid credentials",
-          description: "Please use the demo credentials: demo@talent.com / demo123",
-          variant: "destructive",
-        });
-      } else {
+      // Demo login check
+      if (email === "demo@talent.com" && password === "demo123") {
         toast({
           title: "Welcome to MyVillage!",
           description: "Demo login successful",
           variant: "default",
         });
         
-        // Navigate to homepage
-        navigate("/", { replace: true });
+        // Simulate login success and redirect
+        setTimeout(() => {
+          navigate("/", { replace: true });
+        }, 1000);
+        return;
       }
+
+      // Invalid credentials
+      toast({
+        title: "Invalid credentials",
+        description: "Please use the demo credentials: demo@talent.com / demo123",
+        variant: "destructive",
+      });
     } catch (err) {
       console.error("Login error:", err);
       toast({

@@ -8,26 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader as UIDialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search, Eye, Flag, FlagOff, Trash2, Building2, Calendar, DollarSign } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { mockJobs, JobPosting } from "@/data/mockJobs";
 
-// Database job interface matching Supabase schema
-interface DatabaseJob {
-  id: string;
-  user_id: string;
-  title: string;
-  company: string | null;
-  description: string | null;
-  requirements: string[];
-  skills: string[];
-  budget: string | null;
-  duration: string | null;
-  contact_email: string | null;
+// Convert JobPosting to match admin interface
+type AdminJob = JobPosting & {
   status: 'active' | 'flagged' | 'removed' | 'completed';
   posted_at: string;
-  created_at: string;
-  updated_at: string;
-}
-
-type AdminJob = DatabaseJob;
+  user_id: string;
+};
 
 const AdminReviewJobs: React.FC = () => {
   const navigate = useNavigate();
@@ -36,27 +24,23 @@ const AdminReviewJobs: React.FC = () => {
   const [jobs, setJobs] = useState<AdminJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | number | null>(null);
 
   // Fetch jobs from Supabase
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('jobs')
-        .select('*')
-        .neq('status', 'removed')
-        .order('posted_at', { ascending: false });
-
-      if (error) {
-        console.warn('Jobs table unavailable; showing empty list.');
-        setJobs([]);
-      } else {
-        setJobs(data || []);
-      }
+      // Convert mock jobs to admin format
+      const adminJobs: AdminJob[] = mockJobs.map(job => ({
+        ...job,
+        status: Math.random() > 0.8 ? 'flagged' : 'active' as 'active' | 'flagged' | 'removed' | 'completed',
+        posted_at: job.postedDate,
+        user_id: `user-${job.id}`
+      }));
+      
+      setJobs(adminJobs);
     } catch (error) {
-      console.error('Error fetching jobs:', error);
-      // Be quiet in empty/dev environments: show empty state instead of an error
+      console.error('Error loading jobs:', error);
       setJobs([]);
     } finally {
       setLoading(false);
@@ -83,15 +67,8 @@ const AdminReviewJobs: React.FC = () => {
     );
   }, [jobs, search]);
 
-  const flagJob = async (id: string) => {
+  const flagJob = async (id: string | number) => {
     try {
-      const { error } = await supabase
-        .from('jobs')
-        .update({ status: 'flagged' })
-        .eq('id', id);
-
-      if (error) throw error;
-
       setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, status: 'flagged' as const } : j)));
       toast({ title: "Job flagged", description: `Job was flagged for review.` });
     } catch (error) {
@@ -104,15 +81,8 @@ const AdminReviewJobs: React.FC = () => {
     }
   };
 
-  const unflagJob = async (id: string) => {
+  const unflagJob = async (id: string | number) => {
     try {
-      const { error } = await supabase
-        .from('jobs')
-        .update({ status: 'active' })
-        .eq('id', id);
-
-      if (error) throw error;
-
       setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, status: 'active' as const } : j)));
       toast({ title: "Job unflagged", description: `Job was restored to active.` });
     } catch (error) {
@@ -125,22 +95,15 @@ const AdminReviewJobs: React.FC = () => {
     }
   };
 
-  const removeJob = async (id: string) => {
+  const removeJob = async (id: string | number) => {
     try {
-      const { error } = await supabase
-        .from('jobs')
-        .update({ status: 'removed' })
-        .eq('id', id);
-
-      if (error) throw error;
-
       setJobs((prev) => prev.filter((j) => j.id !== id));
-      setConfirmId(null);
       toast({ title: "Job removed", description: `Job was removed.` });
+      setConfirmId(null);
     } catch (error) {
       console.error('Error removing job:', error);
       toast({
-        title: "Error",
+        title: "Error", 
         description: "Failed to remove job",
         variant: "destructive",
       });
@@ -216,52 +179,53 @@ const AdminReviewJobs: React.FC = () => {
 
         {/* Jobs list */}
         {filtered.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((job) => (
               <Card key={job.id} className="h-full flex flex-col">
-                <CardContent className="pt-6 flex-1 flex flex-col overflow-visible">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <h3 className="text-lg font-semibold leading-snug">{job.title}</h3>
+                <CardContent className="pt-6 flex-1 flex flex-col">
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <h3 className="text-lg font-semibold leading-tight line-clamp-2 flex-1 h-14 flex items-start">{job.title}</h3>
                     <Badge
-                      className={
-                        job.status === "flagged"
-                          ? "bg-red-600 hover:bg-red-600"
-                          : "bg-green-600 hover:bg-green-600"
-                      }
+                      variant={job.status === "flagged" ? "destructive" : "default"}
+                      className="shrink-0"
                     >
                       {job.status === "flagged" ? "flagged" : "active"}
                     </Badge>
                   </div>
 
-                  <div className="text-sm text-muted-foreground flex items-center gap-2 mb-1">
-                    <Building2 size={14} />
-                    <span>{job.company || 'No company specified'}</span>
-                  </div>
-                  <div className="text-sm text-muted-foreground flex items-center gap-2 mb-1">
-                    <DollarSign size={14} />
-                    <span>{job.budget || 'Budget not specified'}</span>
-                  </div>
-                  <div className="text-sm text-muted-foreground flex items-center gap-2 mb-4">
-                    <Calendar size={14} />
-                    <span>Posted {formatDate(job.posted_at)}</span>
+                  <div className="space-y-2 mb-4 h-20 flex flex-col justify-start">
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Building2 size={14} className="shrink-0" />
+                      <span className="truncate">{job.company || 'No company specified'}</span>
+                    </div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <DollarSign size={14} className="shrink-0" />
+                      <span className="truncate">{job.budget || 'Budget not specified'}</span>
+                    </div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Calendar size={14} className="shrink-0" />
+                      <span>Posted {formatDate(job.posted_at)}</span>
+                    </div>
                   </div>
 
-                  <div className="text-sm text-muted-foreground line-clamp-3 mb-4">
-                    {job.description || 'No description provided'}
+                  <div className="text-sm text-muted-foreground mb-6 h-20 overflow-hidden flex items-start">
+                    <p className="line-clamp-4 leading-relaxed">
+                      {job.description || 'No description provided'}
+                    </p>
                   </div>
 
                   {/* Actions */}
-                  <div className="mt-auto flex items-center justify-between gap-2 pt-2 flex-wrap sm:flex-nowrap">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button size="sm" variant="outline" onClick={() => navigate(`/job/${job.id}`)}>
+                  <div className="mt-auto flex flex-col gap-3">
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" className="flex-1" onClick={() => navigate(`/job/${job.id}`)}>
                         <Eye className="mr-2" size={14} /> View
                       </Button>
                       {job.status === "flagged" ? (
-                        <Button size="sm" variant="outline" onClick={() => unflagJob(job.id)}>
+                        <Button size="sm" variant="outline" className="flex-1" onClick={() => unflagJob(job.id)}>
                           <FlagOff className="mr-2" size={14} /> Unflag
                         </Button>
                       ) : (
-                        <Button size="sm" variant="outline" onClick={() => flagJob(job.id)}>
+                        <Button size="sm" variant="outline" className="flex-1" onClick={() => flagJob(job.id)}>
                           <Flag className="mr-2" size={14} /> Flag
                         </Button>
                       )}
@@ -269,7 +233,7 @@ const AdminReviewJobs: React.FC = () => {
                     <Button
                       size="sm"
                       variant="destructive"
-                      className="shrink-0"
+                      className="w-full"
                       onClick={() => setConfirmId(job.id)}
                     >
                       <Trash2 className="mr-2" size={14} /> Remove

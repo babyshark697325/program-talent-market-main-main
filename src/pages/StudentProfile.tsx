@@ -4,6 +4,7 @@ import PageHeader from '@/components/PageHeader';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Mail, Phone, MapPin, Eye, Edit, Image, User, X, Plus, Trash2, ExternalLink, Linkedin, Github } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { mockStudents } from '@/data/mockStudents';
 
 // Brand icons for platform links (prefer official SVGs in /public/brands, fallback to colored badge)
 const UpworkIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -182,7 +183,7 @@ const StudentProfile = () => {
     setIsEditing(false);
   };
 
-  // Prefill from Supabase profile (signup/waitlist info)
+  // Prefill from Supabase profile (signup/waitlist info) or mock data for viewing other students
   useEffect(() => {
     // get currently authenticated user id for edit permissions and prefill profile
     (async () => {
@@ -190,6 +191,51 @@ const StudentProfile = () => {
         const { data: userRes } = await supabase.auth.getUser();
         setCurrentUserId(userRes?.user?.id || null);
         const uid = userRes?.user?.id;
+        
+        // If we have an ID in the URL, we're viewing another student's profile
+        if (id && id !== uid) {
+          // Find the student in mock data
+          const mockStudent = mockStudents.find(s => s.id === parseInt(id));
+          if (mockStudent) {
+            const studentData: StudentState = {
+              name: mockStudent.name,
+              email: mockStudent.contact?.email || '',
+              phone: mockStudent.contact?.phone || '',
+              avatarUrl: mockStudent.avatarUrl || '',
+              location: '', // Not available in mock data
+              bio: mockStudent.aboutMe || mockStudent.description,
+              skills: mockStudent.skills || [],
+              experience: [], // Not available in mock data
+              portfolio: mockStudent.portfolio?.map(p => ({
+                id: p.id,
+                title: p.title,
+                description: p.description,
+                link: p.link,
+                imageUrl: p.imageUrl
+              })) || [],
+              platformLinks: {
+                linkedin: mockStudent.contact?.linkedinUrl || '',
+                github: mockStudent.contact?.githubUrl || '',
+                upwork: mockStudent.contact?.upworkUrl || '',
+                fiverr: mockStudent.contact?.fiverrUrl || ''
+              },
+              payments: {
+                method: '' as PaymentMethod,
+                paypalEmail: '',
+                venmo: '',
+                cashapp: '',
+                bankLast4: '',
+                taxW9Submitted: false,
+                history: [],
+              },
+            };
+            setStudent(studentData);
+            setEdited(studentData);
+          }
+          return;
+        }
+        
+        // Otherwise, load current user's profile
         if (!uid) return;
         const { data, error } = await supabase
           .from('profiles')
@@ -205,16 +251,16 @@ const StudentProfile = () => {
         setCurrentUserId(null);
       }
     })();
-  }, []);
+  }, [id]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       <PageHeader
-        title="My Profile"
-        description="Manage your profile information and settings"
+        title={canEdit ? "My Profile" : `${student.name}'s Profile`}
+        description={canEdit ? "Manage your profile information and settings" : "View student profile and information"}
       >
         <div className="flex gap-2">
-          <Button variant="outline" size="default"><Eye className="mr-2 h-4 w-4" /> Preview Profile</Button>
+          {canEdit && <Button variant="outline" size="default"><Eye className="mr-2 h-4 w-4" /> Preview Profile</Button>}
           {canEdit && (!isEditing ? (
             <Button size="default" onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>
           ) : (

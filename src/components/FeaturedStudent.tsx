@@ -54,7 +54,7 @@ const FeaturedStudent: React.FC<FeaturedStudentProps> = ({ student, onViewProfil
 
         <div className="grid md:grid-cols-2 gap-6 md:gap-10 items-start">
           {/* Enhanced Student Info */}
-          <div className="flex flex-col items-center md:items-start text-center md:text-left">
+          <div className="flex flex-col items-center md:items-start text-center md:text-left h-full">
             <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-6 mb-4 md:mb-6">
               <div className="relative group">
                 <Avatar className="relative w-20 md:w-24 h-20 md:h-24 border-4 border-[#C7A836] shadow-xl group-hover:scale-105 transition-transform duration-300">
@@ -102,7 +102,7 @@ const FeaturedStudent: React.FC<FeaturedStudentProps> = ({ student, onViewProfil
             </Button>
 
             {/* Enhanced Student Quote */}
-            <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 mb-6 relative shadow-lg border border-primary/10 hover:shadow-xl transition-all duration-300">
+            <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 mb-6 relative shadow-lg border border-primary/10 hover:shadow-xl transition-all duration-300 flex-1 flex flex-col justify-center">
               <Quote size={20} className="text-primary/50 absolute top-4 left-4" />
               <p className="text-card-foreground italic pl-8 pr-4 font-medium leading-relaxed">
                 "{student.quote}"

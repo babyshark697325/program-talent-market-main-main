@@ -22,11 +22,16 @@ const PostJob: React.FC = () => {
 
   const handlePostJob = (formData: JobFormData) => {
     console.log("Job posted:", formData);
-    toast({
-      title: "Job Posted Successfully!",
-      description: "Your job listing has been posted and is now live.",
+    
+    // Create URL with job details
+    const params = new URLSearchParams({
+      title: formData.title || 'Your Job Posting',
+      budget: formData.budget || '$500-$1000',
+      duration: formData.duration || 'Project-based'
     });
-    navigate("/");
+    
+    // Navigate to success page with job details
+    navigate(`/job-posted?${params.toString()}`);
   };
 
   const handleCancel = () => {

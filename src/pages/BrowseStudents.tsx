@@ -10,6 +10,7 @@ import StudentServiceCard from "@/components/StudentServiceCard";
 import PageHeader from '@/components/PageHeader';
 import { StudentService } from '@/types/student';
 import { supabase } from "@/integrations/supabase/client";
+import { mockStudents } from "@/data/mockStudents";
 
 // Updated interface to match the profiles table structure
 export interface DatabaseStudent {
@@ -74,53 +75,23 @@ const BrowseStudents = () => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200]);
   const [sortBy, setSortBy] = useState<'name' | 'price' | 'rating'>('name');
 
-  // Fetch students from Supabase
+  // Fetch students from mock data
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Get profiles for users with 'student' role
-        const { data: studentRoles, error: rolesError } = await supabase
-          .from('user_roles')
-          .select('user_id')
-          .eq('role', 'student');
-
-        if (rolesError) {
-          console.warn('Student roles unavailable; rendering empty list.');
-          setStudents([]);
-          setFilteredStudents([]);
-          return;
-        }
-
-        if (!studentRoles || studentRoles.length === 0) {
-          setStudents([]);
-          setFilteredStudents([]);
-          return;
-        }
-
-        const studentUserIds = studentRoles.map(role => role.user_id);
+        // Use mock students data for demo
+        await new Promise(resolve => setTimeout(resolve, 300)); // Simulate loading
         
-        const { data, error: fetchError } = await supabase
-          .from('profiles')
-          .select('*')
-          .in('user_id', studentUserIds)
-          .order('created_at', { ascending: false });
-
-        if (fetchError) {
-          console.warn('Profiles unavailable; rendering empty list.');
-          setStudents([]);
-          setFilteredStudents([]);
-          return;
-        }
-
-        const transformedStudents = (data || []).map(transformStudent);
-        setStudents(transformedStudents);
-        setFilteredStudents(transformedStudents);
+        setStudents(mockStudents);
+        setFilteredStudents(mockStudents);
       } catch (err) {
-        console.error('Error:', err);
-        setError('An unexpected error occurred');
+        console.error('Error loading students:', err);
+        setError('Failed to load students. Please try again.');
+        setStudents([]);
+        setFilteredStudents([]);
       } finally {
         setLoading(false);
       }
@@ -179,7 +150,7 @@ const BrowseStudents = () => {
   }, [students, searchQuery, selectedSkills, priceRange, sortBy]);
 
   const handleStudentView = (id: number) => {
-    navigate(`/student/${id}`);
+    navigate(`/view-student/${id}`);
   };
 
   const handleClearFilters = () => {
@@ -228,23 +199,22 @@ const BrowseStudents = () => {
       <PageHeader title="Browse Talented Students" description="Discover skilled students ready to help with your projects" />
 
       <div className="rounded-3xl p-8 shadow-md border bg-white border-black/10 dark:bg-[#040b17] dark:border-white/5 mb-10">
-        <div className="flex flex-col lg:flex-row gap-6 mb-6 relative">
-          {/* Clear Filters Button - top right */}
-          <button
-            onClick={handleClearFilters}
-            className="absolute right-0 top-0 bg-gradient-to-r from-primary to-primary/80 text-white px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all text-sm font-semibold z-10"
-            style={{ margin: '1rem' }}
-          >
-            Clear Filters
-          </button>
+        <div className="flex flex-col lg:flex-row gap-6 mb-6">
           <div className="relative flex-1">
             <input
               type="text"
               placeholder="Search students by name, skill, or service..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-4 pr-4 py-4 text-lg rounded-2xl border border-primary/30 dark:border-white/10 focus:border-primary focus:ring-primary/20 bg-white/90 dark:bg-[#040b17] text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2"
+              className="w-full pl-4 pr-36 py-6 text-lg rounded-full border border-primary/30 dark:border-white/10 focus:border-primary focus:ring-primary/20 bg-white/90 dark:bg-[#040b17] text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2"
             />
+            {/* Clear Filters Button - inside search bar */}
+            <button
+              onClick={handleClearFilters}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 px-4 py-2 text-sm rounded-full bg-primary text-white hover:bg-primary/90 shadow-sm hover:shadow-md transition-all font-semibold whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              Clear Filters
+            </button>
           </div>
         </div>
 
@@ -326,11 +296,11 @@ const BrowseStudents = () => {
       </div>
 
       {filteredStudents.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 items-start">
           {filteredStudents.map((student, index) => (
             <div
               key={student.id}
-              className="animate-fade-in hover:scale-[1.02] transition-transform duration-200"
+              className="animate-fade-in hover:scale-[1.02] transition-transform duration-200 h-full"
               style={{ animationDelay: `${0.1 * index}s` }}
             >
               <StudentServiceCard student={student} onView={() => handleStudentView(student.id)} />

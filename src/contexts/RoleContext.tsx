@@ -25,32 +25,37 @@ interface RoleProviderProps {
 
 export const RoleProvider: React.FC<RoleProviderProps> = ({ children }) => {
   const { user, userRole, isGuest } = useAuth();
-  const [role, setRoleState] = useState<UserRole>('client');
-  const [manual, setManual] = useState(false);
+  
+  // Initialize role from localStorage with fallback
+  const [role, setRoleState] = useState<UserRole>(() => {
+    const stored = localStorage.getItem('selectedRole') as UserRole;
+    return stored && ['student', 'client', 'admin', 'developer'].includes(stored) ? stored : 'client';
+  });
 
-  // Allow manual switching only for admin/developer
+  // Simple setRole that ALWAYS works for guests, admins, and developers
   const setRole = (r: UserRole) => {
-    if (userRole === 'admin' || userRole === 'developer') {
-      setManual(true);
+    // For guests, always allow role switching
+    if (isGuest) {
       setRoleState(r);
+      localStorage.setItem('selectedRole', r);
+      return;
+    }
+    
+    // For admin/developer, always allow role switching  
+    if (userRole === 'admin' || userRole === 'developer') {
+      setRoleState(r);
+      localStorage.setItem('selectedRole', r);
+      return;
     }
   };
 
-  // Auto-sync to authenticated user role when not manually overridden (or if not admin/developer)
+  // Minimal effect - only restore from localStorage on mount
   useEffect(() => {
-    if (!manual || !(userRole === 'admin' || userRole === 'developer')) {
-      if (userRole) setRoleState(userRole as UserRole);
-      else setRoleState('client');
+    const stored = localStorage.getItem('selectedRole') as UserRole;
+    if (stored && ['student', 'client', 'admin', 'developer'].includes(stored)) {
+      setRoleState(stored);
     }
-  }, [userRole, manual]);
-
-  // Reset override on logout or when leaving guest mode
-  useEffect(() => {
-    if (!user && !isGuest) {
-      setManual(false);
-      setRoleState('client');
-    }
-  }, [user, isGuest]);
+  }, []); // Empty dependency array - only run once on mount
 
   return (
     <RoleContext.Provider value={{ role, setRole }}>
