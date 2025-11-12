@@ -5,37 +5,25 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { RoleProvider } from "./contexts/RoleContext";
 import { SavedJobsProvider } from "./contexts/SavedJobsContext";
 import StudentDashboard from "./components/StudentDashboard";
-import { mockJobs } from "./data/mockJobs";
 import GlobalPreferencesBoot from "./components/GlobalPreferencesBoot";
 
-// Mock auth context for preview
-const MockAuthProvider = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <div>
-      {children}
-    </div>
-  );
-};
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"students" | "jobs">("students");
+  // ...existing code...
 
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
       <Router>
-        <MockAuthProvider>
+        <AuthProvider>
           <RoleProvider>
             <SavedJobsProvider>
               <div className="min-h-screen">
                 <GlobalPreferencesBoot />
-                <StudentDashboard 
-                  jobs={mockJobs} 
-                  setActiveTab={setActiveTab}
-                />
+                <StudentDashboard />
               </div>
             </SavedJobsProvider>
           </RoleProvider>
-        </MockAuthProvider>
+        </AuthProvider>
       </Router>
     </ThemeProvider>
   );

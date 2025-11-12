@@ -5,7 +5,6 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { RoleProvider } from "./contexts/RoleContext";
 import { SavedJobsProvider } from "./contexts/SavedJobsContext";
 import AdminDashboard from "./components/AdminDashboard";
-import { mockJobs } from "./data/mockJobs";
 import GlobalPreferencesBoot from "./components/GlobalPreferencesBoot";
 
 // Mock auth context for preview
@@ -27,7 +26,7 @@ const App: React.FC = () => {
               <div className="min-h-screen">
                 <GlobalPreferencesBoot />
                 <AdminDashboard 
-                  jobs={mockJobs}
+                  jobs={[]} // Use real data source here
                 />
               </div>
             </SavedJobsProvider>

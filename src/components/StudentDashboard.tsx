@@ -8,9 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import BackToTop from "./BackToTop";
 
 // Updated interface - removed jobs prop
-interface StudentDashboardProps {
-  setActiveTab: (tab: "students" | "jobs") => void;
-}
 
 // Job interface matching Supabase schema
 interface Job {
@@ -28,7 +25,7 @@ interface Job {
   updated_at: string;
 }
 
-const StudentDashboard: React.FC<StudentDashboardProps> = ({ setActiveTab }) => {
+const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [userSkills, setUserSkills] = React.useState<string[]>([]);
@@ -314,7 +311,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ setActiveTab }) => 
                     }
                   </p>
                   <Button 
-                    onClick={() => userSkills.length === 0 ? navigate("/profile") : setActiveTab("jobs")} 
+                    onClick={() => userSkills.length === 0 ? navigate("/profile") : navigate("/browse-jobs")}
                     className="mt-4 bg-gradient-to-r from-primary to-primary/80"
                   >
                     {userSkills.length === 0 ? "Complete Profile" : "Browse All Jobs"}
