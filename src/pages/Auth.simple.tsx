@@ -15,8 +15,8 @@ const Auth: React.FC = () => {
   const { toast } = useToast();
 
   const [signInData, setSignInData] = React.useState({ 
-    email: "demo@talent.com", 
-    password: "demo123" 
+    email: "", 
+    password: "" 
   });
   const [submitting, setSubmitting] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
@@ -29,25 +29,10 @@ const Auth: React.FC = () => {
     const password = signInData.password;
 
     try {
-      // Demo login check
-      if (email === "demo@talent.com" && password === "demo123") {
-        toast({
-          title: "Welcome to MyVillage!",
-          description: "Demo login successful",
-          variant: "default",
-        });
-        
-        // Simulate login success and redirect
-        setTimeout(() => {
-          navigate("/", { replace: true });
-        }, 1000);
-        return;
-      }
-
-      // Invalid credentials
+      // TODO: Replace with real authentication logic
       toast({
-        title: "Invalid credentials",
-        description: "Please use the demo credentials: demo@talent.com / demo123",
+        title: "Login failed",
+        description: "Invalid credentials. Please try again.",
         variant: "destructive",
       });
     } catch (err) {
@@ -72,15 +57,8 @@ const Auth: React.FC = () => {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Welcome to MyVillage</CardTitle>
-          <p className="text-sm text-muted-foreground">Demo Login</p>
         </CardHeader>
         <CardContent className="pt-0">
-          {/* Demo credentials helper */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
-            <p className="text-xs text-blue-700 font-medium mb-2">🎬 Demo Credentials:</p>
-            <p className="text-xs text-blue-600 mb-1">Email: <span className="font-mono font-semibold">demo@talent.com</span></p>
-            <p className="text-xs text-blue-600">Password: <span className="font-mono font-semibold">demo123</span></p>
-          </div>
 
           <form onSubmit={handleSignIn} className="space-y-4">
             <div className="space-y-2">
