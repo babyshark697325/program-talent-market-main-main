@@ -53,65 +53,52 @@ const Auth: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full grid place-items-center px-4 py-10">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Welcome to MyVillage</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-
-          <form onSubmit={handleSignIn} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="demo@talent.com"
-                value={signInData.email}
-                onChange={(e) => setSignInData({ ...signInData, email: e.target.value })}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="demo123"
-                  value={signInData.password}
-                  onChange={(e) => setSignInData({ ...signInData, password: e.target.value })}
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-gray-400" />
-                  )}
-                </button>
-              </div>
-            </div>
-            
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "Signing in..." : "Sign In"}
-            </Button>
-          </form>
-
-          <Separator className="my-6" />
-
-          <div className="space-y-3">
-            <Button variant="outline" className="w-full" onClick={handleGuest}>
-              Continue as Guest
-            </Button>
+    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 py-10">
+      <h2 className="text-2xl font-bold mb-6">Welcome to MyVillage</h2>
+      <form onSubmit={handleSignIn} className="space-y-4 w-full max-w-md">
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="Enter your email"
+            value={signInData.email}
+            onChange={(e) => setSignInData({ ...signInData, email: e.target.value })}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              value={signInData.password}
+              onChange={(e) => setSignInData({ ...signInData, password: e.target.value })}
+              required
+            />
+            <button
+              type="button"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4 text-gray-400" />
+              ) : (
+                <Eye className="h-4 w-4 text-gray-400" />
+              )}
+            </button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <Button type="submit" className="w-full" disabled={submitting}>
+          {submitting ? "Signing in..." : "Sign In"}
+        </Button>
+        <Separator className="my-6" />
+        <Button variant="outline" className="w-full" onClick={handleGuest}>
+          Continue as Guest
+        </Button>
+      </form>
     </div>
   );
 };
