@@ -115,12 +115,12 @@ const FeaturedStudent: React.FC<FeaturedStudentProps> = ({ student, onViewProfil
 
           {/* Showcase Work (optional) */}
           {student.showcaseImage && (
-            <div className="bg-card/90 backdrop-blur-sm rounded-2xl p-0 shadow-xl border border-primary/10 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-              <div className="relative w-full aspect-video md:aspect-[4/3]">
+            <div className="bg-card/90 backdrop-blur-sm rounded-2xl p-0 shadow-xl border border-primary/10 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] min-h-[360px] flex items-center">
+              <div className="relative w-full h-[360px]">
                 <img
                   src={student.showcaseImage}
                   alt="Showcase Work"
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover rounded-2xl"
                 />
                 <div className="absolute top-3 left-3">
                   <span className="inline-flex items-center rounded-md px-3 py-1 text-xs font-semibold shadow-sm border border-border bg-white/90 text-foreground dark:bg-background/70 dark:text-foreground backdrop-blur">
