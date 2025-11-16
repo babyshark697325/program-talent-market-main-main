@@ -11,180 +11,9 @@ import SearchFilters from "@/components/SearchFilters";
 import ContentGrid from "@/components/ContentGrid";
 import { StudentService } from "@/types/student";
 import { JobPosting, mockJobs } from "@/data/mockJobs";
-import { mockStudents } from "@/data/mockStudents";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useRole } from "@/contexts/RoleContext";
 import { supabase } from "@/integrations/supabase/client";
-
-// Database profile type from Supabase
-interface DatabaseProfile {
-  id: string;
-  user_id: string;
-  email: string;
-  display_name: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  bio: string | null;
-  avatar_url: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-// Database job type from Supabase
-interface DatabaseJob {
-  id: string;
-  user_id: string;
-  title: string;
-  company: string | null;
-  description: string | null;
-  requirements: string[];
-  skills: string[];
-  budget: string | null;
-  duration: string | null;
-  contact_email: string | null;
-  status: "active" | "flagged" | "removed" | "completed";
-  posted_at: string;
-  created_at: string;
-  updated_at: string;
-}
-
-// Transform database profile to StudentService format
-const transformProfileToStudent = (profile: DatabaseProfile): StudentService => {
-  const name = profile.display_name || 
-    `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 
-    profile.email.split('@')[0];
-  
-  return {
-    // Convert UUID to number for compatibility with existing routes
-    id: parseInt(profile.id.slice(-8), 16),
-    name,
-    title: 'Student Developer',
-    description: profile.bio || 'Skilled developer ready to help with your projects',
-    avatarUrl: profile.avatar_url || '',
-    skills: [],
-    price: '$25/hr',
-    affiliation: 'student' as const,
-    aboutMe: profile.bio,
-    contact: {
-      email: profile.email,
-      phone: undefined,
-      linkedinUrl: undefined,
-      githubUrl: undefined,
-      upworkUrl: undefined,
-      fiverrUrl: undefined,
-    },
-    portfolio: [],
-  };
-};
-
-// Transform database job to JobPosting format
-const transformDatabaseJobToJobPosting = (dbJob: DatabaseJob): JobPosting => {
-  return {
-    id: parseInt(dbJob.id.slice(-8), 16), // Convert string UUID to number
-    title: dbJob.title,
-    company: dbJob.company || "Unknown Company",
-    description: dbJob.description || "No description provided",
-    requirements: dbJob.requirements || [],
-    skills: dbJob.skills || [],
-    budget: dbJob.budget || "Budget not specified",
-    duration: dbJob.duration || "Duration not specified",
-    contactEmail: dbJob.contact_email || "",
-    postedDate: dbJob.posted_at,
-  };
-};
-
-// Spotlight settings constants
-const LS_QUOTE_KEY = "spotlight.quote";
-const LS_STUDENT_ID_KEY = "spotlight.studentId";
-const LS_SHOWCASE_IMAGE_KEY = "spotlight.showcaseImage";
-const LS_REVIEW_KEY = "spotlight.review";
-const DEFAULT_QUOTE = "Building amazing web experiences is my passion. Every line of code I write aims to create something that users will love and businesses will thrive with!";
-const DEFAULT_CLIENT_REVIEW = {
-  text: "Alex built our entire e-commerce platform from scratch and it's been a game-changer for our business. The site is fast, beautiful, and user-friendly. Sales increased by 40% in the first month!",
-  clientName: "Sarah Johnson, Store Owner",
-  rating: 5
-};
-
-// Remove the duplicate FeaturedStudentProps interface (lines 107-116)
-// Delete these lines:
-// interface FeaturedStudentProps {
-//   student: StudentService;
-//   quote: string;
-//   showcaseImage?: string;
-//   clientReview: {
-//     text: string;
-//     clientName: string;
-//     rating: number;
-//   };
-// }
-
-const getSpotlightFromStorage = async (): Promise<{
-  student: StudentService;
-  quote: string;
-  showcaseImage?: string;
-  clientReview: {
-    text: string;
-    clientName: string;
-    rating: number;
-  };
-} | null> => {
-  const studentId = localStorage.getItem(LS_STUDENT_ID_KEY);
-  const quote = localStorage.getItem(LS_QUOTE_KEY);
-  const showcaseImage = localStorage.getItem(LS_SHOWCASE_IMAGE_KEY);
-  const reviewId = localStorage.getItem(LS_REVIEW_KEY);
-
-  if (!studentId) {
-    return null;
-  }
-
-  try {
-    // Fetch student profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', studentId)
-      .single();
-
-    if (profileError || !profile) {
-      console.error('Student not found:', profileError);
-      return null;
-    }
-
-    // Transform profile to student
-    const transformedStudent = transformProfileToStudent(profile);
-
-    // Fetch selected review if reviewId exists
-    let clientReview = DEFAULT_CLIENT_REVIEW;
-    if (reviewId) {
-      const { data: review, error: reviewError } = await supabase
-        .from('reviews')
-        .select('reviewer_name, reviewer_company, review_text, rating')
-        .eq('id', reviewId)
-        .single();
-
-      if (!reviewError && review) {
-        clientReview = {
-          text: review.review_text,
-          clientName: review.reviewer_company 
-            ? `${review.reviewer_name}, ${review.reviewer_company}`
-            : review.reviewer_name,
-          rating: review.rating
-        };
-      }
-    }
-
-    return {
-      student: transformedStudent,
-      quote: quote || "Passionate about creating innovative solutions",
-      showcaseImage: showcaseImage || undefined,
-      clientReview
-    };
-  } catch (error) {
-    console.error('Error loading spotlight data:', error);
-    return null;
-  }
-};
-
 const Index: React.FC = () => {
   const [search, setSearch] = useState("");
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
@@ -201,59 +30,32 @@ const Index: React.FC = () => {
   const location = useLocation();
   const { role } = useRole();
 
-  // Use mock students data instead of Supabase
   useEffect(() => {
     const loadStudents = async () => {
       try {
-        setLoading(true);
-        setError(null);
-        
-        // Use mock students data
-        setStudents(mockStudents);
-        
-        // Create featured student data using Alex Rivera from mock students
-        const featuredStudent = mockStudents.find(student => student.name === "Alex Rivera") || mockStudents[0];
-        const featuredData = {
-          student: featuredStudent,
-          quote: "I'm passionate about creating beautiful, functional web experiences that help businesses establish their online presence and connect with their customers.",
-          showcaseImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=800&h=500&q=80",
-          clientReview: {
-            text: "Alex delivered an exceptional e-commerce website that exceeded our expectations. Professional communication, clean code, and delivered on time!",
-            clientName: "Maria Santos, Boutique Owner",
-            rating: 5
-          }
-        };
-        setFeatured(featuredData);
-      } catch (err) {
-        console.error('Error loading mock students:', err);
-        setError('Failed to load students');
+        setStudents([]);
       } finally {
         setLoading(false);
       }
     };
-
     loadStudents();
   }, []);
 
-  // Use mock jobs data instead of Supabase
   useEffect(() => {
     setJobs(mockJobs);
   }, []);
 
-  // Use mock rating data instead of Supabase
   useEffect(() => {
     setAverageRating(4.5);
     setAvgResponseHours(3);
   }, []);
 
-  // Memoized skills calculation
   const allSkills = useMemo(() => 
     Array.from(
       new Set([...students.flatMap((s) => s.skills), ...jobs.flatMap((j) => j.skills)])
     ), [students, jobs]
   );
 
-  // Handle tab switching from sidebar navigation
   useEffect(() => {
     const st = location.state as { activeTab?: string; scrollTo?: string } | null;
     if (st?.activeTab) {
@@ -275,20 +77,15 @@ const Index: React.FC = () => {
     }
   }, [location.state, navigate, location.pathname]);
 
-  // Reload spotlight on focus or when admin saves settings
   useEffect(() => {
-    const refresh = async () => {
-      if (students.length > 0) {
-        const featuredData = await getSpotlightFromStorage();
-        setFeatured(featuredData);
-      }
-    };
-    window.addEventListener('focus', refresh);
-    window.addEventListener('spotlight:updated', refresh as EventListener);
-    return () => {
-      window.removeEventListener('focus', refresh);
-      window.removeEventListener('spotlight:updated', refresh as EventListener);
-    };
+    // Removed getSpotlightFromStorage reference due to missing import
+    // If you need to refresh featured student, implement logic here
+    // window.addEventListener('focus', refresh);
+    // window.addEventListener('spotlight:updated', refresh as EventListener);
+    // return () => {
+    //   window.removeEventListener('focus', refresh);
+    //   window.removeEventListener('spotlight:updated', refresh as EventListener);
+    // };
   }, [students]);
 
   const filteredStudents = useMemo(() => {
@@ -319,15 +116,12 @@ const Index: React.FC = () => {
 
   const filteredJobs = useMemo(() => {
     const searchLower = search.toLowerCase();
-    
     return jobs.filter((job) => {
       const matchSearch =
         job.title.toLowerCase().includes(searchLower) ||
         job.company.toLowerCase().includes(searchLower) ||
-        job.description.toLowerCase().includes(searchLower) ||
         job.skills.some((skill) => skill.toLowerCase().includes(searchLower));
       const matchSkill = !selectedSkill || job.skills.includes(selectedSkill);
-      
       return matchSearch && matchSkill;
     });
   }, [jobs, search, selectedSkill]);

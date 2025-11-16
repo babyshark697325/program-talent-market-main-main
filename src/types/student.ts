@@ -17,6 +17,7 @@ export interface StudentContact {
 
 export interface StudentService {
   id: number;
+  cic_id: string;
   name: string;
   title: string;
   description: string;

@@ -6,13 +6,33 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Building, MapPin, Clock, DollarSign, Calendar, Users, Mail, Bookmark, User, Star, ExternalLink, ArrowLeft, Linkedin, Github, Phone } from 'lucide-react';
-import { mockStudents } from '@/data/mockStudents';
+import { supabase } from '@/integrations/supabase/client';
 import { mockReviews } from '@/data/mockReviews';
 import { useAuth } from "@/contexts/AuthContext";
 
 const StudentDetail = () => {
   const { id } = useParams();
-  const student = mockStudents.find(s => s.id === parseInt(id || '0'));
+  const [student, setStudent] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchStudent = async () => {
+      if (id) {
+        const { data, error } = await supabase
+          .from('students')
+          .select('*')
+          .eq('cic_id', id)
+          .single();
+        if (error || !data) {
+          setStudent(null);
+        } else {
+          setStudent(data);
+        }
+      }
+      setLoading(false);
+    };
+    fetchStudent();
+  }, [id]);
   const { userRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,6 +59,16 @@ const StudentDetail = () => {
     console.log('Bookmark student:', student?.name);
   };
 
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading student profile...</p>
+        </div>
+      </div>
+    );
+  }
   if (!student) {
     return (
       <div className="p-6">

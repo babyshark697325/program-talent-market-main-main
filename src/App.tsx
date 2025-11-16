@@ -326,18 +326,18 @@ const App: React.FC = () => {
                 }
               />
               <Route
-                path="/admin/review-jobs"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Layout><AdminReviewJobs /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/admin/settings"
                 element={
                   <ProtectedRoute requiredRole="admin">
                     <Layout><AdminSettings /></Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/review-jobs"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <Layout><AdminReviewJobs /></Layout>
                   </ProtectedRoute>
                 }
               />

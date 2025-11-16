@@ -10,7 +10,6 @@ import StudentServiceCard from "@/components/StudentServiceCard";
 import PageHeader from '@/components/PageHeader';
 import { StudentService } from '@/types/student';
 import { supabase } from "@/integrations/supabase/client";
-import { mockStudents } from "@/data/mockStudents";
 
 // Updated interface to match the profiles table structure
 export interface DatabaseStudent {
@@ -35,6 +34,7 @@ const transformStudent = (dbStudent: DatabaseStudent): StudentService => {
   return {
     // Convert UUID to number for compatibility with existing routes
     id: parseInt(dbStudent.id.slice(-8), 16),
+    cic_id: dbStudent.id, // Use the database id as cic_id
     name: displayName,
     title: dbStudent.bio || 'Student Developer',
     description: dbStudent.bio || 'Skilled developer ready to help with your projects',
@@ -75,18 +75,24 @@ const BrowseStudents = () => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200]);
   const [sortBy, setSortBy] = useState<'name' | 'price' | 'rating'>('name');
 
-  // Fetch students from mock data
+  // Fetch students from Supabase
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         setLoading(true);
         setError(null);
-
-        // Use mock students data for demo
-        await new Promise(resolve => setTimeout(resolve, 300)); // Simulate loading
-        
-        setStudents(mockStudents);
-        setFilteredStudents(mockStudents);
+        const { data, error } = await supabase
+          .from('students')
+          .select('*');
+        if (error || !data) {
+          setError('Failed to load students. Please try again.');
+          setStudents([]);
+          setFilteredStudents([]);
+        } else {
+          const mappedStudents = data.map(transformStudent);
+          setStudents(mappedStudents);
+          setFilteredStudents(mappedStudents);
+        }
       } catch (err) {
         console.error('Error loading students:', err);
         setError('Failed to load students. Please try again.');
@@ -96,7 +102,6 @@ const BrowseStudents = () => {
         setLoading(false);
       }
     };
-
     fetchStudents();
   }, []);
 

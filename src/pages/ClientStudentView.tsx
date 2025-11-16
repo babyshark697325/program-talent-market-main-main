@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ArrowLeft, Star, Clock, User, Mail, Phone, ExternalLink, Briefcase, MessageCircle, FileText, Video, Code } from 'lucide-react';
-import { mockStudents } from '@/data/mockStudents';
+import { supabase } from '@/integrations/supabase/client';
 import { mockReviews } from '@/data/mockReviews';
 import { StudentService } from '@/types/student';
 
@@ -35,11 +35,36 @@ const StudentView: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
-      const foundStudent = mockStudents.find(s => s.id === parseInt(id));
-      setStudent(foundStudent || null);
-    }
-    setLoading(false);
+    const fetchStudent = async () => {
+      if (id) {
+        const { data, error } = await supabase
+          .from('students')
+          .select('*')
+          .eq('cic_id', id)
+          .single();
+        if (error || !data) {
+          setStudent(null);
+        } else {
+          // Map Supabase data to StudentService type
+          setStudent({
+            id: data.id,
+            cic_id: data.cic_id,
+            name: data.display_name || data.name || '',
+            title: data.title || 'Student Developer',
+            description: data.description || '',
+            avatarUrl: data.avatar_url || '',
+            skills: data.skills || [],
+            price: data.price || '',
+            affiliation: data.affiliation,
+            aboutMe: data.aboutMe || '',
+            contact: data.contact || {},
+            portfolio: data.portfolio || [],
+          });
+        }
+      }
+      setLoading(false);
+    };
+    fetchStudent();
   }, [id]);
 
   if (loading) {
