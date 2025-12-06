@@ -33,6 +33,49 @@ const Index: React.FC = () => {
   useEffect(() => {
     const loadStudents = async () => {
       try {
+        setLoading(true);
+        setError(null);
+        const { data, error } = await supabase
+          .from('prelaunch_signups')
+          .select('*')
+          .eq('role', 'student');
+        if (error || !data) {
+          setError('Failed to load students. Please try again.');
+          setStudents([]);
+        } else {
+          const mappedStudents = data.map((dbStudent: any) => {
+            const displayName = dbStudent.display_name || dbStudent.name || [dbStudent.first_name, dbStudent.last_name].filter(Boolean).join(' ') || dbStudent.email?.split('@')[0] || 'Unnamed Student';
+            let affiliation: "student" | "alumni" = "student";
+            if (dbStudent.affiliation === "alumni" || dbStudent.role === "alumni") {
+              affiliation = "alumni";
+            }
+            return {
+              id: dbStudent.id || parseInt((dbStudent.id || '').slice(-8), 16),
+              cic_id: dbStudent.cic_id || dbStudent.id,
+              name: displayName,
+              title: dbStudent.title || 'Student',
+              description: dbStudent.description || 'This student has not added a description yet.',
+              avatarUrl: dbStudent.avatar_url || '',
+              skills: Array.isArray(dbStudent.skills) ? dbStudent.skills : [],
+              price: dbStudent.price || '$25/hr',
+              affiliation,
+              aboutMe: dbStudent.aboutMe || '',
+              contact: dbStudent.contact || {
+                email: dbStudent.email || '',
+                phone: dbStudent.phone || '',
+                linkedinUrl: dbStudent.linkedinUrl || '',
+                githubUrl: dbStudent.githubUrl || '',
+                upworkUrl: dbStudent.upworkUrl || '',
+                fiverrUrl: dbStudent.fiverrUrl || '',
+              },
+              portfolio: Array.isArray(dbStudent.portfolio) ? dbStudent.portfolio : [],
+            };
+          });
+          setStudents(mappedStudents);
+        }
+      } catch (err) {
+        console.error('Error loading students:', err);
+        setError('Failed to load students. Please try again.');
         setStudents([]);
       } finally {
         setLoading(false);
@@ -237,7 +280,7 @@ const Index: React.FC = () => {
           activeTab={activeTab}
           filteredStudents={filteredStudents}
           filteredJobs={filteredJobs}
-          onStudentView={(id) => navigate(`/view-student/${id}`)}
+          onStudentView={(cic_id) => navigate(`/view-student/${cic_id}`)}
           onJobView={(id) => navigate(`/job/${id}`)}
           onClearFilters={handleClearFilters}
         />

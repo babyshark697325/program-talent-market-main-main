@@ -12,6 +12,8 @@ interface StudentServiceCardProps {
 }
 
 const StudentServiceCard: React.FC<StudentServiceCardProps> = ({ student, onView }) => {
+  // Debug log for rendering
+  (() => { console.log('[StudentServiceCard] Rendered for student:', student.cic_id); })();
   return (
     <div className="group relative rounded-xl p-[1px] bg-[linear-gradient(135deg,hsl(var(--primary)/0.25),hsl(var(--primary)/0.08),transparent)] hover:shadow-[0_8px_30px_-12px_hsl(var(--primary)/0.35)] transition-shadow duration-300 h-full">
       <div className="flex flex-col h-full bg-background text-foreground border border-border/60 rounded-xl shadow-sm group-hover:shadow-lg transition-all duration-300 p-5 cursor-pointer transform group-hover:-translate-y-0.5">
@@ -39,7 +41,7 @@ const StudentServiceCard: React.FC<StudentServiceCardProps> = ({ student, onView
           </div>
 
           <div className="flex-1 min-w-0 space-y-2">
-            <h3 className="text-lg font-bold leading-tight break-words">
+            <h3 className="text-lg font-bold leading-tight truncate overflow-hidden whitespace-nowrap">
               {student.name}
             </h3>
             
@@ -73,7 +75,10 @@ const StudentServiceCard: React.FC<StudentServiceCardProps> = ({ student, onView
           <span className="font-semibold text-primary text-base whitespace-nowrap">{student.price}</span>
           <Button
             size="sm"
-            onClick={onView}
+            onClick={() => {
+              console.log('[StudentServiceCard] View button clicked for:', student.cic_id);
+              if (onView) onView();
+            }}
             variant="default"
             className="text-sm px-4 py-2 h-9"
           >

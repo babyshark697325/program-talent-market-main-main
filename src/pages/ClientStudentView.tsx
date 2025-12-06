@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ArrowLeft, Star, Clock, User, Mail, Phone, ExternalLink, Briefcase, MessageCircle, FileText, Video, Code } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { mockReviews } from '@/data/mockReviews';
+import { mockStudents } from '@/data/mockStudents';
 import { StudentService } from '@/types/student';
 
 function getIconForProjectType(type: string) {
@@ -34,37 +35,14 @@ const StudentView: React.FC = () => {
   const [student, setStudent] = useState<StudentService | null>(null);
   const [loading, setLoading] = useState(true);
 
+
   useEffect(() => {
-    const fetchStudent = async () => {
-      if (id) {
-        const { data, error } = await supabase
-          .from('students')
-          .select('*')
-          .eq('cic_id', id)
-          .single();
-        if (error || !data) {
-          setStudent(null);
-        } else {
-          // Map Supabase data to StudentService type
-          setStudent({
-            id: data.id,
-            cic_id: data.cic_id,
-            name: data.display_name || data.name || '',
-            title: data.title || 'Student Developer',
-            description: data.description || '',
-            avatarUrl: data.avatar_url || '',
-            skills: data.skills || [],
-            price: data.price || '',
-            affiliation: data.affiliation,
-            aboutMe: data.aboutMe || '',
-            contact: data.contact || {},
-            portfolio: data.portfolio || [],
-          });
-        }
-      }
-      setLoading(false);
-    };
-    fetchStudent();
+    if (id) {
+      // Use cic_id for lookup
+      const foundStudent = mockStudents.find(s => s.cic_id === id);
+      setStudent(foundStudent || null);
+    }
+    setLoading(false);
   }, [id]);
 
   if (loading) {
@@ -137,7 +115,6 @@ const StudentView: React.FC = () => {
                   </AvatarFallback>
                 )}
               </Avatar>
-              
               {/* Status Badge */}
               <Badge 
                 className={`absolute -top-2 -right-2 ${
@@ -337,6 +314,5 @@ const StudentView: React.FC = () => {
       </Card>
     </div>
   );
-};
-
+}
 export default StudentView;

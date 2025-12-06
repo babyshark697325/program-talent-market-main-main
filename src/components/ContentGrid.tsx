@@ -11,7 +11,7 @@ interface ContentGridProps {
   activeTab: "students" | "jobs";
   filteredStudents: StudentService[];
   filteredJobs: JobPosting[];
-  onStudentView: (id: number) => void;
+  onStudentView: (cic_id: string) => void;
   onJobView: (id: number) => void;
   onClearFilters: () => void;
 }
@@ -65,7 +65,7 @@ const ContentGrid: React.FC<ContentGridProps> = ({
     <div className="animate-fade-in">
       {activeTab === "students" ? (
         filteredStudents.length ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             {filteredStudents.map((student, index) => (
               <div 
                 key={student.id} 
@@ -81,7 +81,7 @@ const ContentGrid: React.FC<ContentGridProps> = ({
               >
                 <StudentServiceCard
                   student={student}
-                  onView={() => onStudentView(student.id)}
+                  onView={() => onStudentView(String(student.cic_id || student.id))}
                 />
               </div>
             ))}

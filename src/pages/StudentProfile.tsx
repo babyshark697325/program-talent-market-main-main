@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import PageHeader from '@/components/PageHeader';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -87,6 +87,8 @@ interface StudentState {
   phone: string;
   avatarUrl: string;
   location: string;
+  title: string;
+  price: string;
   bio: string;
   skills: string[];
   experience: ExperienceItem[];
@@ -135,17 +137,41 @@ const StudentProfile = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const canEdit = !id || (currentUserId && id === currentUserId);
   const [isEditing, setIsEditing] = useState(false);
+  const fallbackStudent = useMemo(() => {
+    if (id) {
+      return (
+        mockStudents.find(
+          (s) => s.cic_id === id || String(s.id) === String(id),
+        ) || mockStudents[0]
+      );
+    }
+    return mockStudents[0];
+  }, [id]);
+  const defaultRate = '$25/hr';
   const initialStudent: StudentState = {
-    name: '',
-    email: '',
-    phone: '',
-    avatarUrl: '',
-    location: '',
-    bio: '',
-    skills: [] as string[],
+    name: fallbackStudent?.name || 'Alex Rivera',
+    email: fallbackStudent?.contact?.email || 'alex@example.com',
+    phone: fallbackStudent?.contact?.phone || '(555) 123-4567',
+    avatarUrl: fallbackStudent?.avatarUrl || '',
+    location: 'San Francisco, CA',
+    title: fallbackStudent?.title || 'Student Developer',
+    price: defaultRate,
+    bio: fallbackStudent?.aboutMe || fallbackStudent?.description || 'Tell clients what you do best and what kind of work excites you.',
+    skills: fallbackStudent?.skills || ['React', 'TypeScript', 'Node.js'],
     experience: [] as ExperienceItem[],
-    portfolio: [] as PortfolioItem[],
-    platformLinks: { linkedin: '', github: '', upwork: '', fiverr: '' },
+    portfolio: fallbackStudent?.portfolio?.map((p) => ({
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      link: p.link,
+      imageUrl: p.imageUrl,
+    })) || [],
+    platformLinks: {
+      linkedin: fallbackStudent?.contact?.linkedinUrl || '',
+      github: fallbackStudent?.contact?.githubUrl || '',
+      upwork: fallbackStudent?.contact?.upworkUrl || '',
+      fiverr: fallbackStudent?.contact?.fiverrUrl || '',
+    },
     payments: {
       method: '' as PaymentMethod,
       paypalEmail: '',
@@ -163,6 +189,7 @@ const StudentProfile = () => {
   const [student, setStudent] = useState<StudentState>(initialStudent);
   const [edited, setEdited] = useState<StudentState>(initialStudent);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const displayStudent = isEditing ? edited : student;
 
   const triggerAvatarPick = () => fileInputRef.current?.click();
   const handleAvatarChange = (file?: File | null) => {
@@ -194,41 +221,88 @@ const StudentProfile = () => {
         
         // If we have an ID in the URL, we're viewing another student's profile
         if (id && id !== uid) {
-          // Find the student in mock data
-          const mockStudent = mockStudents.find(s => s.id === parseInt(id));
-          if (mockStudent) {
-            const studentData: StudentState = {
-              name: mockStudent.name,
-              email: mockStudent.contact?.email || '',
-              phone: mockStudent.contact?.phone || '',
-              avatarUrl: mockStudent.avatarUrl || '',
-              location: '', // Not available in mock data
-              bio: mockStudent.aboutMe || mockStudent.description,
-              skills: mockStudent.skills || [],
-              experience: [], // Not available in mock data
-              portfolio: mockStudent.portfolio?.map(p => ({
+          let studentData: StudentState | null = null;
+          const isNumericId = /^\d+$/.test(id);
+          const identifierColumn = isNumericId ? 'id' : 'cic_id';
+          const identifierValue = isNumericId ? Number(id) : id;
+          const { data: waitlistData } = await supabase
+            .from('prelaunch_signups')
+            .select('*')
+            .eq(identifierColumn, identifierValue)
+            .maybeSingle();
+
+          if (waitlistData) {
+            studentData = {
+              name: waitlistData.display_name || waitlistData.name || '',
+              email: waitlistData.email || '',
+              phone: waitlistData.phone || '',
+              avatarUrl: waitlistData.avatar_url || '',
+              location: waitlistData.location || '',
+              title: waitlistData.title || '',
+              price: waitlistData.price || '',
+              bio: waitlistData.aboutMe || waitlistData.description || '',
+              skills: waitlistData.skills || [],
+              experience: [],
+              portfolio: waitlistData.portfolio?.map((p: PortfolioItem) => ({
                 id: p.id,
                 title: p.title,
                 description: p.description,
                 link: p.link,
-                imageUrl: p.imageUrl
+                imageUrl: (p as any).imageUrl,
               })) || [],
               platformLinks: {
-                linkedin: mockStudent.contact?.linkedinUrl || '',
-                github: mockStudent.contact?.githubUrl || '',
-                upwork: mockStudent.contact?.upworkUrl || '',
-                fiverr: mockStudent.contact?.fiverrUrl || ''
+                linkedin: waitlistData.contact?.linkedinUrl || '',
+                github: waitlistData.contact?.githubUrl || '',
+                upwork: waitlistData.contact?.upworkUrl || '',
+                fiverr: waitlistData.contact?.fiverrUrl || '',
               },
-              payments: {
-                method: '' as PaymentMethod,
-                paypalEmail: '',
-                venmo: '',
-                cashapp: '',
-                bankLast4: '',
-                taxW9Submitted: false,
-                history: [],
-              },
+              payments: { ...initialStudent.payments, history: [] },
             };
+          }
+
+          if (!studentData) {
+            const mockStudent = mockStudents.find(
+              (s) => s.cic_id === id || String(s.id) === String(id),
+            );
+            if (mockStudent) {
+              studentData = {
+                name: mockStudent.name,
+                email: mockStudent.contact?.email || '',
+                phone: mockStudent.contact?.phone || '',
+                avatarUrl: mockStudent.avatarUrl || '',
+                location: '',
+                title: mockStudent.title || '',
+                price: mockStudent.price || '',
+                bio: mockStudent.aboutMe || mockStudent.description,
+                skills: mockStudent.skills || [],
+                experience: [],
+                portfolio: mockStudent.portfolio?.map(p => ({
+                  id: p.id,
+                  title: p.title,
+                  description: p.description,
+                  link: p.link,
+                  imageUrl: p.imageUrl
+                })) || [],
+                platformLinks: {
+                  linkedin: mockStudent.contact?.linkedinUrl || '',
+                  github: mockStudent.contact?.githubUrl || '',
+                  upwork: mockStudent.contact?.upworkUrl || '',
+                  fiverr: mockStudent.contact?.fiverrUrl || ''
+                },
+                payments: {
+                  method: '' as PaymentMethod,
+                  paypalEmail: '',
+                  venmo: '',
+                  cashapp: '',
+                  bankLast4: '',
+                  taxW9Submitted: false,
+                  history: [],
+                },
+              };
+            }
+          }
+
+          if (studentData) {
             setStudent(studentData);
             setEdited(studentData);
           }
@@ -243,7 +317,10 @@ const StudentProfile = () => {
           .eq('user_id', uid)
           .maybeSingle();
         if (!error && data) {
-          const name = [data.first_name, data.last_name].filter(Boolean).join(' ').trim() || data.display_name || '';
+          const name =
+            [data.first_name, data.last_name].filter(Boolean).join(' ').trim() ||
+            data.display_name ||
+            (data.email ? data.email.split('@')[0] : '');
           setStudent(prev => ({ ...prev, name, email: data.email || '' }));
           setEdited(prev => ({ ...prev, name, email: data.email || '' }));
         }
@@ -275,6 +352,67 @@ const StudentProfile = () => {
           ))}
         </div>
       </PageHeader>
+      <Card className="overflow-hidden bg-gradient-to-br from-card via-card to-muted/40">
+        <CardContent className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between py-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Avatar className="w-20 h-20 border-4 border-primary">
+              {displayStudent.avatarUrl ? (
+                <AvatarImage src={displayStudent.avatarUrl} alt={`${displayStudent.name} profile`} />
+              ) : (
+                <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-xl">
+                  <User className="w-8 h-8" />
+                </AvatarFallback>
+              )}
+            </Avatar>
+            <div className="space-y-2">
+              <div>
+                <CardTitle className="text-2xl">{displayStudent.name || fallbackStudent?.name || ''}</CardTitle>
+                <CardDescription className="text-base">
+                  {displayStudent.title || 'Student Freelancer'}
+                </CardDescription>
+              </div>
+              <p className="text-sm text-muted-foreground max-w-2xl">
+                {displayStudent.bio || 'Share a quick summary about your skills, past work, and what type of projects you enjoy tackling.'}
+              </p>
+              <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                {displayStudent.location && (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin className="w-4 h-4" />
+                    {displayStudent.location}
+                  </span>
+                )}
+                {displayStudent.email && (
+                  <span className="inline-flex items-center gap-1">
+                    <Mail className="w-4 h-4" />
+                    {displayStudent.email}
+                  </span>
+                )}
+                {displayStudent.phone && (
+                  <span className="inline-flex items-center gap-1">
+                    <Phone className="w-4 h-4" />
+                    {displayStudent.phone}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col gap-4 items-start sm:items-end">
+            <div className="text-right">
+              <div className="text-muted-foreground text-sm">Default rate</div>
+              <div className="text-3xl font-semibold text-primary">{displayStudent.price || defaultRate}</div>
+            </div>
+            {displayStudent.skills?.length > 0 && (
+              <div className="flex flex-wrap gap-2 justify-end">
+                {displayStudent.skills.map((skill) => (
+                  <Badge key={skill} variant="secondary" className="px-3 py-1">
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
       <Tabs defaultValue="general" className="space-y-6">
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>

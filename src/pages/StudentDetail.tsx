@@ -19,7 +19,7 @@ const StudentDetail = () => {
     const fetchStudent = async () => {
       if (id) {
         const { data, error } = await supabase
-          .from('students')
+          .from('prelaunch_signups')
           .select('*')
           .eq('cic_id', id)
           .single();

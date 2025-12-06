@@ -12,37 +12,43 @@ import { StudentService } from '@/types/student';
 import { supabase } from "@/integrations/supabase/client";
 
 // Updated interface to match the profiles table structure
-export interface DatabaseStudent {
+export interface PrelaunchStudent {
   id: string;
-  user_id: string;
+  first_name: string;
+  last_name: string;
   email: string;
-  display_name: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  bio: string | null;
-  avatar_url: string | null;
+  city?: string;
+  role: string;
   created_at: string;
-  updated_at: string;
+  status?: string;
+  cic_id?: string;
 }
 
 // Transform database profile to component format
-const transformStudent = (dbStudent: DatabaseStudent): StudentService => {
-  const displayName = dbStudent.display_name || 
-    [dbStudent.first_name, dbStudent.last_name].filter(Boolean).join(' ') || 
-    dbStudent.email.split('@')[0];
-  
+const transformStudent = (dbStudent: PrelaunchStudent): StudentService => {
+  let displayName = '';
+  if (dbStudent.first_name && dbStudent.last_name) {
+    displayName = `${dbStudent.first_name} ${dbStudent.last_name}`;
+  } else if (dbStudent.first_name) {
+    displayName = dbStudent.first_name;
+  } else if (dbStudent.last_name) {
+    displayName = dbStudent.last_name;
+  } else if (dbStudent.email) {
+    displayName = dbStudent.email.split('@')[0];
+  } else {
+    displayName = 'Unnamed Student';
+  }
   return {
-    // Convert UUID to number for compatibility with existing routes
     id: parseInt(dbStudent.id.slice(-8), 16),
-    cic_id: dbStudent.id, // Use the database id as cic_id
+    cic_id: dbStudent.cic_id || dbStudent.id,
     name: displayName,
-    title: dbStudent.bio || 'Student Developer',
-    description: dbStudent.bio || 'Skilled developer ready to help with your projects',
-    avatarUrl: dbStudent.avatar_url || '',
+    title: 'Student',
+    description: 'Prelaunch signup student',
+    avatarUrl: '',
     skills: [],
     price: '$25/hr',
-    affiliation: 'student' as const,
-    aboutMe: dbStudent.bio,
+    affiliation: 'student',
+    aboutMe: '',
     contact: {
       email: dbStudent.email,
       phone: undefined,
@@ -82,8 +88,10 @@ const BrowseStudents = () => {
         setLoading(true);
         setError(null);
         const { data, error } = await supabase
-          .from('students')
-          .select('*');
+          .from('prelaunch_signups')
+          .select('*')
+          .eq('role', 'student');
+        console.log('Supabase prelaunch students data:', data);
         if (error || !data) {
           setError('Failed to load students. Please try again.');
           setStudents([]);
@@ -111,6 +119,7 @@ const BrowseStudents = () => {
   useEffect(() => {
     let filtered = students;
 
+    // Only apply filters if there is a search query or selected skills
     if (searchQuery) {
       filtered = filtered.filter(
         (student) =>
@@ -127,11 +136,14 @@ const BrowseStudents = () => {
       );
     }
 
-    const [minPrice, maxPrice] = priceRange;
-    filtered = filtered.filter((student) => {
-      const price = parseInt(student.price.replace(/[^0-9]/g, ''), 10);
-      return price >= minPrice && price <= maxPrice;
-    });
+    // Only apply price filter if a search or skill filter is active
+    if (searchQuery || selectedSkills.length > 0) {
+      const [minPrice, maxPrice] = priceRange;
+      filtered = filtered.filter((student) => {
+        const price = parseInt(student.price.replace(/[^0-9]/g, ''), 10);
+        return price >= minPrice && price <= maxPrice;
+      });
+    }
 
     // Apply sorting without mutating original array/state
     const sorted = [...filtered].sort((a, b) => {
@@ -154,8 +166,9 @@ const BrowseStudents = () => {
     setFilteredStudents(sorted);
   }, [students, searchQuery, selectedSkills, priceRange, sortBy]);
 
-  const handleStudentView = (id: number) => {
-    navigate(`/view-student/${id}`);
+  const handleStudentView = (cic_id: string) => {
+  console.log('[BrowseStudents] handleStudentView called for:', cic_id);
+  navigate(`/view-student/${cic_id}`);
   };
 
   const handleClearFilters = () => {
@@ -301,14 +314,14 @@ const BrowseStudents = () => {
       </div>
 
       {filteredStudents.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 items-start">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8 items-start">
           {filteredStudents.map((student, index) => (
             <div
-              key={student.id}
+              key={student.cic_id}
               className="animate-fade-in hover:scale-[1.02] transition-transform duration-200 h-full"
               style={{ animationDelay: `${0.1 * index}s` }}
             >
-              <StudentServiceCard student={student} onView={() => handleStudentView(student.id)} />
+              <StudentServiceCard student={student} onView={() => handleStudentView(student.cic_id)} />
             </div>
           ))}
         </div>
@@ -338,5 +351,6 @@ const BrowseStudents = () => {
     </div>
   );
 };
+
 
 export default BrowseStudents;
