@@ -21,6 +21,7 @@ export interface StudentService {
   cic_id: string;
   name: string;
   title: string;
+  location?: string;
   description: string;
   avatarUrl: string;
   skills: string[];
@@ -37,12 +38,13 @@ export const mockStudents: StudentService[] = [
     cic_id: "cic-0001",
     name: "Alex Rivera",
     title: "Full-Stack Web Developer",
+    location: "San Francisco, CA",
     description:
       "I create modern, responsive websites and web applications using the latest technologies.",
     avatarUrl:
       "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80",
     skills: ["Web Development", "Programming", "UI/UX Design"],
-    price: "$35/hr",
+    price: "$25/hr",
     affiliation: "student",
     aboutMe: "I'm passionate about creating beautiful, functional web experiences. With expertise in modern web technologies, I help businesses establish their online presence. In my spare time, I enjoy gaming and exploring new coding frameworks.",
     contact: {
@@ -74,12 +76,13 @@ export const mockStudents: StudentService[] = [
     cic_id: "cic-0002",
     name: "Jamie Patel",
     title: "Logo & Brand Designer",
+    location: "New York, NY",
     description:
       "Creating memorable logos and brand identities that help businesses stand out from the crowd.",
     avatarUrl:
       "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80",
     skills: ["Logo Design", "Graphic Design", "Animation"],
-    price: "$40/hr",
+    price: "$25/hr",
     affiliation: "alumni",
     aboutMe: "I specialize in creating visual identities that tell your brand's story. From concept to final design, I ensure every element works harmoniously. When I'm not designing, you'll find me sketching in cafes or exploring art galleries.",
     contact: {
@@ -105,12 +108,13 @@ export const mockStudents: StudentService[] = [
     cic_id: "cic-0003",
     name: "Morgan Lee",
     title: "3D Artist & Animator",
+    location: "Austin, TX",
     description:
       "Bringing ideas to life through 3D modeling and animation using Blender and industry-standard tools.",
     avatarUrl:
       "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80",
     skills: ["3D Modeling", "Blender", "Animation"],
-    price: "$45/hr",
+    price: "$25/hr",
     affiliation: "student",
     aboutMe: "I create stunning 3D visuals and animations for games, movies, and marketing. Every project is an opportunity to push creative boundaries and tell compelling stories through visual art. Outside work, I love gaming and attending animation festivals.",
     contact: {
@@ -136,12 +140,13 @@ export const mockStudents: StudentService[] = [
     cic_id: "cic-0004",
     name: "Samira Chen",
     title: "Game Designer & Developer",
+    location: "Seattle, WA",
     description:
       "Creating engaging game experiences from concept to completion, specializing in indie and mobile games.",
     avatarUrl:
       "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80",
     skills: ["Game Design", "Programming", "Animation"],
-    price: "$50/hr",
+    price: "$25/hr",
     affiliation: "student",
     aboutMe: "Games are my passion! I design and develop engaging experiences that captivate players. From mechanics to storytelling, I handle every aspect of game creation. When not coding, I'm analyzing the latest games or speedrunning classics.",
     contact: {
@@ -167,12 +172,13 @@ export const mockStudents: StudentService[] = [
     cic_id: "cic-0005",
     name: "Ethan Smith",
     title: "Graphic Designer & Illustrator",
+    location: "Portland, OR",
     description:
       "Professional graphic design services for print and digital media, specializing in creative illustrations.",
     avatarUrl:
       "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80",
     skills: ["Graphic Design", "Logo Design", "Animation"],
-    price: "$30/hr",
+    price: "$25/hr",
     affiliation: "alumni",
     aboutMe: "I bring creativity to every project, whether it's a business card or a full marketing campaign. My style blends modern aesthetics with timeless design principles. In my free time, I enjoy digital painting and collecting vintage design books.",
     contact: {

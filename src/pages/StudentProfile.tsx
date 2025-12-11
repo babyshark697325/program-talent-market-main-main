@@ -2,62 +2,28 @@ import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import PageHeader from '@/components/PageHeader';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Mail, Phone, MapPin, Eye, Edit, Image, User, X, Plus, Trash2, ExternalLink, Linkedin, Github } from 'lucide-react';
+import { Mail, Phone, MapPin, Eye, Edit, Image, User, X, Plus, Trash2, ExternalLink, Linkedin, Github, Briefcase, MessageCircle, Star, FolderOpen, CheckCircle, Clock, Globe, Shield, Heart } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
 import { mockStudents } from '@/data/mockStudents';
+import { mockReviews } from '@/data/mockReviews';
 
 // Brand icons for platform links (prefer official SVGs in /public/brands, fallback to colored badge)
-const UpworkIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg
-    viewBox="0 0 24 24"
-    role="img"
-    aria-label="Upwork"
-    className={className}
-    focusable="false"
-  >
-    <circle cx="12" cy="12" r="12" fill="#000" />
-    <text
-      x="50%"
-      y="53%"
-      textAnchor="middle"
-      dominantBaseline="middle"
-      fontSize="13.5"
-      fontWeight="800"
-      fill="#fff"
-      fontFamily="Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
-    >
-      Up
-    </text>
+const UpworkIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className} xmlns="http://www.w3.org/2000/svg">
+    <path d="M18.561 13.158c-1.102 0-2.135-.467-3.074-1.227l.228-1.077.008-.042c.207-1.143.849-3.06 2.839-3.06 1.492 0 2.703 1.212 2.703 2.703 0 1.491-1.211 2.703-2.704 2.703zm0-7.347c-2.548 0-4.63 2.082-4.63 4.63 0 .639.132 1.25.37 1.81l-1.666-4.214H9.72l2.316 5.867c-2.454.773-4.195 1.549-4.708 1.821C6.918 10.237 7.051 6.848 7.051 5.81c0-1.895-.88-3.06-2.529-3.06C2.698 2.75 1.76 4.316 1.76 6.864v9.33h1.927V6.865c0-1.499.502-2.188 1.408-2.188.8 0 1.127.818 1.127 2.188v9.33h1.926v-1.926c.39-.181 2.301-1.025 5.093-1.93l-1.04 2.625 1.713 1.232 2.39-6.035c.749.61 1.62.964 2.502.964 2.548 0 4.63-2.082 4.63-4.63 0-2.547-2.082-4.629-4.63-4.629z" />
   </svg>
 );
 
-const FiverrIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg
-    viewBox="0 0 24 24"
-    role="img"
-    aria-label="Fiverr"
-    className={className}
-    focusable="false"
-  >
-    <circle cx="12" cy="12" r="12" fill="#000" />
-    <text
-      x="50%"
-      y="53%"
-      textAnchor="middle"
-      dominantBaseline="middle"
-      fontSize="13.5"
-      fontWeight="800"
-      fill="#fff"
-      fontFamily="Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
-      letterSpacing="-0.5"
-    >
-      fi
-    </text>
+const FiverrIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className} xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="10" className="fill-current opacity-20" />
+    <path d="M17.5 13.5V9.5h-1.3v4h-1.4V9.5h-1.3V11c0 1.1-.9 2-2 2h-.8v.5h3.4v1.3H10v-3.7c0-1.1.9-2 2-2h1.6V7.8h-4.3v5.7h1.4v-1.2h.7c.3 0 .5-.2.5-.5V11c0-.3-.2-.5-.5-.5h-.7V9.5h1.7c.3 0 .5-.2.5-.5V7.8h-5.2v8.5H19v-2.8h-1.5z" />
   </svg>
 );
+
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -179,15 +145,12 @@ const StudentProfile = () => {
       cashapp: '',
       bankLast4: '',
       taxW9Submitted: false,
-      history: [
-        { id: 1, date: '2024-08-15', description: 'Project payout', amount: '$250.00', status: 'paid' },
-        { id: 2, date: '2024-08-02', description: 'Milestone payment', amount: '$120.00', status: 'paid' },
-        { id: 3, date: '2024-07-28', description: 'Invoice #1042', amount: '$75.00', status: 'pending' },
-      ],
+      history: [],
     },
   };
   const [student, setStudent] = useState<StudentState>(initialStudent);
   const [edited, setEdited] = useState<StudentState>(initialStudent);
+  const [loading, setLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const displayStudent = isEditing ? edited : student;
 
@@ -210,54 +173,94 @@ const StudentProfile = () => {
     setIsEditing(false);
   };
 
+  const handleHire = () => {
+    console.log('Hire student:', student.name);
+    // TODO: Implement hire flow
+  };
+
+  const handleContact = () => {
+    console.log('Contact student:', student.name);
+    // TODO: Implement contact flow
+  };
+
   // Prefill from Supabase profile (signup/waitlist info) or mock data for viewing other students
   useEffect(() => {
     // get currently authenticated user id for edit permissions and prefill profile
     (async () => {
+      setLoading(true);
       try {
         const { data: userRes } = await supabase.auth.getUser();
         setCurrentUserId(userRes?.user?.id || null);
         const uid = userRes?.user?.id;
-        
+
         // If we have an ID in the URL, we're viewing another student's profile
         if (id && id !== uid) {
           let studentData: StudentState | null = null;
-          const isNumericId = /^\d+$/.test(id);
-          const identifierColumn = isNumericId ? 'id' : 'cic_id';
-          const identifierValue = isNumericId ? Number(id) : id;
-          const { data: waitlistData } = await supabase
-            .from('prelaunch_signups')
+          // 1. Try to find in 'profiles' (registered users)
+          const { data: profileData } = await supabase
+            .from('profiles')
             .select('*')
-            .eq(identifierColumn, identifierValue)
+            .eq('user_id', id)
             .maybeSingle();
 
-          if (waitlistData) {
+          if (profileData) {
+            const fullName = [profileData.first_name, profileData.last_name].filter(Boolean).join(' ').trim();
             studentData = {
-              name: waitlistData.display_name || waitlistData.name || '',
-              email: waitlistData.email || '',
-              phone: waitlistData.phone || '',
-              avatarUrl: waitlistData.avatar_url || '',
-              location: waitlistData.location || '',
-              title: waitlistData.title || '',
-              price: waitlistData.price || '',
-              bio: waitlistData.aboutMe || waitlistData.description || '',
-              skills: waitlistData.skills || [],
-              experience: [],
-              portfolio: waitlistData.portfolio?.map((p: PortfolioItem) => ({
-                id: p.id,
-                title: p.title,
-                description: p.description,
-                link: p.link,
-                imageUrl: (p as any).imageUrl,
-              })) || [],
-              platformLinks: {
-                linkedin: waitlistData.contact?.linkedinUrl || '',
-                github: waitlistData.contact?.githubUrl || '',
-                upwork: waitlistData.contact?.upworkUrl || '',
-                fiverr: waitlistData.contact?.fiverrUrl || '',
-              },
+              name: fullName || profileData.display_name || 'Unnamed Student',
+              email: profileData.email || '',
+              phone: '', // profiles table might not have phone exposed or distinct col
+              avatarUrl: profileData.avatar_url || '',
+              location: profileData.location || 'San Francisco, CA', // Fallback location if missing
+              title: profileData.title || 'Student',
+              price: profileData.hourly_rate || '$25/hr', // Map snake_case if needed, assuming col exists or defaults
+              bio: profileData.bio || profileData.description || '',
+              skills: profileData.skills || [],
+              experience: [], // functionality to fetch experience table needed later?
+              portfolio: [],
+              platformLinks: { linkedin: '', github: '', upwork: '', fiverr: '' },
               payments: { ...initialStudent.payments, history: [] },
             };
+          }
+
+          // 2. If not found, try 'prelaunch_signups' (waitlist)
+          if (!studentData) {
+            const isNumericId = /^\d+$/.test(id);
+            const identifierColumn = isNumericId ? 'id' : 'cic_id';
+            const identifierValue = isNumericId ? Number(id) : id;
+            const { data: waitlistData } = await supabase
+              .from('prelaunch_signups')
+              .select('*')
+              .eq(identifierColumn, identifierValue)
+              .maybeSingle();
+
+            if (waitlistData) {
+              studentData = {
+                name: waitlistData.display_name || waitlistData.name || '',
+                email: waitlistData.email || '',
+                phone: waitlistData.phone || '',
+                avatarUrl: waitlistData.avatar_url || '',
+                location: waitlistData.location || 'San Francisco, CA',
+                title: waitlistData.title || '',
+                price: waitlistData.price || '$25/hr',
+                bio: waitlistData.aboutMe || waitlistData.description || '',
+                skills: waitlistData.skills || [],
+                experience: [],
+                portfolio: waitlistData.portfolio?.map((p: PortfolioItem) => ({
+                  id: p.id,
+                  title: p.title,
+                  description: p.description,
+                  link: p.link,
+                  imageUrl: (p as any).imageUrl,
+                })) || [],
+                platformLinks: {
+                  linkedin: waitlistData.contact?.linkedinUrl || '',
+                  github: waitlistData.contact?.githubUrl || '',
+                  upwork: waitlistData.contact?.upworkUrl || '',
+                  fiverr: waitlistData.contact?.fiverrUrl || '',
+                },
+                payments: { ...initialStudent.payments, history: [] },
+              };
+            }
           }
 
           if (!studentData) {
@@ -270,7 +273,7 @@ const StudentProfile = () => {
                 email: mockStudent.contact?.email || '',
                 phone: mockStudent.contact?.phone || '',
                 avatarUrl: mockStudent.avatarUrl || '',
-                location: '',
+                location: mockStudent.location || 'San Francisco, CA',
                 title: mockStudent.title || '',
                 price: mockStudent.price || '',
                 bio: mockStudent.aboutMe || mockStudent.description,
@@ -308,7 +311,7 @@ const StudentProfile = () => {
           }
           return;
         }
-        
+
         // Otherwise, load current user's profile
         if (!uid) return;
         const { data, error } = await supabase
@@ -326,401 +329,366 @@ const StudentProfile = () => {
         }
       } catch (e) {
         setCurrentUserId(null);
+      } finally {
+        setLoading(false);
       }
     })();
+    window.scrollTo(0, 0);
   }, [id]);
 
+  // --- Additional Icons ---
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6 md:p-8 max-w-7xl min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <PageHeader
-        title={canEdit ? "My Profile" : `${student.name}'s Profile`}
-        description={canEdit ? "Manage your profile information and settings" : "View student profile and information"}
-      >
-        <div className="flex gap-2">
-          {canEdit && <Button variant="outline" size="default"><Eye className="mr-2 h-4 w-4" /> Preview Profile</Button>}
-          {canEdit && (!isEditing ? (
-            <Button size="default" onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>
-          ) : (
-            <>
-              {canEdit && (
-                <>
-                  <Button onClick={handleSave}><span className="mr-2">Save</span></Button>
-                  <Button variant="outline" onClick={handleCancel}><span className="mr-2">Cancel</span></Button>
-                </>
+    <div className="container mx-auto p-6 md:p-8 max-w-7xl animate-in fade-in duration-500 bg-muted/20 min-h-screen">
+
+      {/* 1. TOP PROFILE HEADER CARD */}
+      <Card className="mb-6 border-none shadow-sm bg-card overflow-hidden">
+        <div className="p-6 md:p-8 flex flex-col md:flex-row gap-8 items-start md:items-center relative">
+
+          {/* Avatar & Basic Info */}
+          <div className="flex items-center gap-6 flex-1">
+            <div className="relative group shrink-0">
+              <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background shadow-md">
+                <AvatarImage src={displayStudent.avatarUrl} className="object-cover" />
+                <AvatarFallback className="text-2xl">{displayStudent.name?.charAt(0)}</AvatarFallback>
+              </Avatar>
+              {isEditing && (
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white" onClick={triggerAvatarPick}>
+                  <Image className="h-6 w-6" />
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={e => handleAvatarChange(e.target.files?.[0])} />
+                </div>
               )}
-            </>
-          ))}
-        </div>
-      </PageHeader>
-      <Card className="overflow-hidden bg-gradient-to-br from-card via-card to-muted/40">
-        <CardContent className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between py-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Avatar className="w-20 h-20 border-4 border-primary">
-              {displayStudent.avatarUrl ? (
-                <AvatarImage src={displayStudent.avatarUrl} alt={`${displayStudent.name} profile`} />
-              ) : (
-                <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-xl">
-                  <User className="w-8 h-8" />
-                </AvatarFallback>
-              )}
-            </Avatar>
-            <div className="space-y-2">
-              <div>
-                <CardTitle className="text-2xl">{displayStudent.name || fallbackStudent?.name || ''}</CardTitle>
-                <CardDescription className="text-base">
-                  {displayStudent.title || 'Student Freelancer'}
-                </CardDescription>
-              </div>
-              <p className="text-sm text-muted-foreground max-w-2xl">
-                {displayStudent.bio || 'Share a quick summary about your skills, past work, and what type of projects you enjoy tackling.'}
-              </p>
-              <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                {displayStudent.location && (
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin className="w-4 h-4" />
-                    {displayStudent.location}
-                  </span>
-                )}
-                {displayStudent.email && (
-                  <span className="inline-flex items-center gap-1">
-                    <Mail className="w-4 h-4" />
-                    {displayStudent.email}
-                  </span>
-                )}
-                {displayStudent.phone && (
-                  <span className="inline-flex items-center gap-1">
-                    <Phone className="w-4 h-4" />
-                    {displayStudent.phone}
-                  </span>
-                )}
-              </div>
             </div>
-          </div>
-          <div className="flex flex-col gap-4 items-start sm:items-end">
-            <div className="text-right">
-              <div className="text-muted-foreground text-sm">Default rate</div>
-              <div className="text-3xl font-semibold text-primary">{displayStudent.price || defaultRate}</div>
-            </div>
-            {displayStudent.skills?.length > 0 && (
-              <div className="flex flex-wrap gap-2 justify-end">
-                {displayStudent.skills.map((skill) => (
-                  <Badge key={skill} variant="secondary" className="px-3 py-1">
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-      <Tabs defaultValue="general" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="skills">Skills & Experience</TabsTrigger>
-          <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-          <TabsTrigger value="connections">Connections</TabsTrigger>
-        </TabsList>
-        <TabsContent value="general">
-          <Card>
-            <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-              <CardDescription>Update your personal details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+
+            <div className="space-y-2 flex-1">
               {isEditing ? (
                 <>
-                  {/* Edit layout (compact form grid) */}
-                  <div className="grid grid-cols-1 gap-4 items-center">
-                    <div className="flex justify-start">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={e => handleAvatarChange(e.target.files?.[0] || null)}
-                      />
-                      <div className="relative inline-block">
-                        {edited.avatarUrl ? (
-                          <Avatar className="h-16 w-16">
-                            <AvatarImage src={edited.avatarUrl} alt={edited.name} />
-                          </Avatar>
-                        ) : (
-                          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                            <User className="text-white" size={28} />
-                          </div>
-                        )}
-                        <button
-                          type="button"
-                          onClick={triggerAvatarPick}
-                          aria-label="Change photo"
-                          className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full border bg-background shadow hover:bg-secondary flex items-center justify-center"
-                        >
-                          <Image className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                      {edited.avatarUrl && (
-                        <button
-                          type="button"
-                          onClick={removeAvatar}
-                          className="ml-3 text-xs text-muted-foreground hover:text-red-600"
-                        >
-                          Remove photo
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-4">
-                      <div className="min-h-[72px] flex flex-col justify-start">
-                        <div className="text-sm font-medium text-muted-foreground">Full Name</div>
-                        <Input className="mt-1 h-9" value={edited.name} onChange={(e)=>setEdited({...edited, name: e.target.value})} placeholder="Your full name" />
-                      </div>
-                      <div className="min-h-[72px] flex flex-col justify-start">
-                        <div className="text-sm font-medium text-muted-foreground">Email</div>
-                        <Input className="mt-1 h-9" type="email" value={edited.email} onChange={(e)=>setEdited({...edited, email: e.target.value})} placeholder="name@example.com" />
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <div className="min-h-[72px] flex flex-col justify-start">
-                        <div className="text-sm font-medium text-muted-foreground">Phone</div>
-                        <Input className="mt-1 h-9" value={edited.phone} onChange={(e)=>setEdited({...edited, phone: e.target.value})} placeholder="(555) 123-4567" />
-                      </div>
-                      <div className="min-h-[72px] flex flex-col justify-start">
-                        <div className="text-sm font-medium text-muted-foreground">Location</div>
-                        <Input className="mt-1 h-9" value={edited.location} onChange={(e)=>setEdited({...edited, location: e.target.value})} placeholder="City, Country" />
-                      </div>
-                    </div>
-                    <div className="md:col-span-2">
-                      <div className="text-sm font-medium text-muted-foreground mb-1">Bio</div>
-                      <Textarea rows={2} className="resize-none text-sm" value={edited.bio} onChange={(e)=>setEdited({...edited, bio: e.target.value})} placeholder="Tell us about yourself" />
-                    </div>
-                  </div>
+                  <Input value={edited.name} onChange={e => setEdited({ ...edited, name: e.target.value })} className="font-bold text-2xl h-10 w-full max-w-md" placeholder="Full Name" />
+                  <Input value={edited.title} onChange={e => setEdited({ ...edited, title: e.target.value })} className="text-muted-foreground h-9 w-full max-w-md" placeholder="Professional Title" />
+                  <Input value={edited.location} onChange={e => setEdited({ ...edited, location: e.target.value })} className="h-8 w-64" placeholder="Location" />
                 </>
               ) : (
                 <>
-                  {/* View layout like the screenshot */}
-                  <div className="grid md:grid-cols-2 gap-8 items-start">
-                    <div className="flex items-start gap-4">
-                      {student.avatarUrl ? (
-                        <Avatar className="h-16 w-16">
-                          <AvatarImage src={student.avatarUrl} alt={student.name} />
-                        </Avatar>
-                      ) : (
-                        <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                          <User className="text-white" size={28} />
-                        </div>
-                      )}
-                      <div className="space-y-4">
-                        <div>
-                          <div className="text-sm font-medium text-muted-foreground">Full Name</div>
-                          <div className="text-base font-semibold">{student.name || '—'}</div>
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-muted-foreground">Email</div>
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Mail size={16} />
-                            <span>{student.email || '—'}</span>
-                          </div>
-                        </div>
-                      </div>
+                  <h1 className="text-3xl font-bold text-foreground">{displayStudent.name}</h1>
+                  <p className="text-lg text-muted-foreground font-medium flex items-center gap-2">
+                    {displayStudent.title || 'Freelancer'}
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground/30 mx-2" />
+                    <span className="text-sm font-normal flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {displayStudent.location}</span>
+                  </p>
+                  <div className="flex gap-4 mt-2">
+                    <div className="flex items-center gap-1.5 text-sm text-foreground bg-accent/50 px-3 py-1 rounded-full">
+                      <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                      {isEditing ? <Input value={edited.email} onChange={e => setEdited({ ...edited, email: e.target.value })} className="h-6 w-40 text-xs bg-transparent border-none p-0 focus-visible:ring-0" /> : (displayStudent.email || 'Email hidden')}
                     </div>
-                    <div className="space-y-4">
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Phone</div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Phone size={16} />
-                          <span>{student.phone || '—'}</span>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-muted-foreground">Location</div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <MapPin size={16} />
-                          <span>{student.location || '—'}</span>
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-1.5 text-sm text-foreground bg-accent/50 px-3 py-1 rounded-full">
+                      <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+                      {isEditing ? <Input value={edited.phone} onChange={e => setEdited({ ...edited, phone: e.target.value })} className="h-6 w-32 text-xs bg-transparent border-none p-0 focus-visible:ring-0" /> : (displayStudent.phone || 'Phone hidden')}
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground mb-1">Bio</div>
-                    <p className="text-muted-foreground text-sm">{student.bio || '—'}</p>
                   </div>
                 </>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </div>
 
-        {/* Skills & Experience */}
-        <TabsContent value="skills">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Skills</CardTitle>
-                <CardDescription>Technologies and tools you use</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {(edited.skills || []).map((skill) => (
-                    <div key={skill} className="flex items-center gap-1">
-                      <Badge>{skill}</Badge>
-                      {isEditing && (
-                        <Button size="sm" variant="ghost" onClick={() => removeSkill(skill)} aria-label={`Remove ${skill}`}>
-                          <X className="h-3 w-3" />
-                        </Button>
-                      )}
+          {/* Stats & Actions (Right Side) */}
+          <div className="flex flex-col items-end gap-6 min-w-[240px]">
+
+            {/* Edit/Action Buttons */}
+            <div className="flex gap-3">
+              {canEdit ? (
+                <>
+                  {!isEditing ? (
+                    <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}><Edit className="mr-2 h-4 w-4" /> Edit Profile</Button>
+                  ) : (
+                    <>
+                      <Button variant="default" size="sm" className="bg-primary hover:bg-primary/90" onClick={handleSave}><CheckCircle className="mr-2 h-4 w-4" /> Save</Button>
+                      <Button variant="ghost" size="sm" onClick={handleCancel}>Cancel</Button>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm">Hire Now</Button>
+                  <Button size="sm" variant="outline">Message</Button>
+                </>
+              )}
+            </div>
+
+            {/* Performance Stats Row */}
+            <div className="flex items-center gap-8 bg-muted/30 px-6 py-3 rounded-xl border border-border/50">
+              <div className="text-center">
+                <div className="text-sm text-muted-foreground font-medium mb-1">Job Success</div>
+                <div className="text-lg font-bold text-foreground flex items-center justify-center gap-1">
+                  100% <Badge variant="secondary" className="h-4 px-1 rounded-full bg-accent/20 text-accent-foreground text-[10px]"><Star className="w-2.5 h-2.5 fill-current" /></Badge>
+                </div>
+              </div>
+              <div className="w-px h-8 bg-border/60" />
+              <div className="text-center">
+                <div className="text-sm text-muted-foreground font-medium mb-1">Hourly Rate</div>
+                <div className="text-lg font-bold text-foreground">
+                  {isEditing ? <div className="flex items-center gap-1">$<Input value={edited.price} onChange={e => setEdited({ ...edited, price: e.target.value })} className="h-6 w-16 text-center p-0" /></div> : (displayStudent.price || '$25/hr')}
+                </div>
+              </div>
+              <div className="w-px h-8 bg-border/60" />
+              <div className="text-center">
+                <div className="text-sm text-muted-foreground font-medium mb-1">Total Earned</div>
+                <div className="text-lg font-bold text-foreground">
+                  ${displayStudent.payments.history
+                    .filter(p => p.status === 'paid')
+                    .reduce((acc, curr) => acc + (parseFloat(curr.amount.replace(/[^0-9.-]+/g, "")) || 0), 0)
+                    .toLocaleString()}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* 2. MAIN LAYOUT: TABS & SIDEBAR */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+
+        {/* LEFT MAIN CONTENT (Tabs) */}
+        <div className="lg:col-span-3">
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="w-full justify-start bg-transparent border-b border-border p-0 h-auto rounded-none gap-6 mb-6">
+              <TabsTrigger value="overview" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-muted/10 data-[state=active]:shadow-none rounded-t-md py-3 px-4 text-base font-medium text-muted-foreground data-[state=active]:text-foreground transition-all">Overview</TabsTrigger>
+              <TabsTrigger value="skills" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-muted/10 data-[state=active]:shadow-none rounded-t-md py-3 px-4 text-base font-medium text-muted-foreground data-[state=active]:text-foreground transition-all">Skills & Expertise</TabsTrigger>
+              <TabsTrigger value="portfolio" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-muted/10 data-[state=active]:shadow-none rounded-t-md py-3 px-4 text-base font-medium text-muted-foreground data-[state=active]:text-foreground transition-all">Portfolio</TabsTrigger>
+              <TabsTrigger value="history" className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:bg-muted/10 data-[state=active]:shadow-none rounded-t-md py-3 px-4 text-base font-medium text-muted-foreground data-[state=active]:text-foreground transition-all">Work History</TabsTrigger>
+            </TabsList>
+
+            {/* TAB: OVERVIEW */}
+            <TabsContent value="overview" className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              {/* About Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Additional Overview</h3>
+                {isEditing ? (
+                  <Textarea rows={6} value={edited.bio} onChange={e => setEdited({ ...edited, bio: e.target.value })} className="text-base leading-relaxed bg-background" placeholder="Write a compelling bio..." />
+                ) : (
+                  <p className="text-base text-muted-foreground leading-relaxed whitespace-pre-wrap">{displayStudent.bio}</p>
+                )}
+              </div>
+
+              {/* Connected Accounts & Languages Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Linked Accounts</h3>
+                  <div className="space-y-4">
+                    {[
+                      { label: 'LinkedIn', icon: Linkedin, key: 'linkedin', color: 'text-[#0077b5]' },
+                      { label: 'GitHub', icon: Github, key: 'github', color: 'text-foreground' },
+                      { label: 'Upwork', icon: UpworkIcon, key: 'upwork', color: 'text-[#14a800]' },
+                      { label: 'Fiverr', icon: FiverrIcon, key: 'fiverr', color: 'text-[#1dbf73]' }
+                    ].map(platform => (
+                      <div key={platform.key} className="flex items-center justify-between group">
+                        <div className="flex items-center gap-3 text-muted-foreground">
+                          <platform.icon className={`w-5 h-5 ${platform.color}`} />
+                          <span className="text-sm font-medium">{platform.label}</span>
+                        </div>
+                        {isEditing ? (
+                          <Input className="h-8 w-36 text-xs" placeholder="URL..." value={(edited.platformLinks as any)[platform.key] || ''} onChange={e => setEdited({ ...edited, platformLinks: { ...edited.platformLinks, [platform.key]: e.target.value } })} />
+                        ) : (
+                          (displayStudent.platformLinks as any)[platform.key] ? (
+                            <a href={(displayStudent.platformLinks as any)[platform.key]} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline font-medium flex items-center gap-1">Verified <CheckCircle className="w-3 h-3" /></a>
+                          ) : <span className="text-xs text-muted-foreground italic">Not Linked</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Languages</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">English</span>
+                      <span className="font-medium text-foreground">Native or Bilingual</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Spanish</span>
+                      <span className="font-medium text-foreground">Conversational</span>
+                    </div>
+                    {isEditing && <Button variant="ghost" size="sm" className="w-full text-xs mt-2"><Plus className="w-3 h-3 mr-1" /> Add Language</Button>}
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* TAB: SKILLS */}
+            <TabsContent value="skills" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Skills Assessment</h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
+                  {(edited.skills || []).map((skill, i) => (
+                    <div key={skill} className="flex flex-col gap-2 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-foreground">{skill}</span>
+                        {isEditing && <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeSkill(skill)}><X className="h-3 w-3" /></Button>}
+                      </div>
+                      <div className="flex gap-1 text-yellow-500">
+                        <Star className="w-4 h-4 fill-current" />
+                        <Star className="w-4 h-4 fill-current" />
+                        <Star className="w-4 h-4 fill-current" />
+                        <Star className="w-4 h-4 fill-current" />
+                        <Star className="w-4 h-4 text-muted/30" />
+                        <span className="text-xs text-muted-foreground ml-2 font-medium">4.0</span>
+                      </div>
                     </div>
                   ))}
+                  {isEditing && (
+                    <div className="flex items-center gap-2 p-3 bg-muted/20 rounded-lg border border-dashed border-muted-foreground/30">
+                      <Input value={newSkill} onChange={e => setNewSkill(e.target.value)} placeholder="Add new skill..." className="h-9 bg-transparent border-none focus-visible:ring-0" onKeyDown={e => e.key === 'Enter' && addSkill()} />
+                      <Button size="sm" variant="ghost" onClick={addSkill}><Plus className="h-4 w-4" /></Button>
+                    </div>
+                  )}
                 </div>
-                {isEditing && (
-                  <div className="mt-3 flex items-center gap-2">
-                    <Input
-                      placeholder="Add a skill"
-                      value={newSkill}
-                      onChange={(e)=>setNewSkill(e.target.value)}
-                      className="h-9 max-w-xs"
-                    />
-                    <Button variant="outline" className="h-9 px-3" onClick={addSkill}>
-                      <Plus className="mr-1 h-3 w-3" /> Add
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              </div>
+            </TabsContent>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Experience</CardTitle>
-                <CardDescription>Your recent roles and projects</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {edited.experience.length === 0 && !isEditing && (
-                  <p className="text-sm text-muted-foreground">No experience added yet.</p>
-                )}
-                {edited.experience.map((exp, idx) => (
-                  <div key={idx} className="flex items-start justify-between gap-3 border border-border/60 rounded-lg p-3">
-                    <div>
-                      <div className="font-medium">{exp.title}</div>
-                      <div className="text-sm text-muted-foreground">{exp.company} {exp.duration ? `• ${exp.duration}` : ''}</div>
-                      {exp.description && <div className="text-sm mt-1 text-muted-foreground">{exp.description}</div>}
+            {/* TAB: PORTFOLIO */}
+            <TabsContent value="portfolio" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex justify-between items-center mb-6 border-b pb-2">
+                <h3 className="text-lg font-semibold">Portfolio & Projects</h3>
+                {isEditing && <Button size="sm" onClick={addPortfolio}><Plus className="mr-2 h-4 w-4" /> Add Project</Button>}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {edited.portfolio.map(item => (
+                  <Card key={item.id} className="overflow-hidden group hover:shadow-md transition-all border-border">
+                    <div className="aspect-video bg-muted relative">
+                      {item.imageUrl ? <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center w-full h-full text-muted-foreground"><Image className="h-10 w-10 opacity-20" /></div>}
+                      <div className="absolute top-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-1 rounded">STARTING AT $500</div>
                     </div>
-                    {isEditing && (
-                      <Button size="sm" variant="ghost" className="text-red-500" onClick={()=>removeExperience(idx)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+                    <CardContent className="p-4 space-y-2">
+                      {isEditing ? (
+                        <>
+                          <Input value={item.title} onChange={e => {
+                            const arr = [...edited.portfolio]; const idx = arr.findIndex(p => p.id === item.id); if (idx >= 0) arr[idx].title = e.target.value; setEdited({ ...edited, portfolio: arr });
+                          }} className="font-bold h-8" />
+                          <Textarea value={item.description} onChange={e => {
+                            const arr = [...edited.portfolio]; const idx = arr.findIndex(p => p.id === item.id); if (idx >= 0) arr[idx].description = e.target.value; setEdited({ ...edited, portfolio: arr });
+                          }} rows={2} className="text-xs" />
+                        </>
+                      ) : (
+                        <>
+                          <div className="font-bold text-foreground truncate">{item.title}</div>
+                          <div className="text-sm text-muted-foreground line-clamp-2">{item.description}</div>
+                        </>
+                      )}
+                      {isEditing && <Button variant="destructive" size="sm" className="w-full mt-2 h-7 text-xs" onClick={() => removePortfolio(item.id)}>Remove</Button>}
+                    </CardContent>
+                  </Card>
                 ))}
-                {isEditing && (
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
-                    <Input placeholder="Title" value={newExp.title} onChange={(e)=>setNewExp({...newExp, title: e.target.value})} />
-                    <Input placeholder="Company" value={newExp.company} onChange={(e)=>setNewExp({...newExp, company: e.target.value})} />
-                    <Input placeholder="Duration (optional)" value={newExp.duration} onChange={(e)=>setNewExp({...newExp, duration: e.target.value})} />
-                    <Button onClick={addExperience}><Plus className="h-4 w-4 mr-1" /> Add</Button>
-                    <div className="md:col-span-4">
-                      <Input placeholder="Short description (optional)" value={newExp.description} onChange={(e)=>setNewExp({...newExp, description: e.target.value})} />
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
+              </div>
+            </TabsContent>
 
-        {/* Portfolio */}
-        <TabsContent value="portfolio">
-          <Card>
-            <CardHeader>
-              <CardTitle>Portfolio</CardTitle>
-              <CardDescription>Showcase your best work</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {edited.portfolio.length === 0 && !isEditing && (
-                <p className="text-sm text-muted-foreground">No portfolio items yet.</p>
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {edited.portfolio.map((item) => (
-                  <div key={item.id} className="rounded-lg border border-border/60 p-3">
-                    <div className="font-medium">{item.title}</div>
-                    {item.description && <div className="text-sm text-muted-foreground mt-1">{item.description}</div>}
-                    {item.link && (
-                      <a href={item.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-primary mt-2">
-                        <ExternalLink className="h-3 w-3" /> View
-                      </a>
-                    )}
-                    {isEditing && (
-                      <div className="mt-2">
-                        <Button size="sm" variant="ghost" className="text-red-500" onClick={()=>removePortfolio(item.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+            {/* TAB: WORK HISTORY */}
+            <TabsContent value="history" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">Employment History</h3>
+                <div className="space-y-6">
+                  {(edited.experience || []).map((exp, i) => (
+                    <div key={i} className="flex gap-4">
+                      <div className="mt-1">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+                          {exp.company?.charAt(0) || 'C'}
+                        </div>
                       </div>
-                    )}
+                      <div className="flex-1 space-y-1">
+                        <div className="flex justify-between">
+                          <h4 className="font-bold text-foreground">{exp.title}</h4>
+                          <span className="text-xs text-muted-foreground font-medium bg-muted px-2 py-1 rounded">{exp.duration || '2023 - Present'}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{exp.description}</p>
+                        {isEditing && <Button variant="link" className="h-auto p-0 text-destructive text-xs mt-1" onClick={() => removeExperience(i)}>Remove Entry</Button>}
+                      </div>
+                    </div>
+                  ))}
+                  {isEditing && <div className="text-center pt-4 border-t"><Button variant="outline" onClick={addExperience}><Plus className="mr-2 h-4 w-4" /> Add Employment</Button></div>}
+                </div>
+              </div>
+            </TabsContent>
+
+          </Tabs>
+        </div>
+
+
+        {/* RIGHT SIDEBAR (Sticky) */}
+        <div className="lg:col-span-1 space-y-6">
+
+          {/* Current Status Widget */}
+          <Card className="border-none shadow-sm bg-card">
+            <CardHeader className="pb-3 bg-muted/30 rounded-t-xl">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-primary uppercase tracking-wide">Current Status</span>
+                <Badge variant="outline" className="bg-background text-[10px]">Available Now</Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="space-y-4 relative pl-4 border-l-2 border-primary/20">
+                {[
+                  { status: 'Available', time: 'Now', current: true },
+                  { status: 'In Design Review', time: '2d ago', current: false },
+                  { status: 'Completed Project', time: '1w ago', current: false }
+                ].map((item, i) => (
+                  <div key={i} className="relative">
+                    <div className={`absolute -left-[21px] top-1.5 w-3 h-3 rounded-full border-2 border-card ${item.current ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                    <div className={`text-sm font-medium ${item.current ? 'text-foreground' : 'text-muted-foreground'}`}>{item.status}</div>
+                    <div className="text-xs text-muted-foreground">{item.time}</div>
                   </div>
                 ))}
               </div>
-              {isEditing && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
-                  <Input placeholder="Title" value={newPortfolio.title} onChange={(e)=>setNewPortfolio({...newPortfolio, title: e.target.value})} />
-                  <Input placeholder="Link (optional)" value={newPortfolio.link} onChange={(e)=>setNewPortfolio({...newPortfolio, link: e.target.value})} />
-                  <Button onClick={addPortfolio}><Plus className="h-4 w-4 mr-1" /> Add</Button>
-                  <div className="md:col-span-3">
-                    <Input placeholder="Short description (optional)" value={newPortfolio.description} onChange={(e)=>setNewPortfolio({...newPortfolio, description: e.target.value})} />
+            </CardContent>
+          </Card>
+
+        </div>
+      </div>
+
+      {/* 3. REVIEWS GRID (Bottom) */}
+      <div className="mt-12 space-y-6">
+        <h3 className="text-xl font-bold text-foreground">Client Reviews</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {mockReviews.filter(r => r.targetType === 'student').map(review => (
+            <Card key={review.id} className="border-none shadow-sm bg-card hover:shadow-md transition-all h-full flex flex-col">
+              <CardContent className="p-6 flex-1 flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10 border border-border">
+                    <AvatarImage src={review.reviewerAvatar} />
+                    <AvatarFallback>{review.reviewerName.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-semibold text-foreground text-sm">{review.reviewerName}</div>
+                    <div className="text-xs text-muted-foreground">Verified Client</div>
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Connections */}
-        <TabsContent value="connections">
-          <Card>
-            <CardHeader>
-              <CardTitle>Platform Connections</CardTitle>
-              <CardDescription>Link your professional profiles</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium flex items-center gap-2"><Linkedin className="h-4 w-4" /> LinkedIn</label>
-                  {isEditing ? (
-                    <Input placeholder="https://linkedin.com/in/username" value={edited.platformLinks.linkedin || ''} onChange={(e)=>setEdited({...edited, platformLinks: { ...edited.platformLinks, linkedin: e.target.value }})} />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{edited.platformLinks.linkedin || 'Not connected'}</p>
-                  )}
+                <div className="text-sm text-muted-foreground leading-relaxed flex-1">
+                  "{review.comment}"
                 </div>
-                <div>
-                  <label className="text-sm font-medium flex items-center gap-2"><Github className="h-4 w-4" /> GitHub</label>
-                  {isEditing ? (
-                    <Input placeholder="https://github.com/username" value={edited.platformLinks.github || ''} onChange={(e)=>setEdited({...edited, platformLinks: { ...edited.platformLinks, github: e.target.value }})} />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{edited.platformLinks.github || 'Not connected'}</p>
-                  )}
+                <div className="pt-4 border-t border-border flex items-center gap-4 mt-auto">
+                  <div className="flex items-center gap-1 text-yellow-500">
+                    <Star className="w-3.5 h-3.5 fill-current" />
+                    <Star className="w-3.5 h-3.5 fill-current" />
+                    <Star className="w-3.5 h-3.5 fill-current" />
+                    <Star className="w-3.5 h-3.5 fill-current" />
+                    <Star className="w-3.5 h-3.5 fill-current" />
+                    <span className="text-xs font-bold text-foreground ml-1">5.0</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">2 weeks ago</div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium flex items-center gap-2"><UpworkIcon className="h-4 w-4" /> Upwork</label>
-                  {isEditing ? (
-                    <Input placeholder="https://upwork.com/freelancers/username" value={edited.platformLinks.upwork || ''} onChange={(e)=>setEdited({...edited, platformLinks: { ...edited.platformLinks, upwork: e.target.value }})} />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{edited.platformLinks.upwork || 'Not connected'}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium flex items-center gap-2"><FiverrIcon className="h-4 w-4" /> Fiverr</label>
-                  {isEditing ? (
-                    <Input placeholder="https://fiverr.com/username" value={edited.platformLinks.fiverr || ''} onChange={(e)=>setEdited({...edited, platformLinks: { ...edited.platformLinks, fiverr: e.target.value }})} />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{edited.platformLinks.fiverr || 'Not connected'}</p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        
-
-      </Tabs>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

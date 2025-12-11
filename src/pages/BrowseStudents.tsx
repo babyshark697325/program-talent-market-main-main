@@ -10,56 +10,7 @@ import StudentServiceCard from "@/components/StudentServiceCard";
 import PageHeader from '@/components/PageHeader';
 import { StudentService } from '@/types/student';
 import { supabase } from "@/integrations/supabase/client";
-
-// Updated interface to match the profiles table structure
-export interface PrelaunchStudent {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  city?: string;
-  role: string;
-  created_at: string;
-  status?: string;
-  cic_id?: string;
-}
-
-// Transform database profile to component format
-const transformStudent = (dbStudent: PrelaunchStudent): StudentService => {
-  let displayName = '';
-  if (dbStudent.first_name && dbStudent.last_name) {
-    displayName = `${dbStudent.first_name} ${dbStudent.last_name}`;
-  } else if (dbStudent.first_name) {
-    displayName = dbStudent.first_name;
-  } else if (dbStudent.last_name) {
-    displayName = dbStudent.last_name;
-  } else if (dbStudent.email) {
-    displayName = dbStudent.email.split('@')[0];
-  } else {
-    displayName = 'Unnamed Student';
-  }
-  return {
-    id: parseInt(dbStudent.id.slice(-8), 16),
-    cic_id: dbStudent.cic_id || dbStudent.id,
-    name: displayName,
-    title: 'Student',
-    description: 'Prelaunch signup student',
-    avatarUrl: '',
-    skills: [],
-    price: '$25/hr',
-    affiliation: 'student',
-    aboutMe: '',
-    contact: {
-      email: dbStudent.email,
-      phone: undefined,
-      linkedinUrl: undefined,
-      githubUrl: undefined,
-      upworkUrl: undefined,
-      fiverrUrl: undefined,
-    },
-    portfolio: [],
-  };
-};
+import { transformStudent } from "@/utils/studentUtils";
 
 const BrowseStudents = () => {
   const navigate = useNavigate();
@@ -167,8 +118,8 @@ const BrowseStudents = () => {
   }, [students, searchQuery, selectedSkills, priceRange, sortBy]);
 
   const handleStudentView = (cic_id: string) => {
-  console.log('[BrowseStudents] handleStudentView called for:', cic_id);
-  navigate(`/view-student/${cic_id}`);
+    console.log('[BrowseStudents] handleStudentView called for:', cic_id);
+    navigate(`/view-student/${cic_id}`);
   };
 
   const handleClearFilters = () => {
@@ -249,11 +200,10 @@ const BrowseStudents = () => {
               <button
                 key={sort.value}
                 onClick={() => setSortBy(sort.value as any)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
-                  sortBy === sort.value
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${sortBy === sort.value
                     ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25'
                     : 'bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5'
-                }`}
+                  }`}
               >
                 {sort.label}
               </button>
@@ -268,11 +218,10 @@ const BrowseStudents = () => {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setSelectedSkills([])}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
-                selectedSkills.length === 0
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${selectedSkills.length === 0
                   ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25'
                   : 'bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5'
-              }`}
+                }`}
             >
               All Skills
             </button>
@@ -286,11 +235,10 @@ const BrowseStudents = () => {
                     setSelectedSkills([...selectedSkills, skill]);
                   }
                 }}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
-                  selectedSkills.includes(skill)
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${selectedSkills.includes(skill)
                     ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25'
                     : 'bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5'
-                }`}
+                  }`}
               >
                 {skill}
               </button>
@@ -314,7 +262,7 @@ const BrowseStudents = () => {
       </div>
 
       {filteredStudents.length > 0 ? (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8 items-start">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8 items-start">
           {filteredStudents.map((student, index) => (
             <div
               key={student.cic_id}
