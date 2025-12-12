@@ -210,7 +210,7 @@ const StudentProfile = () => {
               email: profileData.email || '',
               phone: '', // profiles table might not have phone exposed or distinct col
               avatarUrl: profileData.avatar_url || '',
-              location: profileData.location || 'San Francisco, CA', // Fallback location if missing
+              location: profileData.city || profileData.location || 'San Francisco, CA', // Fallback location if missing
               title: profileData.title || 'Student',
               price: profileData.hourly_rate || '$25/hr', // Map snake_case if needed, assuming col exists or defaults
               bio: profileData.bio || profileData.description || '',
@@ -234,12 +234,13 @@ const StudentProfile = () => {
               .maybeSingle();
 
             if (waitlistData) {
+              const waitlistName = [waitlistData.first_name, waitlistData.last_name].filter(Boolean).join(' ').trim();
               studentData = {
-                name: waitlistData.display_name || waitlistData.name || '',
+                name: waitlistName || waitlistData.display_name || waitlistData.name || (waitlistData.email ? waitlistData.email.split('@')[0] : 'Unnamed Student'),
                 email: waitlistData.email || '',
                 phone: waitlistData.phone || '',
                 avatarUrl: waitlistData.avatar_url || '',
-                location: waitlistData.location || 'San Francisco, CA',
+                location: waitlistData.city || waitlistData.location || 'San Francisco, CA',
                 title: waitlistData.title || '',
                 price: waitlistData.price || '$25/hr',
                 bio: waitlistData.aboutMe || waitlistData.description || '',
