@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { RoleProvider } from "./contexts/RoleContext";
 import { SavedJobsProvider } from "./contexts/SavedJobsContext";
+import { PresenceProvider } from "./contexts/PresenceContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useRole } from "./contexts/RoleContext";
 
@@ -43,6 +44,7 @@ import ClientProfile from "./pages/ClientProfile";
 import StudentResources from "./pages/StudentResources";
 import BrowseStudents from "./pages/BrowseStudents";
 import StudentProfile from "./pages/StudentProfile";
+import HireStudent from "./pages/HireStudent";
 import ClientStudentView from "./pages/ClientStudentView";
 import StudentSettings from "./pages/StudentSettings";
 import AllResources from "./pages/AllResources";
@@ -102,306 +104,315 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider 
-      attribute="class" 
-      defaultTheme="light" 
-      enableSystem 
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="light"
+      enableSystem
       disableTransitionOnChange
       storageKey="myvillage-theme"
     >
       <AuthProvider>
         <RoleProvider>
           <SavedJobsProvider>
-            <Router>
-            <GlobalPreferencesBoot />
-            <Routes>
-              {/* ---------- PUBLIC ---------- */}
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/" element={<Layout><Index /></Layout>} />
+            <PresenceProvider>
+              <Router>
+                <GlobalPreferencesBoot />
+                <Routes>
+                  {/* ---------- PUBLIC ---------- */}
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/" element={<Layout><Index /></Layout>} />
 
-              {/* ---------- CLIENT (protected) ---------- */}
-              <Route
-                path="/client-dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Layout><ClientDashboardPage /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/manage-jobs"
-                element={
-                  <ProtectedRoute>
-                    <Layout><ManageJobs /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/post-job"
-                element={
-                  <ProtectedRoute>
-                    <Layout><PostJob /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/job-posted"
-                element={
-                  <ProtectedRoute>
-                    <Layout><JobPostSuccess /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/browse-jobs"
-                element={
-                  <ProtectedRoute>
-                    <Layout><BrowseJobs /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/my-applications"
-                element={
-                  <ProtectedRoute>
-                    <Layout><MyApplications /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/saved-jobs"
-                element={
-                  <ProtectedRoute>
-                    <Layout><SavedJobs /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/job/:id"
-                element={
-                  <ProtectedRoute>
-                    <Layout><JobDetail /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <Layout><Profile /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/client/settings"
-                element={
-                  <ProtectedRoute>
-                    <Layout><ClientSettings /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/client/profile"
-                element={
-                  <ProtectedRoute>
-                    <Layout><ClientProfile /></Layout>
-                  </ProtectedRoute>
-                }
-              />
+                  {/* ---------- CLIENT (protected) ---------- */}
+                  <Route
+                    path="/client-dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><ClientDashboardPage /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/manage-jobs"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><ManageJobs /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/post-job"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><PostJob /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/job-posted"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><JobPostSuccess /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/browse-jobs"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><BrowseJobs /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/my-applications"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><MyApplications /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/saved-jobs"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><SavedJobs /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/job/:id"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><JobDetail /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><Profile /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/client/settings"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><ClientSettings /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/client/profile"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><ClientProfile /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-              {/* ---------- STUDENT (protected) ---------- */}
-              <Route
-                path="/student-dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Layout><StudentDashboardPage /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              {/* Resources paths so the sidebar link won’t 404 */}
-              <Route
-                path="/resources"
-                element={
-                  <ProtectedRoute>
-                    <Layout><StudentResources /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/student/resources"
-                element={
-                  <ProtectedRoute>
-                    <Layout><StudentResources /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/all-resources"
-                element={
-                  <ProtectedRoute>
-                    <Layout><AllResources /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/browse-students"
-                element={
-                  <ProtectedRoute>
-                    <Layout><BrowseStudents /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/student/settings"
-                element={
-                  <ProtectedRoute>
-                    <Layout><StudentSettings /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/payouts"
-                element={
-                  <ProtectedRoute>
-                    <Layout><Payouts /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/student/:id"
-                element={
-                  <ProtectedRoute>
-                    <Layout><StudentProfile /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/view-student/:id"
-                element={
-                  <ProtectedRoute>
-                    <Layout><ClientStudentView /></Layout>
-                  </ProtectedRoute>
-                }
-              />
+                  {/* ---------- STUDENT (protected) ---------- */}
+                  <Route
+                    path="/student-dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><StudentDashboardPage /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  {/* Resources paths so the sidebar link won’t 404 */}
+                  <Route
+                    path="/resources"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><StudentResources /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/student/resources"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><StudentResources /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/all-resources"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><AllResources /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/browse-students"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><BrowseStudents /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/student/settings"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><StudentSettings /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/payouts"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><Payouts /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/student/:id"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><StudentProfile /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/view-student/:id"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><ClientStudentView /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/hire/:id"
+                    element={
+                      <ProtectedRoute>
+                        <Layout><HireStudent /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-              {/* ---------- ADMIN (protected + role) ---------- */}
-              <Route
-                path="/admin-dashboard"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Layout><AdminDashboardPage /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/users"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Layout><AdminUsers /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/analytics"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Layout><AdminAnalytics /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/stats"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Layout><AdminStats /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/reports"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Layout><AdminReports /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/settings"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Layout><AdminSettings /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/review-jobs"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Layout><AdminReviewJobs /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/spotlight"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Layout><AdminSpotlightSuccess /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/learning-resources"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Layout><AdminLearningResources /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/learning-resources/list"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Layout><AdminLearningResourcesList /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/learning-resources/edit/:id"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Layout><AdminLearningResourceEdit /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/users/list"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Layout><AdminUsersList /></Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/waitlist"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Layout><AdminWaitlist /></Layout>
-                  </ProtectedRoute>
-                }
-              />
+                  {/* ---------- ADMIN (protected + role) ---------- */}
+                  <Route
+                    path="/admin-dashboard"
+                    element={
+                      <ProtectedRoute requiredRole="admin">
+                        <Layout><AdminDashboardPage /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/users"
+                    element={
+                      <ProtectedRoute requiredRole="admin">
+                        <Layout><AdminUsers /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/analytics"
+                    element={
+                      <ProtectedRoute requiredRole="admin">
+                        <Layout><AdminAnalytics /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/stats"
+                    element={
+                      <ProtectedRoute requiredRole="admin">
+                        <Layout><AdminStats /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/reports"
+                    element={
+                      <ProtectedRoute requiredRole="admin">
+                        <Layout><AdminReports /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/settings"
+                    element={
+                      <ProtectedRoute requiredRole="admin">
+                        <Layout><AdminSettings /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/review-jobs"
+                    element={
+                      <ProtectedRoute requiredRole="admin">
+                        <Layout><AdminReviewJobs /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/spotlight"
+                    element={
+                      <ProtectedRoute requiredRole="admin">
+                        <Layout><AdminSpotlightSuccess /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/learning-resources"
+                    element={
+                      <ProtectedRoute requiredRole="admin">
+                        <Layout><AdminLearningResources /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/learning-resources/list"
+                    element={
+                      <ProtectedRoute requiredRole="admin">
+                        <Layout><AdminLearningResourcesList /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/learning-resources/edit/:id"
+                    element={
+                      <ProtectedRoute requiredRole="admin">
+                        <Layout><AdminLearningResourceEdit /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/users/list"
+                    element={
+                      <ProtectedRoute requiredRole="admin">
+                        <Layout><AdminUsersList /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/waitlist"
+                    element={
+                      <ProtectedRoute requiredRole="admin">
+                        <Layout><AdminWaitlist /></Layout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-              {/* ---------- 404 ---------- */}
-              <Route path="/waitlist" element={<Waitlist />} />
-              <Route path="*" element={<Layout><NotFound /></Layout>} />
-            </Routes>
-            </Router>
-
-            {/* shadcn toasts host */}
-            <Toaster />
+                  {/* ---------- 404 ---------- */}
+                  <Route path="/waitlist" element={<Waitlist />} />
+                  <Route path="*" element={<Layout><NotFound /></Layout>} />
+                </Routes>
+                {/* shadcn toasts host */}
+                <Toaster />
+              </Router>
+            </PresenceProvider>
           </SavedJobsProvider>
-        </RoleProvider>
-      </AuthProvider>
-    </ThemeProvider>
+        </RoleProvider >
+      </AuthProvider >
+    </ThemeProvider >
   );
 };
 

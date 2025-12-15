@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { mockJobs, JobPosting } from "@/data/mockJobs";
+import { JobPosting } from "@/data/mockJobs";
+import { supabase } from "@/integrations/supabase/client";
+import { Job } from "@/integrations/supabase/types/jobs";
 import JobCard from "@/components/JobCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -9,7 +11,9 @@ import PageHeader from "@/components/PageHeader";
 
 const BrowseJobs = () => {
   const navigate = useNavigate();
-  const [filteredJobs, setFilteredJobs] = useState<JobPosting[]>(mockJobs);
+  const [jobs, setJobs] = useState<JobPosting[]>([]);
+  const [filteredJobs, setFilteredJobs] = useState<JobPosting[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [budgetRange, setBudgetRange] = useState<[number, number]>([0, 1000]);
@@ -17,19 +21,49 @@ const BrowseJobs = () => {
 
   // Scroll to top when component mounts
   useEffect(() => {
-    window.scrollTo({ 
-      top: 0, 
-      behavior: 'smooth' 
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
     });
+    fetchJobs();
   }, []);
+
+  const fetchJobs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*');
+
+      if (error) throw error;
+
+      if (data) {
+        const mappedJobs: JobPosting[] = data.map((job: Job) => ({
+          ...job,
+          id: job.id,
+          postedDate: job.posted_date,
+          contactEmail: job.contact_email,
+          experienceLevel: job.experience_level,
+          // Handle potential missing optional fields if DB allows nulls, though our seed assumes not null
+          location: job.location || 'Remote',
+          requirements: job.requirements || []
+        }));
+        setJobs(mappedJobs);
+        setFilteredJobs(mappedJobs);
+      }
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Get all unique skills from jobs
   const allSkills = Array.from(
-    new Set(mockJobs.flatMap(job => job.skills))
+    new Set(jobs.flatMap(job => job.skills))
   ).sort();
 
   useEffect(() => {
-    let filtered = mockJobs;
+    let filtered = jobs;
 
     if (searchQuery) {
       filtered = filtered.filter(
@@ -90,8 +124,8 @@ const BrowseJobs = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6 space-y-6">
-        <PageHeader 
-          title="Browse Job Opportunities" 
+        <PageHeader
+          title="Browse Job Opportunities"
           description="Find exciting projects that match your skills and interests"
         />
 
@@ -127,11 +161,10 @@ const BrowseJobs = () => {
                 <button
                   key={sort.value}
                   onClick={() => setSortBy(sort.value as any)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
-                    sortBy === sort.value 
-                      ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${sortBy === sort.value
+                      ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25"
                       : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
-                  }`}
+                    }`}
                 >
                   {sort.label}
                 </button>
@@ -146,11 +179,10 @@ const BrowseJobs = () => {
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setSelectedSkills([])}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
-                  selectedSkills.length === 0 
-                    ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${selectedSkills.length === 0
+                    ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25"
                     : "bg-secondary/60 dark:bg-[#040b17] text-primary border border-primary/20 dark:border-white/10 hover:bg-primary/5 dark:hover:bg-white/5"
-                }`}
+                  }`}
               >
                 All Skills
               </button>
@@ -164,11 +196,10 @@ const BrowseJobs = () => {
                       setSelectedSkills([...selectedSkills, skill]);
                     }
                   }}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${
-                    selectedSkills.includes(skill)
-                      ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${selectedSkills.includes(skill)
+                      ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25"
                       : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
-                  }`}
+                    }`}
                 >
                   {skill}
                 </button>
@@ -194,8 +225,8 @@ const BrowseJobs = () => {
         {filteredJobs.length > 0 ? (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-stretch">
             {filteredJobs.map((job, index) => (
-              <div 
-                key={job.id} 
+              <div
+                key={job.id}
                 className="animate-fade-in hover:scale-[1.02] transition-transform duration-200 flex"
                 style={{ animationDelay: `${0.1 * index}s` }}
               >
@@ -216,10 +247,10 @@ const BrowseJobs = () => {
                 No Jobs Found
               </h3>
               <p className="text-muted-foreground mb-6">
-                We couldn't find any jobs matching your criteria. 
+                We couldn't find any jobs matching your criteria.
                 Try adjusting your search or filters.
               </p>
-              <button 
+              <button
                 onClick={handleClearFilters}
                 className="bg-gradient-to-r from-primary to-primary/80 text-white px-6 py-2 rounded-lg hover:shadow-lg transition-shadow"
               >

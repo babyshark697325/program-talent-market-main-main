@@ -1,12 +1,15 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { usePresence } from '@/contexts/PresenceContext';
 import PageHeader from '@/components/PageHeader';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Mail, Phone, MapPin, Eye, Edit, Image, User, X, Plus, Trash2, ExternalLink, Linkedin, Github, Briefcase, MessageCircle, Star, FolderOpen, CheckCircle, Clock, Globe, Shield, Heart } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
 import { mockStudents } from '@/data/mockStudents';
-import { mockReviews } from '@/data/mockReviews';
+
+import { Review } from "@/integrations/supabase/types/reviews";
 
 // Brand icons for platform links (prefer official SVGs in /public/brands, fallback to colored badge)
 const UpworkIcon = ({ className }: { className?: string }) => (
@@ -22,7 +25,7 @@ const FiverrIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-import { useParams } from 'react-router-dom';
+
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,6 +64,7 @@ interface StudentState {
   portfolio: PortfolioItem[];
   platformLinks: PlatformLinks;
   payments: PaymentsState;
+  status: 'Available' | 'Busy' | 'Open to Work' | 'Offline';
 }
 
 const StudentProfile = () => {
@@ -100,6 +104,7 @@ const StudentProfile = () => {
     }
   };
   const { id } = useParams();
+  const navigate = useNavigate();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const canEdit = !id || (currentUserId && id === currentUserId);
   const [isEditing, setIsEditing] = useState(false);
@@ -147,12 +152,20 @@ const StudentProfile = () => {
       taxW9Submitted: false,
       history: [],
     },
+    status: 'Available',
   };
   const [student, setStudent] = useState<StudentState>(initialStudent);
   const [edited, setEdited] = useState<StudentState>(initialStudent);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const displayStudent = isEditing ? edited : student;
+
+  const { onlineUsers } = usePresence();
+
+  // Determine display status based on REALTIME presence and manual override
+  const isOnline = id && onlineUsers.has(id);
+  const effectiveStatus = isOnline ? 'Available' : 'Offline';
 
   const triggerAvatarPick = () => fileInputRef.current?.click();
   const handleAvatarChange = (file?: File | null) => {
@@ -219,6 +232,7 @@ const StudentProfile = () => {
               portfolio: [],
               platformLinks: { linkedin: '', github: '', upwork: '', fiverr: '' },
               payments: { ...initialStudent.payments, history: [] },
+              status: (profileData as any).status || 'Available',
             };
           }
 
@@ -260,6 +274,7 @@ const StudentProfile = () => {
                   fiverr: waitlistData.contact?.fiverrUrl || '',
                 },
                 payments: { ...initialStudent.payments, history: [] },
+                status: 'Available',
               };
             }
           }
@@ -302,6 +317,7 @@ const StudentProfile = () => {
                   taxW9Submitted: false,
                   history: [],
                 },
+                status: 'Available',
               };
             }
           }
@@ -317,16 +333,22 @@ const StudentProfile = () => {
         if (!uid) return;
         const { data, error } = await supabase
           .from('profiles')
-          .select('first_name,last_name,display_name,email')
+          .select('first_name,last_name,display_name,email,status')
           .eq('user_id', uid)
           .maybeSingle();
         if (!error && data) {
+          // ... existing name logic ...
+          // Note: assuming 'status' column exists or we default. 
+          // If it doesn't exist in DB yet, we might need a migration or just keep it local for now.
+          // For this refactor, we default to 'Available' if missing.
+          const status = (data as any).status || 'Available';
+
           const name =
             [data.first_name, data.last_name].filter(Boolean).join(' ').trim() ||
             data.display_name ||
             (data.email ? data.email.split('@')[0] : '');
-          setStudent(prev => ({ ...prev, name, email: data.email || '' }));
-          setEdited(prev => ({ ...prev, name, email: data.email || '' }));
+          setStudent(prev => ({ ...prev, name, email: data.email || '', status }));
+          setEdited(prev => ({ ...prev, name, email: data.email || '', status }));
         }
       } catch (e) {
         setCurrentUserId(null);
@@ -334,7 +356,31 @@ const StudentProfile = () => {
         setLoading(false);
       }
     })();
+  }, [id]);
+
+  // Scroll to top on ID change
+  useEffect(() => {
     window.scrollTo(0, 0);
+  }, [id]);
+
+  // Fetch reviews logic
+  useEffect(() => {
+    const fetchReviews = async () => {
+      // Logic to fetch reviews for the current student/target
+      // Using 'id' from params or default ID '1' for demo if url param is missing
+      const targetId = id || '1';
+
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('target_id', targetId)
+        .eq('target_type', 'student');
+
+      if (!error && data) {
+        setReviews(data as unknown as Review[]);
+      }
+    };
+    fetchReviews();
   }, [id]);
 
   // --- Additional Icons ---
@@ -417,7 +463,7 @@ const StudentProfile = () => {
                 </>
               ) : (
                 <>
-                  <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm">Hire Now</Button>
+                  <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm" onClick={() => navigate(`/hire/${id || '1'}`)}>Hire Now</Button>
                   <Button size="sm" variant="outline">Message</Button>
                 </>
               )}
@@ -428,7 +474,10 @@ const StudentProfile = () => {
               <div className="text-center">
                 <div className="text-sm text-muted-foreground font-medium mb-1">Job Success</div>
                 <div className="text-lg font-bold text-foreground flex items-center justify-center gap-1">
-                  100% <Badge variant="secondary" className="h-4 px-1 rounded-full bg-accent/20 text-accent-foreground text-[10px]"><Star className="w-2.5 h-2.5 fill-current" /></Badge>
+                  {reviews.length > 0
+                    ? `${Math.round(reviews.filter(r => r.rating >= 4).length / reviews.length * 100)}%`
+                    : '100%'}
+
                 </div>
               </div>
               <div className="w-px h-8 bg-border/60" />
@@ -631,23 +680,53 @@ const StudentProfile = () => {
             <CardHeader className="pb-3 bg-muted/30 rounded-t-xl">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-bold text-primary uppercase tracking-wide">Current Status</span>
-                <Badge variant="outline" className="bg-background text-[10px]">Available Now</Badge>
+                <span className={`relative flex h-2.5 w-2.5`}>
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isOnline && displayStudent.status !== 'Busy' ? 'bg-green-400' : 'bg-gray-400'}`}></span>
+                  <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isOnline && displayStudent.status !== 'Busy' ? 'bg-green-500' : 'bg-gray-500'}`}></span>
+                </span>
               </div>
             </CardHeader>
             <CardContent className="pt-4">
-              <div className="space-y-4 relative pl-4 border-l-2 border-primary/20">
-                {[
-                  { status: 'Available', time: 'Now', current: true },
-                  { status: 'In Design Review', time: '2d ago', current: false },
-                  { status: 'Completed Project', time: '1w ago', current: false }
-                ].map((item, i) => (
-                  <div key={i} className="relative">
-                    <div className={`absolute -left-[21px] top-1.5 w-3 h-3 rounded-full border-2 border-card ${item.current ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
-                    <div className={`text-sm font-medium ${item.current ? 'text-foreground' : 'text-muted-foreground'}`}>{item.status}</div>
-                    <div className="text-xs text-muted-foreground">{item.time}</div>
+              {isEditing ? (
+                <div className="space-y-2">
+                  {/* In edit mode, we might still want to show the 'live' status or allow manual override if that was the requirement. 
+                       But user asked for "available should only show when they're logged in". 
+                       So we'll show a message or just the read-only status for now to avoid confusion, 
+                       OR we allow them to set a 'preferred' status but override it with offline if they are offline. 
+                       Given the prompt "available should only show when they re logged in", strictly implied automated status.
+                       Let's keep the manual select for 'Busy' etc, but 'Available' is automatic? 
+                       Actually, usually 'Online' is automatic. 'Available' is a manual state often.
+                       But the prompt says "available should only show when they're logged in".
+                       So if they are Offline, we force 'Offline'. If Online, we show their manual status (default Available).
+                   */}
+                  <label className="text-xs font-semibold text-muted-foreground">Manual Status Preference</label>
+                  <Select
+                    value={edited.status}
+                    onValueChange={(val: any) => setEdited({ ...edited, status: val })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Available">Available (when online)</SelectItem>
+                      <SelectItem value="Busy">Busy</SelectItem>
+                      <SelectItem value="Open to Work">Open to Work</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground mt-1">* You will appear Offline when not visiting the site.</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <div className="text-2xl font-bold text-foreground">
+                    {isOnline ? (displayStudent.status === 'Offline' ? 'Available' : displayStudent.status) : 'Offline'}
                   </div>
-                ))}
-              </div>
+                  <p className="text-sm text-muted-foreground">
+                    {isOnline
+                      ? (displayStudent.status === 'Available' ? 'Online and ready to chat.' : 'Currently online.')
+                      : 'Currently offline. Last seen recently.'}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -658,36 +737,43 @@ const StudentProfile = () => {
       <div className="mt-12 space-y-6">
         <h3 className="text-xl font-bold text-foreground">Client Reviews</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockReviews.filter(r => r.targetType === 'student').map(review => (
-            <Card key={review.id} className="border-none shadow-sm bg-card hover:shadow-md transition-all h-full flex flex-col">
-              <CardContent className="p-6 flex-1 flex flex-col gap-4">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10 border border-border">
-                    <AvatarImage src={review.reviewerAvatar} />
-                    <AvatarFallback>{review.reviewerName.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-semibold text-foreground text-sm">{review.reviewerName}</div>
-                    <div className="text-xs text-muted-foreground">Verified Client</div>
+          {reviews.length > 0 ? (
+            reviews.map(review => (
+              <Card key={review.id} className="border-none shadow-sm bg-card hover:shadow-md transition-all h-full flex flex-col">
+                <CardContent className="p-6 flex-1 flex flex-col gap-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 border border-border">
+                      <AvatarImage src={review.reviewer_avatar || undefined} />
+                      <AvatarFallback>{review.reviewer_name?.charAt(0) || '?'}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-semibold text-foreground text-sm">{review.reviewer_name}</div>
+                      <div className="text-xs text-muted-foreground">{review.verified ? 'Verified Client' : 'Client'}</div>
+                    </div>
                   </div>
-                </div>
-                <div className="text-sm text-muted-foreground leading-relaxed flex-1">
-                  "{review.comment}"
-                </div>
-                <div className="pt-4 border-t border-border flex items-center gap-4 mt-auto">
-                  <div className="flex items-center gap-1 text-yellow-500">
-                    <Star className="w-3.5 h-3.5 fill-current" />
-                    <Star className="w-3.5 h-3.5 fill-current" />
-                    <Star className="w-3.5 h-3.5 fill-current" />
-                    <Star className="w-3.5 h-3.5 fill-current" />
-                    <Star className="w-3.5 h-3.5 fill-current" />
-                    <span className="text-xs font-bold text-foreground ml-1">5.0</span>
+                  <div className="text-sm text-muted-foreground leading-relaxed flex-1">
+                    "{review.comment}"
                   </div>
-                  <div className="text-xs text-muted-foreground">2 weeks ago</div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  <div className="pt-4 border-t border-border flex items-center gap-4 mt-auto">
+                    <div className="flex items-center gap-1 text-yellow-500">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-3.5 h-3.5 ${i < review.rating ? 'fill-current' : 'text-muted/30'}`}
+                        />
+                      ))}
+                      <span className="text-xs font-bold text-foreground ml-1">{review.rating.toFixed(1)}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{new Date(review.created_at).toLocaleDateString()}</div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-10 text-muted-foreground">
+              No reviews yet for this student.
+            </div>
+          )}
         </div>
       </div>
     </div>

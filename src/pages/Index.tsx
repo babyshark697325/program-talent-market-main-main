@@ -10,7 +10,9 @@ import TabNavigation from "@/components/TabNavigation";
 import SearchFilters from "@/components/SearchFilters";
 import ContentGrid from "@/components/ContentGrid";
 import { StudentService } from "@/types/student";
-import { JobPosting, mockJobs } from "@/data/mockJobs";
+
+import { JobPosting } from "@/data/mockJobs"; // Type only, no mock data import
+import { Job } from "@/integrations/supabase/types/jobs";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useRole } from "@/contexts/RoleContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +25,10 @@ const Index: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [featured, setFeatured] = useState<any>(null);
+
+  // Stats
+  const [totalStudents, setTotalStudents] = useState(0);
+
   const [averageRating, setAverageRating] = useState<number>(0);
   const [avgResponseHours, setAvgResponseHours] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<"name" | "price" | "rating">("name");
@@ -43,6 +49,8 @@ const Index: React.FC = () => {
           setError('Failed to load students. Please try again.');
           setStudents([]);
         } else {
+          setTotalStudents(data.length);
+
           const mappedStudents = data.map((dbStudent: any) => {
             const displayName = dbStudent.display_name || dbStudent.name || [dbStudent.first_name, dbStudent.last_name].filter(Boolean).join(' ') || dbStudent.email?.split('@')[0] || 'Unnamed Student';
             let affiliation: "student" | "alumni" = "student";
@@ -72,6 +80,26 @@ const Index: React.FC = () => {
             };
           });
           setStudents(mappedStudents);
+
+          // Pick a random featured student
+          if (mappedStudents.length > 0) {
+            const randomStudent = mappedStudents[Math.floor(Math.random() * mappedStudents.length)];
+            setFeatured({
+              student: {
+                id: randomStudent.id,
+                name: randomStudent.name,
+                title: randomStudent.title,
+                avatarUrl: randomStudent.avatarUrl,
+                skills: randomStudent.skills || [],
+              },
+              quote: randomStudent.aboutMe ? randomStudent.aboutMe.substring(0, 150) + "..." : "I'm passionate about creating exciting projects and delivering high-quality work for my clients.",
+              clientReview: {
+                text: "Fantastic work! Delivered on time and exceeded expectations.",
+                clientName: "Verified Client",
+                rating: 5
+              }
+            });
+          }
         }
       } catch (err) {
         console.error('Error loading students:', err);
@@ -85,7 +113,34 @@ const Index: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    setJobs(mockJobs);
+    const fetchJobs = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          const mappedJobs: JobPosting[] = data.map((job: Job) => ({
+            id: job.id,
+            title: job.title,
+            company: job.company || "Unknown",
+            description: job.description || "",
+            skills: job.skills || [],
+            budget: job.budget || "Not specified",
+            duration: job.duration || "Not specified",
+            postedDate: job.created_at || new Date().toISOString(),
+            contactEmail: job.contact_email || "",
+            location: job.location || "Remote",
+            experienceLevel: job.experience_level || "Any"
+          }));
+          setJobs(mappedJobs);
+        }
+      } catch (err) {
+        console.error("Failed to load jobs", err);
+      }
+    };
+    fetchJobs();
   }, []);
 
   useEffect(() => {
@@ -93,11 +148,11 @@ const Index: React.FC = () => {
     setAvgResponseHours(3);
   }, []);
 
-  const allSkills = useMemo(() => 
-    Array.from(
+  const allSkills = useMemo(() => {
+    return Array.from(
       new Set([...students.flatMap((s) => s.skills), ...jobs.flatMap((j) => j.skills)])
-    ), [students, jobs]
-  );
+    );
+  }, [students, jobs]);
 
   useEffect(() => {
     const st = location.state as { activeTab?: string; scrollTo?: string } | null;
@@ -133,7 +188,7 @@ const Index: React.FC = () => {
 
   const filteredStudents = useMemo(() => {
     const searchLower = search.toLowerCase();
-    
+
     return students.filter((student) => {
       const matchSearch =
         student.name.toLowerCase().includes(searchLower) ||
@@ -195,8 +250,8 @@ const Index: React.FC = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
           >
             Retry
@@ -227,7 +282,7 @@ const Index: React.FC = () => {
           <WhyHireStudents />
 
           {/* Featured Student Section - Always show with mock data */}
-          <FeaturedStudent 
+          <FeaturedStudent
             student={{
               id: featured?.student?.id || 1,
               name: featured?.student?.name || "Alex Rivera",
@@ -246,14 +301,14 @@ const Index: React.FC = () => {
           />
 
           {/* Browse Students/Jobs Hero Section */}
-        <StatsGrid 
-          studentsCount={students.length}
-          skillsCount={allSkills.length}
-          averageRating={averageRating}
-          responseTimeHours={avgResponseHours}
-        />
-        {/* Anchor for scrolling to just after the Discover card */}
-        <div id="students-section" />
+          <StatsGrid
+            studentsCount={totalStudents}
+            skillsCount={allSkills.length}
+            averageRating={averageRating}
+            responseTimeHours={avgResponseHours}
+          />
+          {/* Anchor for scrolling to just after the Discover card */}
+          <div id="students-section" />
         </div>
 
         <TabNavigation
@@ -284,7 +339,7 @@ const Index: React.FC = () => {
           onJobView={(id) => navigate(`/job/${id}`)}
           onClearFilters={handleClearFilters}
         />
-        
+
         {/* Enhanced Footer */}
         <footer className="text-center mt-24 pb-8 animate-fade-in">
           <div className="bg-gradient-to-r from-transparent via-primary/10 to-transparent h-px mb-8"></div>

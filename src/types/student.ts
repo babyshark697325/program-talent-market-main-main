@@ -25,6 +25,7 @@ export interface StudentService {
   skills: string[];
   price: string;
   affiliation?: "student" | "alumni";
+  rating?: number; // Star rating out of 5
   portfolio?: StudentPortfolioItem[];
   aboutMe?: string;
   contact?: StudentContact;

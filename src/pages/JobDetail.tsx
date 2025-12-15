@@ -1,17 +1,22 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Building, MapPin, Clock, DollarSign, Calendar, Users, Mail, Bookmark } from 'lucide-react';
-import { mockJobs } from '@/data/mockJobs';
+import { supabase } from "@/integrations/supabase/client";
+import { Job } from "@/integrations/supabase/types/jobs";
+import { JobPosting } from "@/data/mockJobs";
+// import { mockJobs } from '@/data/mockJobs'; // Removed to avoid usage
 import { useAuth } from "@/contexts/AuthContext";
 
 const JobDetail = () => {
   const { id } = useParams();
-  const job = mockJobs.find(j => j.id === parseInt(id || '0'));
+  const [job, setJob] = useState<JobPosting | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [similarJobs, setSimilarJobs] = useState<JobPosting[]>([]);
   const { userRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -28,9 +33,72 @@ const JobDetail = () => {
   };
 
   // Scroll to top when component mounts or job ID changes
+  // Scroll to top when component mounts or job ID changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    const fetchJob = async () => {
+      try {
+        setLoading(true);
+        if (!id) return;
+
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          const mappedJob: JobPosting = {
+            ...data,
+            id: data.id,
+            postedDate: data.posted_date,
+            contactEmail: data.contact_email,
+            experienceLevel: data.experience_level,
+            location: data.location || 'Remote',
+            requirements: data.requirements || []
+          };
+          setJob(mappedJob);
+
+          // Fetch similar jobs
+          const { data: similarData } = await supabase
+            .from('jobs')
+            .select('*')
+            .neq('id', id)
+            .limit(3);
+
+          if (similarData) {
+            const mappedSimilar: JobPosting[] = similarData.map((j: Job) => ({
+              ...j,
+              id: j.id,
+              postedDate: j.posted_date,
+              contactEmail: j.contact_email,
+              experienceLevel: j.experience_level,
+              location: j.location || 'Remote',
+              requirements: j.requirements || []
+            }));
+            setSimilarJobs(mappedSimilar);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching job:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJob();
   }, [id]);
+
+  if (loading) {
+    return (
+      <div className="p-6 flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   if (!job) {
     return (
@@ -61,7 +129,7 @@ const JobDetail = () => {
                   <p className="text-xl text-muted-foreground">{job.company}</p>
                 </div>
               </div>
-              
+
               <div className="flex flex-wrap items-center gap-4 mb-6">
                 <div className="flex items-center gap-1">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -96,7 +164,7 @@ const JobDetail = () => {
                 {job.budget}
               </div>
               <div className="text-muted-foreground mb-4">Budget</div>
-              
+
               {isClientContext ? (
                 <div className="flex flex-col gap-2">
                   <Button variant="outline" size="lg" onClick={handleClientEdit}>
@@ -134,11 +202,11 @@ const JobDetail = () => {
               <div className="prose max-w-none text-muted-foreground">
                 <p className="mb-4">{job.description}</p>
                 <p className="mb-4">
-                  We are looking for a talented developer to join our team and help build innovative solutions. 
+                  We are looking for a talented developer to join our team and help build innovative solutions.
                   The ideal candidate will have strong problem-solving skills and experience with modern web technologies.
                 </p>
                 <p>
-                  This is a great opportunity to work with a dynamic team and contribute to exciting projects 
+                  This is a great opportunity to work with a dynamic team and contribute to exciting projects
                   that will have a real impact on our users.
                 </p>
               </div>
@@ -214,7 +282,7 @@ const JobDetail = () => {
               <div>
                 <h3 className="font-semibold mb-2">{job.company}</h3>
                 <p className="text-muted-foreground text-sm">
-                  A leading technology company focused on innovation and digital transformation. 
+                  A leading technology company focused on innovation and digital transformation.
                   We've been helping businesses grow through cutting-edge solutions for over 10 years.
                 </p>
               </div>
@@ -280,7 +348,7 @@ const JobDetail = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {mockJobs.slice(0, 3).filter(j => j.id !== job.id).map((similarJob) => (
+                {similarJobs.map((similarJob) => (
                   <div key={similarJob.id} className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer">
                     <h4 className="font-medium text-sm">{similarJob.title}</h4>
                     <p className="text-xs text-muted-foreground">{similarJob.company}</p>

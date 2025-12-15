@@ -38,30 +38,41 @@ const GlobalPreferencesBoot: React.FC = () => {
   const { role } = useRole();
 
   React.useEffect(() => {
-    // Only run on first mount
-    const path = window.location.pathname || '';
-    const isStudentArea = /(^\/student\b)|(^\/student-)|(^\/resources$)|(^\/all-resources$)|(^\/browse-students$)/.test(path);
-    const isClientArea = /(^\/client\b)|(^\/client-)|(^\/manage-jobs$)|(^\/post-job$)|(^\/browse-jobs$)/.test(path);
+    // Apply preferences immediately
+    const applyPreferences = () => {
+      const path = window.location.pathname || '';
+      const isStudentArea = /(^\/student\b)|(^\/student-)|(^\/resources$)|(^\/all-resources$)|(^\/browse-students$)/.test(path);
+      const isClientArea = /(^\/client\b)|(^\/client-)|(^\/manage-jobs$)|(^\/post-job$)|(^\/browse-jobs$)/.test(path);
 
-    // Priority by URL first (most reliable), then role, then fallback order
-    if (isStudentArea) {
-      if (!applyFrom('student-settings', setTheme)) applyFrom('client-settings', setTheme);
-      return;
+      // Priority by URL first (most reliable), then role, then fallback order
+      if (isStudentArea) {
+        if (!applyFrom('student-settings', setTheme)) applyFrom('client-settings', setTheme);
+        return;
+      }
+      if (isClientArea) {
+        if (!applyFrom('client-settings', setTheme)) applyFrom('student-settings', setTheme);
+        return;
+      }
+      // Role-based preference if no clear URL context
+      if (role === 'student') {
+        if (!applyFrom('student-settings', setTheme)) applyFrom('client-settings', setTheme);
+      } else if (role === 'client') {
+        if (!applyFrom('client-settings', setTheme)) applyFrom('student-settings', setTheme);
+      } else {
+        // admin/unknown
+        if (!applyFrom('student-settings', setTheme)) applyFrom('client-settings', setTheme);
+      }
+    };
+
+    // Apply immediately
+    applyPreferences();
+
+    // Also apply on window load as fallback
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', applyPreferences);
+      return () => window.removeEventListener('DOMContentLoaded', applyPreferences);
     }
-    if (isClientArea) {
-      if (!applyFrom('client-settings', setTheme)) applyFrom('student-settings', setTheme);
-      return;
-    }
-    // Role-based preference if no clear URL context
-    if (role === 'student') {
-      if (!applyFrom('student-settings', setTheme)) applyFrom('client-settings', setTheme);
-    } else if (role === 'client') {
-      if (!applyFrom('client-settings', setTheme)) applyFrom('student-settings', setTheme);
-    } else {
-      // admin/unknown
-      if (!applyFrom('student-settings', setTheme)) applyFrom('client-settings', setTheme);
-    }
-    // Only run once
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

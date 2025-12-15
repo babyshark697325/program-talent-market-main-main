@@ -29,7 +29,7 @@ const StudentServiceCard: React.FC<StudentServiceCardProps> = ({ student, onView
                 </AvatarFallback>
               )}
             </Avatar>
-            
+
             {student.affiliation && (
               <Badge
                 variant={student.affiliation === 'alumni' ? 'secondary' : 'default'}
@@ -40,13 +40,25 @@ const StudentServiceCard: React.FC<StudentServiceCardProps> = ({ student, onView
             )}
           </div>
 
-          <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex-1 min-w-0 space-y-1">
             <h3 className="text-lg font-bold leading-tight truncate overflow-hidden whitespace-nowrap">
               {student.name}
             </h3>
-            
-            <div className="text-sm text-muted-foreground break-words leading-relaxed">
-              {student.title}
+
+            {/* Star Rating - replaces the title text */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star
+                  key={i}
+                  className={`w-3.5 h-3.5 ${i < Math.floor(student.rating || 0)
+                      ? 'text-yellow-500 fill-yellow-500'
+                      : 'text-muted-foreground/30'
+                    }`}
+                />
+              ))}
+              <span className="text-xs text-muted-foreground ml-1">
+                ({(student.rating || 0).toFixed(1)})
+              </span>
             </div>
           </div>
         </div>        {/* Description */}
@@ -88,4 +100,4 @@ const StudentServiceCard: React.FC<StudentServiceCardProps> = ({ student, onView
       </div>
     </div>
   );
-};export default StudentServiceCard;
+}; export default StudentServiceCard;

@@ -9,22 +9,10 @@ import PostJobForm from "@/components/PostJobForm";
 import { Plus, Edit, Trash2, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { mockJobs, JobPosting } from "@/data/mockJobs";
+import { JobPosting } from "@/data/mockJobs";
+import { Job } from "@/integrations/supabase/types/jobs";
 
-// Database job type - updated to match actual schema
-interface DatabaseJob {
-  id: string;
-  title: string;
-  company: string | null;
-  description: string | null;
-  skills: string[];
-  budget: string | null;
-  duration: string | null;
-  posted_at: string;
-  contact_email: string | null;
-  status: string;
-  user_id: string;
-}
+
 
 const ManageJobs = () => {
   const navigate = useNavigate();
@@ -35,20 +23,9 @@ const ManageJobs = () => {
   const [error, setError] = useState<string | null>(null);
   const [totalBudgetRange, setTotalBudgetRange] = useState("$0-0");
 
-  // Convert database job to JobPosting format - updated to match schema
-  const convertDatabaseJobToJobPosting = (dbJob: DatabaseJob): JobPosting => ({
-    id: parseInt(dbJob.id.replace(/-/g, '').substring(0, 8), 16), // Convert UUID to number
-    title: dbJob.title,
-    company: dbJob.company || "Unknown Company",
-    description: dbJob.description || "",
-    skills: dbJob.skills || [],
-    budget: dbJob.budget || "Not specified",
-    duration: dbJob.duration || "Not specified",
-    postedDate: dbJob.posted_at ? new Date(dbJob.posted_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-    contactEmail: dbJob.contact_email || "contact@company.com"
-  });
 
-  // Fetch jobs from mock data (for demo)
+
+  // Fetch jobs from Supabase
   const fetchJobs = async () => {
     if (!user) {
       setLoading(false);
@@ -59,32 +36,49 @@ const ManageJobs = () => {
       setLoading(true);
       setError(null);
 
-      // Use first 2 jobs from mock data for the demo user
-      const userJobs = mockJobs.slice(0, 2);
-      setJobs(userJobs);
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-      // Calculate budget range
-      if (userJobs.length > 0) {
-        const budgets = userJobs
-          .map(job => {
-            // Extract both min and max from budget ranges like "$2,000 - $3,500"
-            const matches = job.budget.match(/\$(\d+,?\d*)\s*-\s*\$(\d+,?\d*)/);
-            if (matches) {
-              const min = parseInt(matches[1].replace(/,/g, ''));
-              const max = parseInt(matches[2].replace(/,/g, ''));
-              return { min, max };
-            }
-            // Fallback for simple budgets
-            const singleMatch = job.budget.match(/\$(\d+,?\d*)/);
-            const value = singleMatch ? parseInt(singleMatch[1].replace(/,/g, '')) : 0;
-            return { min: value, max: value };
-          })
-          .filter(budget => budget.min > 0);
-        
-        if (budgets.length > 0) {
-          const minBudget = Math.min(...budgets.map(b => b.min));
-          const maxBudget = Math.max(...budgets.map(b => b.max));
-          setTotalBudgetRange(`$${minBudget.toLocaleString()} - $${maxBudget.toLocaleString()}`);
+      if (error) throw error;
+
+      if (data) {
+        const userJobs: JobPosting[] = data.map((job: Job) => ({
+          ...job,
+          id: job.id,
+          postedDate: job.posted_date,
+          contactEmail: job.contact_email,
+          experienceLevel: job.experience_level,
+          location: job.location || "Remote",
+          requirements: job.requirements || []
+        }));
+        setJobs(userJobs);
+
+        // Calculate budget range
+        if (userJobs.length > 0) {
+          const budgets = userJobs
+            .map(job => {
+              // Extract both min and max from budget ranges like "$2,000 - $3,500"
+              const matches = job.budget.match(/\$(\d+,?\d*)\s*-\s*\$(\d+,?\d*)/);
+              if (matches) {
+                const min = parseInt(matches[1].replace(/,/g, ''));
+                const max = parseInt(matches[2].replace(/,/g, ''));
+                return { min, max };
+              }
+              // Fallback for simple budgets
+              const singleMatch = job.budget.match(/\$(\d+,?\d*)/);
+              const value = singleMatch ? parseInt(singleMatch[1].replace(/,/g, '')) : 0;
+              return { min: value, max: value };
+            })
+            .filter(budget => budget.min > 0);
+
+          if (budgets.length > 0) {
+            const minBudget = Math.min(...budgets.map(b => b.min));
+            const maxBudget = Math.max(...budgets.map(b => b.max));
+            setTotalBudgetRange(`$${minBudget.toLocaleString()} - $${maxBudget.toLocaleString()}`);
+          }
         }
       }
     } catch (err) {
@@ -112,25 +106,35 @@ const ManageJobs = () => {
 
     try {
       setError(null);
-      
-      // Create new job for demo
-      const newJob: JobPosting = {
-        id: Date.now(), // Simple ID generation for demo
+
+      const newJob = {
         title: formData.title,
         company: formData.company || "Your Company",
         description: formData.description,
         skills: formData.skills ? formData.skills.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
         budget: formData.budget,
         duration: formData.duration || "To be discussed",
-        contactEmail: formData.contactEmail || user.email || "contact@yourcompany.com",
-        postedDate: new Date().toISOString().split('T')[0],
+        contact_email: formData.contactEmail || user.email || "contact@yourcompany.com",
+        posted_date: new Date().toISOString().split('T')[0],
         location: "Remote",
-        experienceLevel: "Mid"
+        experience_level: "Mid",
+        requirements: [],
+        user_id: user.id
       };
 
-      // Add to local state
-      setJobs([newJob, ...jobs]);
-      setIsPostJobOpen(false);
+      const { data, error } = await supabase
+        .from('jobs')
+        .insert([newJob])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        // Refresh jobs list
+        fetchJobs();
+        setIsPostJobOpen(false);
+      }
     } catch (err) {
       console.error('Error posting job:', err);
       setError(err instanceof Error ? err.message : 'Failed to post job');
@@ -140,8 +144,15 @@ const ManageJobs = () => {
   const handleDeleteJob = async (id: string | number) => {
     try {
       setError(null);
-      
-      // For demo: just remove from local state
+
+      const { error } = await supabase
+        .from('jobs')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Refresh jobs
       setJobs(jobs.filter(job => job.id !== id));
     } catch (err) {
       console.error('Error deleting job:', err);
@@ -184,7 +195,7 @@ const ManageJobs = () => {
               <DialogHeader>
                 <DialogTitle>Post a New Job</DialogTitle>
               </DialogHeader>
-              <PostJobForm 
+              <PostJobForm
                 onSubmit={handlePostJob}
                 onCancel={() => setIsPostJobOpen(false)}
               />
@@ -234,8 +245,8 @@ const ManageJobs = () => {
               <div key={job.id} className="relative group h-full flex flex-col">
                 <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="secondary"
                       className="h-8 w-8 p-0"
                       onClick={(e) => {
@@ -245,8 +256,8 @@ const ManageJobs = () => {
                     >
                       <Edit size={14} />
                     </Button>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="destructive"
                       className="h-8 w-8 p-0"
                       onClick={(e) => {
@@ -258,11 +269,11 @@ const ManageJobs = () => {
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="animate-fade-in hover:scale-[1.02] transition-transform duration-200 h-full flex flex-col"
-                     style={{ animationDelay: `${0.1 * index}s` }}>
+                  style={{ animationDelay: `${0.1 * index}s` }}>
                   <JobCard
-                    job={{...job, location: "Remote" as const, experienceLevel: "Entry" as const}}
+                    job={{ ...job, location: "Remote" as const, experienceLevel: "Entry" as const }}
                     onView={() => handleJobView(job.id)}
                     hideBookmark
                   />
@@ -282,7 +293,7 @@ const ManageJobs = () => {
               <p className="text-muted-foreground mb-6">
                 Start by posting your first job to connect with talented students.
               </p>
-              <Button 
+              <Button
                 onClick={() => setIsPostJobOpen(true)}
                 className="bg-gradient-to-r from-primary to-primary/80"
               >
