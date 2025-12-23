@@ -19,16 +19,9 @@ const BrowseJobs = () => {
   const [budgetRange, setBudgetRange] = useState<[number, number]>([0, 1000]);
   const [sortBy, setSortBy] = useState<"title" | "budget" | "company">("title");
 
-  // Scroll to top when component mounts
-  useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-    fetchJobs();
-  }, []);
+  // Fetch jobs on mount - moved to bottom to avoid hoisting issues
 
-  const fetchJobs = async () => {
+  const fetchJobs = React.useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('jobs')
@@ -55,7 +48,9 @@ const BrowseJobs = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Fetch jobs on mount - moved to bottom to avoid hoisting issues
 
   // Get all unique skills from jobs
   const allSkills = Array.from(
@@ -97,10 +92,11 @@ const BrowseJobs = () => {
       switch (sortBy) {
         case "title":
           return a.title.localeCompare(b.title);
-        case "budget":
+        case "budget": {
           const budgetA = parseInt(a.budget.replace(/[^\d]/g, ''));
           const budgetB = parseInt(b.budget.replace(/[^\d]/g, ''));
           return budgetA - budgetB;
+        }
         case "company":
           return a.company.localeCompare(b.company);
         default:
@@ -109,7 +105,7 @@ const BrowseJobs = () => {
     });
 
     setFilteredJobs(filtered);
-  }, [searchQuery, selectedSkills, budgetRange, sortBy]);
+  }, [searchQuery, selectedSkills, budgetRange, sortBy, jobs]);
 
   const handleJobView = (id: number) => {
     navigate(`/job/${id}`);
@@ -120,6 +116,15 @@ const BrowseJobs = () => {
     setSelectedSkills([]);
     setBudgetRange([0, 1000]);
   };
+
+  // Fetch jobs on mount
+  React.useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+    fetchJobs();
+  }, [fetchJobs]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -160,10 +165,10 @@ const BrowseJobs = () => {
               ].map((sort) => (
                 <button
                   key={sort.value}
-                  onClick={() => setSortBy(sort.value as any)}
+                  onClick={() => setSortBy(sort.value as "title" | "budget" | "company")}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${sortBy === sort.value
-                      ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25"
-                      : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
+                    ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25"
+                    : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
                     }`}
                 >
                   {sort.label}
@@ -180,8 +185,8 @@ const BrowseJobs = () => {
               <button
                 onClick={() => setSelectedSkills([])}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${selectedSkills.length === 0
-                    ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25"
-                    : "bg-secondary/60 dark:bg-[#040b17] text-primary border border-primary/20 dark:border-white/10 hover:bg-primary/5 dark:hover:bg-white/5"
+                  ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25"
+                  : "bg-secondary/60 dark:bg-[#040b17] text-primary border border-primary/20 dark:border-white/10 hover:bg-primary/5 dark:hover:bg-white/5"
                   }`}
               >
                 All Skills
@@ -197,8 +202,8 @@ const BrowseJobs = () => {
                     }
                   }}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${selectedSkills.includes(skill)
-                      ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25"
-                      : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
+                    ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25"
+                    : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
                     }`}
                 >
                   {skill}

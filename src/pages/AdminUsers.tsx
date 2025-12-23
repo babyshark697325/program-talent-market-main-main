@@ -9,24 +9,19 @@ import { useToast } from '@/components/ui/use-toast';
 
 const AdminUsers = () => {
   const { toast } = useToast();
-  const [waitlistEntries, setWaitlistEntries] = React.useState<any[]>([]);
+  const [waitlistEntries, setWaitlistEntries] = React.useState<{ id: string; first_name?: string; last_name?: string; email: string; role: string; city?: string; status: string; created_at: string }[]>([]);
   const [loadingWaitlist, setLoadingWaitlist] = React.useState(true);
   const [totalUsers, setTotalUsers] = React.useState<number | null>(null);
   const [activeUsers, setActiveUsers] = React.useState<number | null>(null);
   const [pendingUsers, setPendingUsers] = React.useState<number | null>(null);
   const [adminsCount, setAdminsCount] = React.useState<number | null>(null);
-  const [recentUsers, setRecentUsers] = React.useState<any[]>([]);
+  const [recentUsers, setRecentUsers] = React.useState<{ id: string; name: string; email: string; role: string; status: string; joinDate: string }[]>([]);
   const [loadingRecent, setLoadingRecent] = React.useState(true);
   const WAITLIST_PREVIEW_LIMIT = 5;
 
-  // Fetch waitlist entries
-  React.useEffect(() => {
-    fetchWaitlist();
-    fetchCounts();
-    fetchRecentUsers();
-  }, []);
+  // Fetch waitlist entries - moved to bottom to avoid hoisting issues
 
-  const fetchWaitlist = async () => {
+  const fetchWaitlist = React.useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('waitlist')
@@ -49,9 +44,9 @@ const AdminUsers = () => {
     } finally {
       setLoadingWaitlist(false);
     }
-  };
+  }, [toast]);
 
-  const fetchRecentUsers = async () => {
+  const fetchRecentUsers = React.useCallback(async () => {
     try {
       setLoadingRecent(true);
       const { data: profiles, error: profilesError } = await supabase
@@ -66,7 +61,7 @@ const AdminUsers = () => {
         return;
       }
 
-      const ids = (profiles || []).map((p: any) => p.user_id);
+      const ids = (profiles || []).map((p: { user_id: string }) => p.user_id);
       let roleMap = new Map<string, string>();
       if (ids.length) {
         const { data: roles, error: rolesError } = await supabase
@@ -76,11 +71,11 @@ const AdminUsers = () => {
         if (rolesError) {
           console.warn('Error fetching roles for recent users:', rolesError);
         } else {
-          roleMap = new Map(roles.map((r: any) => [r.user_id, r.role]));
+          roleMap = new Map(roles.map((r: { user_id: string; role: string }) => [r.user_id, r.role]));
         }
       }
 
-      let mapped = (profiles || []).map((p: any) => ({
+      let mapped = (profiles || []).map((p: { user_id: string; first_name?: string; last_name?: string; display_name?: string; email?: string; created_at: string }) => ({
         id: p.user_id,
         name: [p.first_name, p.last_name].filter(Boolean).join(' ') || p.display_name || (p.email ? p.email.split('@')[0] : '—'),
         email: p.email || '—',
@@ -121,10 +116,12 @@ const AdminUsers = () => {
             mapped = [me, ...mapped];
           }
         }
-      } catch {}
+      } catch {
+        // Ignore error
+      }
 
       // Sort by join date desc and limit to 5
-      mapped.sort((a: any, b: any) => new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime());
+      mapped.sort((a: { joinDate: string }, b: { joinDate: string }) => new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime());
       setRecentUsers(mapped.slice(0, 5));
     } catch (e) {
       console.error('Unexpected error fetching recent users:', e);
@@ -132,13 +129,13 @@ const AdminUsers = () => {
     } finally {
       setLoadingRecent(false);
     }
-  };
+  }, []);
 
   const previewWaitlist = React.useMemo(() => {
     return waitlistEntries.slice(0, WAITLIST_PREVIEW_LIMIT);
   }, [waitlistEntries]);
 
-  const fetchCounts = async () => {
+  const fetchCounts = React.useCallback(async () => {
     try {
       // Total users from profiles
       const { count: profilesCount, error: profilesError } = await supabase
@@ -177,7 +174,7 @@ const AdminUsers = () => {
     } catch (e) {
       console.error('Error fetching dashboard counts:', e);
     }
-  };
+  }, []);
 
   const updateWaitlistStatus = async (id: string, status: 'approved' | 'rejected') => {
     try {
@@ -206,6 +203,13 @@ const AdminUsers = () => {
       console.error('Error updating waitlist:', error);
     }
   };
+
+  // Fetch waitlist entries
+  React.useEffect(() => {
+    fetchWaitlist();
+    fetchCounts();
+    fetchRecentUsers();
+  }, [fetchWaitlist, fetchCounts, fetchRecentUsers]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -318,8 +322,8 @@ const AdminUsers = () => {
                           {user.role}
                         </Badge>
                         <Badge variant={
-                          user.status === 'active' ? 'default' : 
-                          user.status === 'pending' ? 'secondary' : 'destructive'
+                          user.status === 'active' ? 'default' :
+                            user.status === 'pending' ? 'secondary' : 'destructive'
                         }>
                           {user.status}
                         </Badge>
@@ -334,7 +338,7 @@ const AdminUsers = () => {
             </CardContent>
           </Card>
 
-                    {/* Waitlist Management */}
+          {/* Waitlist Management */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
@@ -345,95 +349,95 @@ const AdminUsers = () => {
                 <Link to="/admin/waitlist">See All</Link>
               </Button>
             </CardHeader>
-          <CardContent>
-            {loadingWaitlist ? (
-              <div className="text-center py-8">
-                <div className="text-muted-foreground">Loading waitlist...</div>
-              </div>
-            ) : waitlistEntries.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-muted-foreground">No waitlist entries found</div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4">
-                {previewWaitlist.map((entry) => (
-                  <Card key={entry.id} className="p-4">
-                    <div className="space-y-3">
-                      {/* Header: Name left, Status right */}
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-base">
-                          {entry.first_name && entry.last_name 
-                            ? `${entry.first_name} ${entry.last_name}` 
-                            : entry.email.split('@')[0]
-                          }
-                        </h3>
-                        <Badge 
-                          variant={entry.status === 'pending' ? 'outline' : 
-                                 entry.status === 'approved' ? 'default' : 'destructive'}
-                          className={
-                            entry.status === 'pending' 
-                              ? 'border-orange-400 text-orange-600 dark:border-orange-500 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/20' 
-                              : ''
-                          }
-                        >
-                          {entry.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
-                          {entry.status} ●
-                        </Badge>
-                      </div>
-                      
-                      {/* Email */}
-                      <p className="text-sm text-muted-foreground">{entry.email}</p>
-                      
-                      {/* Role */}
-                      <p className="text-sm text-muted-foreground">
-                        Role: <Badge variant="outline" className="ml-1">{entry.role}</Badge>
-                      </p>
-                      
-                      {/* Location and Date on same line */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                          {entry.city && (
-                            <span>📍 {entry.city}</span>
-                          )}
-                          <span>Joined: {new Date(entry.created_at).toLocaleDateString()}</span>
+            <CardContent>
+              {loadingWaitlist ? (
+                <div className="text-center py-8">
+                  <div className="text-muted-foreground">Loading waitlist...</div>
+                </div>
+              ) : waitlistEntries.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-muted-foreground">No waitlist entries found</div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {previewWaitlist.map((entry) => (
+                    <Card key={entry.id} className="p-4">
+                      <div className="space-y-3">
+                        {/* Header: Name left, Status right */}
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-medium text-base">
+                            {entry.first_name && entry.last_name
+                              ? `${entry.first_name} ${entry.last_name}`
+                              : entry.email.split('@')[0]
+                            }
+                          </h3>
+                          <Badge
+                            variant={entry.status === 'pending' ? 'outline' :
+                              entry.status === 'approved' ? 'default' : 'destructive'}
+                            className={
+                              entry.status === 'pending'
+                                ? 'border-orange-400 text-orange-600 dark:border-orange-500 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/20'
+                                : ''
+                            }
+                          >
+                            {entry.status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
+                            {entry.status} ●
+                          </Badge>
                         </div>
-                        
-                        {/* Buttons positioned on the right */}
-                        {entry.status === 'pending' && (
-                          <div className="flex gap-2 flex-wrap">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => updateWaitlistStatus(entry.id, 'approved')}
-                              className="text-green-600 hover:text-green-700"
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => updateWaitlistStatus(entry.id, 'rejected')}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Reject
-                            </Button>
+
+                        {/* Email */}
+                        <p className="text-sm text-muted-foreground">{entry.email}</p>
+
+                        {/* Role */}
+                        <p className="text-sm text-muted-foreground">
+                          Role: <Badge variant="outline" className="ml-1">{entry.role}</Badge>
+                        </p>
+
+                        {/* Location and Date on same line */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                            {entry.city && (
+                              <span>📍 {entry.city}</span>
+                            )}
+                            <span>Joined: {new Date(entry.created_at).toLocaleDateString()}</span>
                           </div>
-                        )}
+
+                          {/* Buttons positioned on the right */}
+                          {entry.status === 'pending' && (
+                            <div className="flex gap-2 flex-wrap">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateWaitlistStatus(entry.id, 'approved')}
+                                className="text-green-600 hover:text-green-700"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateWaitlistStatus(entry.id, 'rejected')}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Reject
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
+                    </Card>
+                  ))}
+                  {waitlistEntries.length > WAITLIST_PREVIEW_LIMIT && (
+                    <div className="text-xs text-muted-foreground text-right">
+                      Showing {WAITLIST_PREVIEW_LIMIT} of {waitlistEntries.length}
                     </div>
-                  </Card>
-                ))}
-                {waitlistEntries.length > WAITLIST_PREVIEW_LIMIT && (
-                  <div className="text-xs text-muted-foreground text-right">
-                    Showing {WAITLIST_PREVIEW_LIMIT} of {waitlistEntries.length}
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

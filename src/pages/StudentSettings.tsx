@@ -12,6 +12,24 @@ import { loadUserSettings, saveUserSettings } from '@/lib/userSettings';
 import '@/components/ui/settings-dropdown.css';
 import '@/components/ui/accessibility-spacing.css';
 
+const defaultForm = {
+  fontSize: 'medium',
+  colorMode: 'system',
+  notifications: {
+    newApplicants: { email: true, sms: false },
+    jobUpdates: { email: true, sms: false },
+    applicationStatus: { email: true, sms: false },
+    recommendations: { email: true, sms: false },
+    billingEmails: { email: true, sms: false },
+  } as Record<string, { email: boolean; sms: boolean }>,
+};
+
+const sizeToPx = (s: string | undefined) => {
+  if (s === 'small') return '13px';
+  if (s === 'large') return '18px';
+  return '15px'; // medium/default
+};
+
 const StudentSettings: React.FC = () => {
   const { toast } = useToast();
 
@@ -20,36 +38,53 @@ const StudentSettings: React.FC = () => {
   const STUDENT_2FA_KEY = 'myvillage-student-2fa';
 
   // Form/settings state (aligns with ClientSettings)
-  const defaultForm = {
-    fontSize: 'medium',
-    colorMode: 'system',
-    notifications: {
-  newApplicants: { email: true, sms: false },
-      jobUpdates: { email: true, sms: false },
-      applicationStatus: { email: true, sms: false },
-      recommendations: { email: true, sms: false },
-      billingEmails: { email: true, sms: false },
-    } as Record<string, { email: boolean; sms: boolean }>,
-  };
   const [form, setForm] = useState(defaultForm);
   const { setTheme } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
   const notifCardRef = useRef<HTMLDivElement | null>(null);
   const rightColRef = useRef<HTMLDivElement | null>(null);
-
-  const sizeToPx = (s: string | undefined) => {
-    if (s === 'small') return '13px';
-    if (s === 'large') return '18px';
-    return '15px'; // medium/default
-  };
+  const [showNotifications, setShowNotifications] = useState(false); // Added this state based on the new useEffect
 
   // Apply accessibility preferences immediately and sync theme via next-themes
   useEffect(() => {
     const px = sizeToPx(form.fontSize);
-    document.documentElement.style.setProperty('--font-size', px);
-    document.documentElement.style.setProperty('--font-size-label', form.fontSize || 'medium');
-    setTheme(form.colorMode as 'light' | 'dark' | 'system');
+    document.documentElement.style.setProperty('--font-size-base', px);
+    if (form.colorMode === "system") {
+      setTheme("system");
+    } else {
+      setTheme(form.colorMode);
+    }
   }, [form.fontSize, form.colorMode, setTheme]);
+
+  // Handle click outside for notifications dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notifCardRef.current && !notifCardRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Update a notification setting
+  const toggleNotification = (category: string, method: 'email' | 'sms') => {
+    setForm(prev => {
+      const currentCategory = prev.notifications[category] || { email: false, sms: false };
+      return {
+        ...prev,
+        notifications: {
+          ...prev.notifications,
+          [category]: {
+            ...currentCategory,
+            [method]: !currentCategory[method]
+          }
+        }
+      };
+    });
+  };
 
   // Load settings (localStorage + backend)
   useEffect(() => {
@@ -77,23 +112,25 @@ const StudentSettings: React.FC = () => {
       }
       const remote = await loadUserSettings('student_settings');
       if (remote) {
+        // Cast to known type to handle spread and properties
+        const loaded = remote as unknown as Partial<typeof defaultForm>;
         setForm(prev => ({
           ...prev,
-          ...remote,
-          notifications: { ...defaultForm.notifications, ...(remote.notifications || {}) },
+          ...loaded,
+          notifications: { ...defaultForm.notifications, ...(loaded.notifications || {}) },
         }));
-        if (remote.fontSize) {
+        if (loaded.fontSize) {
           const currentFontSize = document.documentElement.style.getPropertyValue('--font-size');
-          const newFontSize = sizeToPx(remote.fontSize);
+          const newFontSize = sizeToPx(loaded.fontSize as string);
           if (currentFontSize !== newFontSize) {
             document.documentElement.style.setProperty('--font-size', newFontSize);
           }
         }
-        if (remote.colorMode) setTheme(remote.colorMode);
+        if (loaded.colorMode) setTheme(loaded.colorMode as string);
       }
     };
     loadAll();
-  }, []);
+  }, [setTheme]);
 
   // Match Notifications card height to total right-column height (desktop only)
   useEffect(() => {
@@ -110,12 +147,13 @@ const StudentSettings: React.FC = () => {
     const ro = new ResizeObserver(syncHeights);
     if (rightColRef.current) ro.observe(rightColRef.current);
     window.addEventListener('resize', syncHeights);
-    mql.addEventListener?.('change', syncHeights as any);
+    mql.addEventListener?.('change', syncHeights as unknown as EventListener);
     syncHeights();
     return () => {
       ro.disconnect();
       window.removeEventListener('resize', syncHeights);
-      mql.removeEventListener?.('change', syncHeights as any);
+      mql.removeEventListener?.('change', syncHeights as unknown as EventListener);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       if (notifCardRef.current) notifCardRef.current.style.minHeight = '';
     };
   }, []);
@@ -127,7 +165,7 @@ const StudentSettings: React.FC = () => {
     if (form.colorMode) setTheme(form.colorMode);
     // Fire a test notification to confirm channels for the user
     try {
-      await sendPreferenceTest(form.notifications as any);
+      await sendPreferenceTest(form.notifications);
     } catch (e) {
       console.warn('Notification test failed', e);
     }

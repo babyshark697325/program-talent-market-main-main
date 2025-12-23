@@ -32,11 +32,12 @@ export const transformStudent = (dbStudent: PrelaunchStudent): StudentService =>
         cic_id: dbStudent.cic_id || dbStudent.id,
         name: displayName,
         title: 'Student',
-        description: 'Prelaunch signup student',
+        description: 'This student has not added a description yet.',
         avatarUrl: '',
         skills: [],
         price: '$25/hr',
         affiliation: 'student',
+        rating: 5, // Default to 5 stars for new/unreviewed students
         aboutMe: '',
         contact: {
             email: dbStudent.email,

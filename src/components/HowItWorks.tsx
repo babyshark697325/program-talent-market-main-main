@@ -49,9 +49,7 @@ const HowItWorks: React.FC = () => {
               <p className="text-muted-foreground text-sm leading-relaxed">
                 {step.description}
               </p>
-              {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-8 left-full w-8 h-0.5 bg-gradient-to-r from-primary/30 to-transparent transform translate-x-4" />
-              )}
+              {/* Connector line removed for cleaner UI */}
             </div>
           ))}
         </div>

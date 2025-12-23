@@ -28,7 +28,9 @@ function loadResources(): LearningResource[] {
       const parsed = JSON.parse(raw) as LearningResource[];
       if (Array.isArray(parsed)) return parsed;
     }
-  } catch {}
+  } catch {
+    // Ignore error
+  }
   // No default seed; start empty until you add your own
   return [];
 }
@@ -60,8 +62,8 @@ const AdminLearningResources: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <PageHeader 
-        title="Learning Resources Settings" 
+      <PageHeader
+        title="Learning Resources Settings"
         description="Manage items shown in Student Resources"
       >
         <Button asChild>
@@ -90,7 +92,7 @@ const AdminLearningResources: React.FC = () => {
           <Button variant="outline" onClick={saveAll}>Save All Changes</Button>
         </div>
       </div>
-      
+
       {resources.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
@@ -122,18 +124,18 @@ const AdminLearningResources: React.FC = () => {
                   </div>
                 </div>
               </CardHeader>
-              
+
               <CardContent className="flex-1 flex flex-col">
                 <div className="text-sm text-muted-foreground mb-4 flex-1 h-20 overflow-hidden flex items-start">
                   <p className="line-clamp-4 leading-relaxed">{r.description}</p>
                 </div>
-                
+
                 <div className="flex items-center justify-between pt-3 border-t">
                   <span className="text-xs text-muted-foreground">ID: {r.id}</span>
                   <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       asChild
                       className="h-8 px-3"
                     >
@@ -141,9 +143,9 @@ const AdminLearningResources: React.FC = () => {
                         Edit
                       </Link>
                     </Button>
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
+                    <Button
+                      variant="destructive"
+                      size="sm"
                       onClick={() => removeResource(r.id)}
                       className="h-8 px-3"
                     >

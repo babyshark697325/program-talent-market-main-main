@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { GradientAvatarFallback } from "@/components/GradientAvatarFallback";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,17 +35,20 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
-  
+
   const [profile, setProfile] = useState({
     name: '',
     email: '',
     phone: '',
     location: '',
+    title: '',
+    price: '',
+    affiliation: '',
     avatarUrl: '',
     bio: '',
     skills: [] as string[],
-    experience: [] as any[],
-    portfolio: [] as any[],
+    experience: [] as { title: string; company: string; duration: string; description: string }[],
+    portfolio: [] as { id: number; title: string; description: string; link: string; imageUrl: string }[],
     platformLinks: {
       linkedin: '',
       upwork: '',
@@ -82,21 +86,21 @@ const Profile = () => {
   const addPortfolioItem = () => {
     const title = newPortfolio.title.trim();
     if (!title) return;
-    const nextId = (editedProfile.portfolio?.length ? Math.max(...editedProfile.portfolio.map((p: any) => p.id)) + 1 : 1);
+    const nextId = (editedProfile.portfolio?.length ? Math.max(...editedProfile.portfolio.map((p) => p.id)) + 1 : 1);
     const item = {
       id: nextId,
       title,
       description: newPortfolio.description.trim(),
       link: newPortfolio.link.trim(),
       imageUrl: newPortfolio.imageUrl || '',
-    } as any;
+    } as { id: number; title: string; description: string; link: string; imageUrl: string };
     setEditedProfile(prev => ({ ...prev, portfolio: [...(prev.portfolio || []), item] }));
     setNewPortfolio({ title: '', description: '', link: '', imageUrl: '' });
     setShowPortfolioForm(false);
   };
 
-  const removePortfolioItem = (id: any) => {
-    setEditedProfile(prev => ({ ...prev, portfolio: (prev.portfolio || []).filter((p: any) => p.id !== id) }));
+  const removePortfolioItem = (id: number) => {
+    setEditedProfile(prev => ({ ...prev, portfolio: (prev.portfolio || []).filter((p) => p.id !== id) }));
   };
 
   useEffect(() => {
@@ -121,7 +125,7 @@ const Profile = () => {
           setLoadingProfile(false);
           return;
         }
-        
+
         // If no localStorage data, load from Supabase
         const { data: userRes, error: userError } = await supabase.auth.getUser();
         if (userError) {
@@ -129,49 +133,57 @@ const Profile = () => {
           setLoadingProfile(false);
           return;
         }
-        
+
         const user = userRes?.user;
-        if (!user) { 
+        if (!user) {
           console.log('No authenticated user found');
-          setLoadingProfile(false); 
-          return; 
+          setLoadingProfile(false);
+          return;
         }
-        
+
         const { data, error } = await supabase
           .from('profiles')
           .select('first_name,last_name,display_name,email,avatar_url,bio')
           .eq('user_id', user.id)
           .maybeSingle();
-          
+
         if (error) {
           console.error('Error fetching profile:', error);
           setLoadingProfile(false);
           return;
         }
-        
+
         if (data) {
           const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || data.display_name || (data.email ? data.email.split('@')[0] : '');
-          const loaded = {
-            name,
+          const mockProfile = {
+            name: name, // Using actual name from Supabase
+            title: '', // Default or fetch from Supabase if available
             email: data.email || '',
-            phone: '',
-            location: '',
+            phone: '', // Fetch from Supabase if available
+            location: '', // Fetch from Supabase if available
+            price: '', // Fetch from Supabase if available
+            affiliation: '', // Fetch from Supabase if available
             avatarUrl: data.avatar_url || '',
             bio: data.bio || '',
-            skills: [] as string[],
-            experience: [] as any[],
-            portfolio: [] as any[],
-            platformLinks: { linkedin: '', upwork: '', fiverr: '', github: '' },
+            skills: [] as string[], // Fetch from Supabase if available
+            experience: [] as { title: string; company: string; duration: string; description: string }[], // Fetch from Supabase if available
+            portfolio: [] as { id: number; title: string; description: string; link: string; imageUrl: string }[], // Fetch from Supabase if available
+            platformLinks: {
+              linkedin: '', // Fetch from Supabase if available
+              github: '', // Fetch from Supabase if available
+              upwork: '', // Fetch from Supabase if available
+              fiverr: '' // Fetch from Supabase if available
+            }
           };
-          setProfile(loaded);
-          setEditedProfile(loaded);
+          setProfile(mockProfile);
+          setEditedProfile(mockProfile);
         } else {
           console.log('No profile data found for user');
         }
       } catch (error) {
         console.error('Unexpected error loading profile:', error);
-      } finally { 
-        setLoadingProfile(false); 
+      } finally {
+        setLoadingProfile(false);
       }
     };
     load();
@@ -184,15 +196,15 @@ const Profile = () => {
       const savedSettingsLocal = localStorage.getItem(STUDENT_SETTINGS_KEY);
       if (savedSettingsLocal) {
         const parsedSettings = JSON.parse(savedSettingsLocal);
-        setEmailSettings(parsedSettings.emailSettings || emailSettings);
-        setTwoFAEnabled(parsedSettings.twoFAEnabled || twoFAEnabled);
+        setEmailSettings(prev => parsedSettings.emailSettings || prev);
+        setTwoFAEnabled(prev => parsedSettings.twoFAEnabled || prev);
       }
-      
+
       // Try to load additional settings from database (fallback)
       const savedSettings = await loadUserSettings('student_settings');
       if (savedSettings) {
-        setEmailSettings(savedSettings.emailSettings || emailSettings);
-        setTwoFAEnabled(savedSettings.twoFAEnabled || twoFAEnabled);
+        setEmailSettings(prev => (savedSettings.emailSettings as { jobAlerts: boolean; messages: boolean; }) || prev);
+        setTwoFAEnabled(prev => (savedSettings.twoFAEnabled as boolean) ?? prev);
       }
     };
 
@@ -201,19 +213,19 @@ const Profile = () => {
 
   const handleSave = async () => {
     setIsSaving(true);
-    
+
     // Save profile data to profiles table (existing logic)
     try {
       // Save profile to localStorage
       localStorage.setItem(STUDENT_PROFILE_KEY, JSON.stringify(editedProfile));
-      
+
       // Save settings to localStorage
       const settingsData = {
         emailSettings,
         twoFAEnabled
       };
       localStorage.setItem(STUDENT_SETTINGS_KEY, JSON.stringify(settingsData));
-      
+
       setProfile(editedProfile);
       setIsEditing(false);
     } catch (error) {
@@ -228,7 +240,7 @@ const Profile = () => {
 
     // Save profile data to user_settings for persistence
     const profileSuccess = await saveUserSettings('student_profile', editedProfile);
-    
+
     if (settingsSuccess && profileSuccess) {
       setProfile(editedProfile);
       toast({
@@ -242,9 +254,47 @@ const Profile = () => {
         variant: "destructive",
       });
     }
-    
+
     setIsSaving(false);
   };
+
+  const handleSaveEmailSettings = async () => {
+    try {
+      const { data: userRes } = await supabase.auth.getUser();
+      const user = userRes?.user;
+
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "User not authenticated.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ email_settings: emailSettings })
+        .eq('user_id', user.id); // Assuming 'user_id' is the column for user ID
+
+      if (error) throw error;
+      toast({
+        title: "Success",
+        description: "Email settings updated",
+      });
+    } catch (error: unknown) {
+      toast({
+        title: "Error",
+        description: (error as Error).message || "An error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    // In a real app we'd fetch settings from DB
+    // For now we just use the default state
+  }, [emailSettings, twoFAEnabled]);
 
   const handleCancel = () => {
     setEditedProfile(profile);
@@ -287,43 +337,19 @@ const Profile = () => {
 
   const [showPreview, setShowPreview] = useState(false);
 
-  // Create preview data from current profile
-  const createPreviewData = () => {
-    const name = editedProfile.name || profile?.email?.split('@')[0] || 'Student';
-    
-    return {
-      name,
-      title: editedProfile.name || 'Student',
-      email: profile?.email,
-      avatarUrl: editedProfile.avatarUrl,
-      aboutMe: editedProfile.bio,
-      description: editedProfile.bio,
-      price: null,
-      skills: editedProfile.skills || [],
-      contact: {
-        linkedinUrl: editedProfile.platformLinks?.linkedin,
-        githubUrl: editedProfile.platformLinks?.github,
-        upworkUrl: editedProfile.platformLinks?.upwork,
-        fiverrUrl: editedProfile.platformLinks?.fiverr,
-      },
-      portfolio: editedProfile.portfolio || [],
-      affiliation: 'student',
-    };
-  };
-
   // Preview Profile Component
-  const PreviewProfile = ({ student }: { student: any }) => (
+  const PreviewProfile = ({ student }: { student: typeof profile }) => (
     <div className="space-y-6">
       {/* Header Section */}
       <div className="p-6 rounded-lg bg-secondary/30">
         <div className="flex flex-col lg:flex-row items-start gap-6">
           <Avatar className="w-24 h-24">
             <AvatarImage src={student.avatarUrl} alt={student.name} />
-            <AvatarFallback className="text-xl">
-              {student.name.split(' ').map((n: string) => n[0]).join('')}
-            </AvatarFallback>
+            <GradientAvatarFallback className="text-xl">
+              <User className="w-8 h-8" />
+            </GradientAvatarFallback>
           </Avatar>
-          
+
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <h1
@@ -342,7 +368,7 @@ const Profile = () => {
               )}
             </div>
             <p className="text-xl text-muted-foreground mb-4">{student.title}</p>
-            
+
             <div className="flex flex-wrap gap-2 mb-6">
               {student.skills.map((skill: string) => (
                 <Badge key={skill} variant="secondary">
@@ -362,25 +388,25 @@ const Profile = () => {
                   Schedule Call
                 </Button>
               </div>
-              
+
               {/* Platform Links */}
               <div className="flex items-center gap-3">
-                {student.contact?.linkedinUrl && (
+                {student.platformLinks?.linkedin && (
                   <div className="p-2 rounded-lg bg-[#0077b5]">
                     <Linkedin className="h-5 w-5 text-white" />
                   </div>
                 )}
-                {student.contact?.githubUrl && (
+                {student.platformLinks?.github && (
                   <div className="p-2 rounded-lg bg-[#24292e]">
                     <Github className="h-5 w-5 text-white" />
                   </div>
                 )}
-                {student.contact?.upworkUrl && (
+                {student.platformLinks?.upwork && (
                   <div className="p-2 rounded-lg bg-[#14A800]">
                     <UpworkIcon className="h-5 w-5" />
                   </div>
                 )}
-                {student.contact?.fiverrUrl && (
+                {student.platformLinks?.fiverr && (
                   <div className="p-2 rounded-lg bg-[#1DBF73]">
                     <FiverrIcon className="h-5 w-5" />
                   </div>
@@ -405,7 +431,7 @@ const Profile = () => {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground leading-relaxed">
-                {student.aboutMe || student.description || 'No description provided yet.'}
+                {student.bio || 'No description provided yet.'}
               </p>
             </CardContent>
           </Card>
@@ -419,7 +445,7 @@ const Profile = () => {
                 <div className="rounded-lg p-4 bg-secondary/30">
                   <h3 className="font-semibold mb-2">{student.title}</h3>
                   <p className="text-muted-foreground text-sm mb-2">
-                    {student.description || 'Professional services available'}
+                    {student.bio || 'Professional services available'}
                   </p>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Rate</span>
@@ -438,10 +464,10 @@ const Profile = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {student.portfolio.map((item: any, index: number) => (
+                  {student.portfolio.map((item: { id: number; title: string; description?: string; link?: string; imageUrl?: string }, index: number) => (
                     <div key={index} className="rounded-lg overflow-hidden hover:shadow-md transition-shadow bg-secondary/20">
-                      <img 
-                        src={item.imageUrl} 
+                      <img
+                        src={item.imageUrl}
                         alt={item.title}
                         className="w-full h-40 object-cover"
                       />
@@ -471,8 +497,8 @@ const Profile = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <PageHeader 
-        title="My Profile" 
+      <PageHeader
+        title="My Profile"
         description="Manage your profile information and settings"
       >
         <div className="flex gap-2">
@@ -487,10 +513,10 @@ const Profile = () => {
               <DialogHeader>
                 <DialogTitle>Profile Preview - Client View</DialogTitle>
               </DialogHeader>
-              <PreviewProfile student={createPreviewData()} />
+              <PreviewProfile student={editedProfile} />
             </DialogContent>
           </Dialog>
-          
+
           {!isEditing ? (
             <Button onClick={() => setIsEditing(true)}>
               <Edit className="mr-2 h-4 w-4" />
@@ -528,15 +554,12 @@ const Profile = () => {
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  {editedProfile.avatarUrl ? (
-                    <Avatar className="h-20 w-20">
-                      <AvatarImage src={editedProfile.avatarUrl} alt={editedProfile.name} />
-                    </Avatar>
-                  ) : (
-                    <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                      <User className="text-white" size={32} />
-                    </div>
-                  )}
+                  <Avatar className="h-20 w-20">
+                    {editedProfile.avatarUrl && <AvatarImage src={editedProfile.avatarUrl} alt={editedProfile.name} />}
+                    <GradientAvatarFallback>
+                      <User className="w-8 h-8" />
+                    </GradientAvatarFallback>
+                  </Avatar>
                   {isEditing && (
                     <>
                       <input
@@ -588,7 +611,7 @@ const Profile = () => {
                     <Input
                       type="email"
                       value={editedProfile.email}
-                      onChange={(e) => setEditedProfile({...editedProfile, email: e.target.value})}
+                      onChange={(e) => setEditedProfile({ ...editedProfile, email: e.target.value })}
                     />
                   ) : (
                     <p className="flex items-center gap-2">
@@ -602,7 +625,7 @@ const Profile = () => {
                   {isEditing ? (
                     <Input
                       value={editedProfile.phone}
-                      onChange={(e) => setEditedProfile({...editedProfile, phone: e.target.value})}
+                      onChange={(e) => setEditedProfile({ ...editedProfile, phone: e.target.value })}
                     />
                   ) : (
                     <p className="flex items-center gap-2">
@@ -618,7 +641,7 @@ const Profile = () => {
                 {isEditing ? (
                   <Input
                     value={editedProfile.location}
-                    onChange={(e) => setEditedProfile({...editedProfile, location: e.target.value})}
+                    onChange={(e) => setEditedProfile({ ...editedProfile, location: e.target.value })}
                   />
                 ) : (
                   <p className="flex items-center gap-2">
@@ -633,7 +656,7 @@ const Profile = () => {
                 {isEditing ? (
                   <Textarea
                     value={editedProfile.bio}
-                    onChange={(e) => setEditedProfile({...editedProfile, bio: e.target.value})}
+                    onChange={(e) => setEditedProfile({ ...editedProfile, bio: e.target.value })}
                     rows={4}
                   />
                 ) : (
@@ -802,7 +825,7 @@ const Profile = () => {
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {editedProfile.portfolio.map((item: any) => (
+                {editedProfile.portfolio.map((item: { id: number; title: string; description?: string; link?: string; imageUrl?: string }) => (
                   <Card key={item.id} className="relative">
                     {item.imageUrl && (
                       <div className="aspect-video bg-muted rounded-t-lg overflow-hidden">

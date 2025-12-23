@@ -21,7 +21,14 @@ const HireStudent = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const [loading, setLoading] = useState(true);
-    const [student, setStudent] = useState<any>(null);
+    const [student, setStudent] = useState<{
+        name: string;
+        title: string;
+        rate: string;
+        avatarUrl?: string;
+        location: string;
+        email: string;
+    } | null>(null);
     const [currentStep, setCurrentStep] = useState(0); // 0 = Intro, 1 = Details, 2 = Schedule, 3 = Review, 4 = Confirm
     const [date, setDate] = useState<Date>();
 

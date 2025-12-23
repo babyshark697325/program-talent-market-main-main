@@ -6,13 +6,26 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Building, MapPin, Clock, DollarSign, Calendar, Users, Mail, Bookmark, User, Star, ExternalLink, ArrowLeft, Linkedin, Github, Phone } from 'lucide-react';
+import { GradientAvatarFallback } from "@/components/GradientAvatarFallback";
 import { supabase } from '@/integrations/supabase/client';
 import { mockReviews } from '@/data/mockReviews';
 import { useAuth } from "@/contexts/AuthContext";
 
 const StudentDetail = () => {
   const { id } = useParams();
-  const [student, setStudent] = React.useState<any>(null);
+  const [student, setStudent] = React.useState<{
+    id: string;
+    name: string;
+    title: string;
+    avatarUrl?: string;
+    affiliation?: 'student' | 'alumni';
+    contact?: { email?: string; phone?: string; linkedinUrl?: string; githubUrl?: string; upworkUrl?: string; fiverrUrl?: string };
+    price: string;
+    aboutMe?: string;
+    description?: string;
+    skills?: string[];
+    portfolio?: { id: string; title: string; imageUrl?: string; description?: string; link?: string }[];
+  } | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -37,7 +50,7 @@ const StudentDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isClientRole = userRole === 'client';
-  const isClientContext = isClientRole || Boolean((location.state as any)?.clientView);
+  const isClientContext = isClientRole || Boolean((location.state as { clientView?: boolean })?.clientView);
 
   // Scroll to top when component mounts or student ID changes
   useEffect(() => {
@@ -96,15 +109,14 @@ const StudentDetail = () => {
               {/* Student Avatar */}
               <div className="relative">
                 <Avatar className={`w-20 h-20 border-4 ${student.affiliation === 'alumni' ? 'border-[#D4AF37]' : 'border-primary'}`}>
-                  {student.avatarUrl ? (
+                  {student.avatarUrl && (
                     <AvatarImage src={student.avatarUrl} alt={`${student.name} profile`} />
-                  ) : (
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-xl">
-                      <User className="w-8 h-8" />
-                    </AvatarFallback>
                   )}
+                  <GradientAvatarFallback className="text-xl">
+                    <User className="w-8 h-8" />
+                  </GradientAvatarFallback>
                 </Avatar>
-                
+
                 {student.affiliation && (
                   <Badge
                     variant={student.affiliation === 'alumni' ? 'secondary' : 'default'}
@@ -118,7 +130,7 @@ const StudentDetail = () => {
               <div className="flex-1">
                 <CardTitle className="text-2xl lg:text-3xl mb-2">{student.name}</CardTitle>
                 <CardDescription className="text-lg mb-3">{student.title}</CardDescription>
-                
+
                 {/* Contact Info */}
                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                   {student.contact?.email && (
@@ -142,7 +154,7 @@ const StudentDetail = () => {
               <div className="text-right mb-2">
                 <span className="text-2xl font-bold text-primary">{student.price}</span>
               </div>
-              
+
               <div className="flex gap-3">
                 <Button onClick={handleHireStudent} size="lg">
                   <Users className="mr-2 h-4 w-4" />
@@ -205,8 +217,8 @@ const StudentDetail = () => {
                     <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                       {item.imageUrl && (
                         <div className="aspect-video overflow-hidden">
-                          <img 
-                            src={item.imageUrl} 
+                          <img
+                            src={item.imageUrl}
                             alt={item.title}
                             className="w-full h-full object-cover"
                           />
@@ -254,10 +266,10 @@ const StudentDetail = () => {
                 {/* Overall Rating Summary */}
                 {(() => {
                   const studentReviews = mockReviews.filter(r => r.targetId === student.id && r.targetType === 'student');
-                  const averageRating = studentReviews.length > 0 
-                    ? studentReviews.reduce((sum, review) => sum + review.rating, 0) / studentReviews.length 
+                  const averageRating = studentReviews.length > 0
+                    ? studentReviews.reduce((sum, review) => sum + review.rating, 0) / studentReviews.length
                     : 0;
-                  
+
                   return studentReviews.length > 0 ? (
                     <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
                       <div className="text-center">
@@ -266,9 +278,8 @@ const StudentDetail = () => {
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star
                               key={star}
-                              className={`w-4 h-4 ${
-                                star <= averageRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                              }`}
+                              className={`w-4 h-4 ${star <= averageRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                }`}
                             />
                           ))}
                         </div>
@@ -314,27 +325,26 @@ const StudentDetail = () => {
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star
                               key={star}
-                              className={`w-4 h-4 ${
-                                star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                              }`}
+                              className={`w-4 h-4 ${star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                                }`}
                             />
                           ))}
                         </div>
                       </div>
-                      
+
                       <div>
                         <h4 className="font-medium mb-1">{review.title}</h4>
                         <p className="text-sm text-muted-foreground leading-relaxed">
                           {review.comment}
                         </p>
                       </div>
-                      
+
                       {review.projectTitle && (
                         <div className="text-xs text-muted-foreground">
                           Project: {review.projectTitle}
                         </div>
                       )}
-                      
+
                       {review.verified && (
                         <Badge variant="outline" className="text-xs">
                           Verified Project
@@ -367,13 +377,13 @@ const StudentDetail = () => {
                 <span className="text-sm text-muted-foreground">Rate:</span>
                 <span className="font-semibold">{student.price}</span>
               </div>
-              
+
               {(() => {
                 const studentReviews = mockReviews.filter(r => r.targetId === student.id && r.targetType === 'student');
-                const averageRating = studentReviews.length > 0 
-                  ? studentReviews.reduce((sum, review) => sum + review.rating, 0) / studentReviews.length 
+                const averageRating = studentReviews.length > 0
+                  ? studentReviews.reduce((sum, review) => sum + review.rating, 0) / studentReviews.length
                   : 0;
-                
+
                 return studentReviews.length > 0 && (
                   <div className="flex items-center gap-2">
                     <Star className="w-4 h-4 text-muted-foreground" />
@@ -384,9 +394,8 @@ const StudentDetail = () => {
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`w-3 h-3 ${
-                              star <= averageRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-                            }`}
+                            className={`w-3 h-3 ${star <= averageRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                              }`}
                           />
                         ))}
                       </div>
@@ -395,7 +404,7 @@ const StudentDetail = () => {
                   </div>
                 );
               })()}
-              
+
               {student.affiliation && (
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-muted-foreground" />

@@ -41,7 +41,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             className="pl-10 md:pl-12 py-5 md:py-6 text-base md:text-lg rounded-full border border-primary/30 dark:border-white/10 focus:border-primary focus:ring-primary/20 bg-white/90 dark:bg-[#040b17] backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2"
           />
         </div>
-        
+
         {activeTab === "students" && (
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="flex items-center gap-2 text-xs md:text-sm font-medium text-muted-foreground whitespace-nowrap">
@@ -58,12 +58,11 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                   key={sort.value}
                   variant={sortBy === sort.value ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setSortBy(sort.value as any)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-[1.02] shadow-sm ${
-                    sortBy === sort.value 
-                      ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
+                  onClick={() => setSortBy(sort.value as "name" | "price" | "rating")}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-[1.02] shadow-sm ${sortBy === sort.value
+                      ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25"
                       : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
-                  }`}
+                    }`}
                 >
                   {sort.label}
                 </Button>
@@ -81,11 +80,10 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
         <div className="flex flex-wrap gap-2">
           <Badge
             key="all"
-            className={`cursor-pointer px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 hover:scale-[1.02] shadow-sm ${
-              selectedSkill === null 
-                ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
+            className={`cursor-pointer px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 hover:scale-[1.02] shadow-sm ${selectedSkill === null
+                ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25"
                 : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
-            }`}
+              }`}
             onClick={() => setSelectedSkill(null)}
           >
             All Skills
@@ -93,11 +91,10 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
           {allSkills.slice(0, window.innerWidth < 640 ? 4 : 8).map((skill) => (
             <Badge
               key={skill}
-              className={`cursor-pointer px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 hover:scale-[1.02] shadow-sm ${
-                selectedSkill === skill 
-                  ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25" 
+              className={`cursor-pointer px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 hover:scale-[1.02] shadow-sm ${selectedSkill === skill
+                  ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25"
                   : "bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5"
-              }`}
+                }`}
               onClick={() => setSelectedSkill(selectedSkill === skill ? null : skill)}
             >
               {skill}

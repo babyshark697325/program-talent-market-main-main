@@ -30,7 +30,7 @@ const AdminReports = () => {
           .select('id,type,title,description,reporter_name,reported_name,status,priority,created_at,resolved_at')
           .order('created_at', { ascending: false });
         if (error) throw error;
-        setReports((data || []) as any);
+        setReports((data || []) as unknown as Report[]);
       } catch (e) {
         console.warn('Reports fetch error', e);
         setReports([]);

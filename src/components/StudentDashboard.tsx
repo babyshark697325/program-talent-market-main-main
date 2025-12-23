@@ -12,7 +12,7 @@ import BackToTop from "./BackToTop";
 // Updated interface - removed jobs prop
 
 // Job interface matching mock data
-interface Job extends JobPosting {}
+type Job = JobPosting;
 
 const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -28,10 +28,10 @@ const StudentDashboard: React.FC = () => {
       try {
         setJobsLoading(true);
         setJobsError(null);
-        
+
         // Simulate API delay for realistic demo
         await new Promise(resolve => setTimeout(resolve, 500));
-        
+
         // Use mock data
         setJobs(mockJobs);
       } catch (err) {
@@ -45,11 +45,11 @@ const StudentDashboard: React.FC = () => {
     fetchJobs();
   }, []);
 
-    // Use mock user skills for demo
+  // Use mock user skills for demo
   React.useEffect(() => {
     const fetchUserSkills = async () => {
       if (!user) return;
-      
+
       try {
         // Use mock skills for demo - representing a student interested in web development
         const demoSkills = ["Web Development", "Programming", "UI/UX Design", "React", "JavaScript"];
@@ -89,7 +89,7 @@ const StudentDashboard: React.FC = () => {
       "Student"
     );
   };
-  
+
   const { timeGreeting, dayMessage } = getDayGreeting();
   const displayName = getDisplayName();
 
@@ -107,7 +107,7 @@ const StudentDashboard: React.FC = () => {
         return sum + amount;
       }, 0);
       const skillsCount = 12; // Representing various skills learned
-      
+
       setStats({
         skills: skillsCount,
         projects: completedProjects,
@@ -133,13 +133,13 @@ const StudentDashboard: React.FC = () => {
 
     // Calculate skill match score for each job
     const jobsWithScore = jobs.map(job => {
-      const matchingSkills = job.skills.filter(skill => 
-        userSkills.some(userSkill => 
+      const matchingSkills = job.skills.filter(skill =>
+        userSkills.some(userSkill =>
           userSkill.toLowerCase().includes(skill.toLowerCase()) ||
           skill.toLowerCase().includes(userSkill.toLowerCase())
         )
       );
-      
+
       return {
         job,
         score: matchingSkills.length,
@@ -187,12 +187,12 @@ const StudentDashboard: React.FC = () => {
             <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent leading-tight tracking-tight">
               Your Dashboard
             </h1>
-            
+
             {/* Greeting */}
             <p className="text-xl md:text-2xl font-medium text-foreground/90">
               {timeGreeting}, {displayName}!
             </p>
-            
+
             {/* Motivational Line */}
             <p className="text-lg md:text-xl text-muted-foreground font-medium">
               {dayMessage}
@@ -246,14 +246,14 @@ const StudentDashboard: React.FC = () => {
         <div className="bg-gradient-to-r from-secondary/60 to-primary/10 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-primary/10 mb-12">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-4xl font-bold text-primary">Recommended Opportunities</h2>
-            <Button 
-              onClick={() => navigate("/browse-jobs")} 
+            <Button
+              onClick={() => navigate("/browse-jobs")}
               variant="outline"
             >
               View All Jobs
             </Button>
           </div>
-          
+
           {jobsLoading ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground text-lg">Loading opportunities...</p>
@@ -261,8 +261,8 @@ const StudentDashboard: React.FC = () => {
           ) : jobsError ? (
             <div className="text-center py-8">
               <p className="text-red-500 text-lg mb-4">{jobsError}</p>
-              <Button 
-                onClick={() => window.location.reload()} 
+              <Button
+                onClick={() => window.location.reload()}
                 variant="outline"
               >
                 Try Again
@@ -284,12 +284,12 @@ const StudentDashboard: React.FC = () => {
               ) : (
                 <div className="col-span-full text-center py-8">
                   <p className="text-muted-foreground text-lg">
-                    {userSkills.length === 0 
+                    {userSkills.length === 0
                       ? "Complete your profile with skills to get personalized job recommendations."
                       : "No opportunities found matching your skills. Check back later for new postings!"
                     }
                   </p>
-                  <Button 
+                  <Button
                     onClick={() => userSkills.length === 0 ? navigate("/profile") : navigate("/browse-jobs")}
                     className="mt-4 bg-gradient-to-r from-primary to-primary/80"
                   >

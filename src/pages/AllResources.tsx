@@ -20,7 +20,9 @@ function loadResources() {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch {
+    // Ignore error
+  }
   return [];
 }
 
@@ -49,13 +51,13 @@ const AllResources = () => {
     const viewedIds = viewed ? JSON.parse(viewed) : [];
     const newViewed = [resource.id, ...viewedIds.filter(id => id !== resource.id)].slice(0, 5);
     localStorage.setItem('recentlyViewedResources', JSON.stringify(newViewed));
-    
+
     // Navigate to resource detail or start learning
     console.log('Starting learning:', resource.title);
   };
 
-  const filteredResources = filter === 'all' 
-    ? resources 
+  const filteredResources = filter === 'all'
+    ? resources
     : resources.filter(r => r.type === filter);
 
   return (
@@ -71,75 +73,75 @@ const AllResources = () => {
         </Button>
       </div>
 
-        <div className="space-y-6">
-          <div className="flex gap-2">
-            <Button 
-              variant={filter === 'all' ? 'default' : 'outline'}
-              onClick={() => setFilter('all')}
-            >
-              All Resources
-            </Button>
-            <Button 
-              variant={filter === 'workshop' ? 'default' : 'outline'}
-              onClick={() => setFilter('workshop')}
-            >
-              Workshops
-            </Button>
-            <Button 
-              variant={filter === 'video' ? 'default' : 'outline'}
-              onClick={() => setFilter('video')}
-            >
-              Videos
-            </Button>
-            <Button 
-              variant={filter === 'guide' ? 'default' : 'outline'}
-              onClick={() => setFilter('guide')}
-            >
-              Guides
-            </Button>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
-            {filteredResources.map((resource) => {
-              const IconComponent = getIconForType(resource.type);
-              return (
-                <Card key={resource.id} className="flex flex-col relative">
-                  <CardHeader className="flex-1 pt-3 pb-2">
-                    <div className="absolute top-3 right-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(resource.status)}`}>
-                        {resource.status === 'coming-soon' ? 'Soon' : 'Available'}
-                      </span>
-                    </div>
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                        <IconComponent className="text-primary opacity-80" size={16} />
-                      </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-lg mb-2 leading-tight font-semibold">{resource.title}</CardTitle>
-                        <CardDescription className="text-xs leading-snug line-clamp-3 mb-2">{resource.description}</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="mt-auto pt-2">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock size={12} />
-                        {resource.duration}
-                      </div>
-                    </div>
-                    <Button 
-                      className="w-full h-8 text-xs"
-                      disabled={resource.status === 'coming-soon'}
-                      onClick={() => handleStartLearning(resource)}
-                    >
-                      {resource.status === 'coming-soon' ? 'Notify Me' : 'Start Learning'}
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+      <div className="space-y-6">
+        <div className="flex gap-2">
+          <Button
+            variant={filter === 'all' ? 'default' : 'outline'}
+            onClick={() => setFilter('all')}
+          >
+            All Resources
+          </Button>
+          <Button
+            variant={filter === 'workshop' ? 'default' : 'outline'}
+            onClick={() => setFilter('workshop')}
+          >
+            Workshops
+          </Button>
+          <Button
+            variant={filter === 'video' ? 'default' : 'outline'}
+            onClick={() => setFilter('video')}
+          >
+            Videos
+          </Button>
+          <Button
+            variant={filter === 'guide' ? 'default' : 'outline'}
+            onClick={() => setFilter('guide')}
+          >
+            Guides
+          </Button>
         </div>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
+          {filteredResources.map((resource) => {
+            const IconComponent = getIconForType(resource.type);
+            return (
+              <Card key={resource.id} className="flex flex-col relative">
+                <CardHeader className="flex-1 pt-3 pb-2">
+                  <div className="absolute top-3 right-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(resource.status)}`}>
+                      {resource.status === 'coming-soon' ? 'Soon' : 'Available'}
+                    </span>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                      <IconComponent className="text-primary opacity-80" size={16} />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-lg mb-2 leading-tight font-semibold">{resource.title}</CardTitle>
+                      <CardDescription className="text-xs leading-snug line-clamp-3 mb-2">{resource.description}</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="mt-auto pt-2">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock size={12} />
+                      {resource.duration}
+                    </div>
+                  </div>
+                  <Button
+                    className="w-full h-8 text-xs"
+                    disabled={resource.status === 'coming-soon'}
+                    onClick={() => handleStartLearning(resource)}
+                  >
+                    {resource.status === 'coming-soon' ? 'Notify Me' : 'Start Learning'}
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 };

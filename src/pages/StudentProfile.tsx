@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { usePresence } from '@/contexts/PresenceContext';
 import PageHeader from '@/components/PageHeader';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { GradientAvatarFallback } from "@/components/GradientAvatarFallback";
 import { Mail, Phone, MapPin, Eye, Edit, Image, User, X, Plus, Trash2, ExternalLink, Linkedin, Github, Briefcase, MessageCircle, Star, FolderOpen, CheckCircle, Clock, Globe, Shield, Heart } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
@@ -119,7 +120,7 @@ const StudentProfile = () => {
     return mockStudents[0];
   }, [id]);
   const defaultRate = '$25/hr';
-  const initialStudent: StudentState = {
+  const initialStudent: StudentState = useMemo(() => ({
     name: fallbackStudent?.name || 'Alex Rivera',
     email: fallbackStudent?.contact?.email || 'alex@example.com',
     phone: fallbackStudent?.contact?.phone || '(555) 123-4567',
@@ -153,7 +154,7 @@ const StudentProfile = () => {
       history: [],
     },
     status: 'Available',
-  };
+  }), [fallbackStudent, defaultRate]);
   const [student, setStudent] = useState<StudentState>(initialStudent);
   const [edited, setEdited] = useState<StudentState>(initialStudent);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -232,7 +233,7 @@ const StudentProfile = () => {
               portfolio: [],
               platformLinks: { linkedin: '', github: '', upwork: '', fiverr: '' },
               payments: { ...initialStudent.payments, history: [] },
-              status: (profileData as any).status || 'Available',
+              status: (profileData as unknown as { status: StudentState['status'] }).status || 'Available',
             };
           }
 
@@ -265,7 +266,7 @@ const StudentProfile = () => {
                   title: p.title,
                   description: p.description,
                   link: p.link,
-                  imageUrl: (p as any).imageUrl,
+                  imageUrl: p.imageUrl || '',
                 })) || [],
                 platformLinks: {
                   linkedin: waitlistData.contact?.linkedinUrl || '',
@@ -341,7 +342,7 @@ const StudentProfile = () => {
           // Note: assuming 'status' column exists or we default. 
           // If it doesn't exist in DB yet, we might need a migration or just keep it local for now.
           // For this refactor, we default to 'Available' if missing.
-          const status = (data as any).status || 'Available';
+          const status = (data as unknown as { status: StudentState['status'] }).status || 'Available';
 
           const name =
             [data.first_name, data.last_name].filter(Boolean).join(' ').trim() ||
@@ -356,7 +357,7 @@ const StudentProfile = () => {
         setLoading(false);
       }
     })();
-  }, [id]);
+  }, [id, initialStudent.payments]);
 
   // Scroll to top on ID change
   useEffect(() => {
@@ -404,8 +405,10 @@ const StudentProfile = () => {
           <div className="flex items-center gap-6 flex-1">
             <div className="relative group shrink-0">
               <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background shadow-md">
-                <AvatarImage src={displayStudent.avatarUrl} className="object-cover" />
-                <AvatarFallback className="text-2xl">{displayStudent.name?.charAt(0)}</AvatarFallback>
+                {displayStudent.avatarUrl && <AvatarImage src={displayStudent.avatarUrl} className="object-cover" />}
+                <GradientAvatarFallback className="text-2xl">
+                  <User className="w-12 h-12" />
+                </GradientAvatarFallback>
               </Avatar>
               {isEditing && (
                 <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white" onClick={triggerAvatarPick}>
@@ -544,10 +547,10 @@ const StudentProfile = () => {
                           <span className="text-sm font-medium">{platform.label}</span>
                         </div>
                         {isEditing ? (
-                          <Input className="h-8 w-36 text-xs" placeholder="URL..." value={(edited.platformLinks as any)[platform.key] || ''} onChange={e => setEdited({ ...edited, platformLinks: { ...edited.platformLinks, [platform.key]: e.target.value } })} />
+                          <Input className="h-8 w-36 text-xs" placeholder="URL..." value={edited.platformLinks[platform.key as keyof PlatformLinks] || ''} onChange={e => setEdited({ ...edited, platformLinks: { ...edited.platformLinks, [platform.key]: e.target.value } })} />
                         ) : (
-                          (displayStudent.platformLinks as any)[platform.key] ? (
-                            <a href={(displayStudent.platformLinks as any)[platform.key]} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline font-medium flex items-center gap-1">Verified <CheckCircle className="w-3 h-3" /></a>
+                          displayStudent.platformLinks[platform.key as keyof PlatformLinks] ? (
+                            <a href={displayStudent.platformLinks[platform.key as keyof PlatformLinks]} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline font-medium flex items-center gap-1">Verified <CheckCircle className="w-3 h-3" /></a>
                           ) : <span className="text-xs text-muted-foreground italic">Not Linked</span>
                         )}
                       </div>
@@ -702,7 +705,7 @@ const StudentProfile = () => {
                   <label className="text-xs font-semibold text-muted-foreground">Manual Status Preference</label>
                   <Select
                     value={edited.status}
-                    onValueChange={(val: any) => setEdited({ ...edited, status: val })}
+                    onValueChange={(val: StudentState['status']) => setEdited({ ...edited, status: val })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select status" />

@@ -19,7 +19,7 @@ export interface Notification {
     clientName?: string;
     studentName?: string;
     rating?: number;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   expiresAt?: string;
 }

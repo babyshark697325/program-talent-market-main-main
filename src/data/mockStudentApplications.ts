@@ -204,13 +204,13 @@ export const getApplicationsByStatus = (status: StudentApplication['status']): S
 };
 
 export const getActiveApplications = (): StudentApplication[] => {
-  return mockStudentApplications.filter(app => 
+  return mockStudentApplications.filter(app =>
     ['pending', 'reviewed', 'shortlisted', 'interviewed'].includes(app.status)
   );
 };
 
 export const getCompletedApplications = (): StudentApplication[] => {
-  return mockStudentApplications.filter(app => 
+  return mockStudentApplications.filter(app =>
     ['hired', 'rejected', 'withdrawn'].includes(app.status)
   );
 };
@@ -222,8 +222,8 @@ export const getSuccessfulApplications = (): StudentApplication[] => {
 export const getRecentApplications = (days: number = 7): StudentApplication[] => {
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - days);
-  
-  return mockStudentApplications.filter(app => 
+
+  return mockStudentApplications.filter(app =>
     new Date(app.appliedDate) >= cutoffDate
   );
 };
@@ -241,11 +241,11 @@ export const studentApplicationStats = {
   active: getActiveApplications().length,
   successRate: (getSuccessfulApplications().length / mockStudentApplications.length) * 100,
   averageProposedBudget: mockStudentApplications.reduce((sum, app) => {
-    const budget = parseInt(app.proposedBudget.replace(/[\$,]/g, ''));
+    const budget = parseInt(app.proposedBudget.replace(/[$,]/g, ''));
     return sum + budget;
   }, 0) / mockStudentApplications.length,
   totalEarnings: getSuccessfulApplications().reduce((sum, app) => {
-    const budget = parseInt(app.proposedBudget.replace(/[\$,]/g, ''));
+    const budget = parseInt(app.proposedBudget.replace(/[$,]/g, ''));
     return sum + budget;
   }, 0)
 };

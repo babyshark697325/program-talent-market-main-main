@@ -24,7 +24,7 @@ const AdminStats = () => {
   React.useEffect(() => {
     const fetchAllData = async () => {
       setIsLoading(true);
-      
+
       try {
         // Define all interfaces first
         interface PaymentRow {
@@ -106,19 +106,19 @@ const AdminStats = () => {
         // Process stats
         if (statsRes.status === 'fulfilled') {
           const [usersRes, adminsRes, waitlistRes, jobsRes, paymentsRes] = statsRes.value;
-          
+
           const totalUsers = usersRes.count ?? 0;
           const admins = adminsRes.count ?? 0;
           const pendingWaitlist = waitlistRes.count ?? 0;
           const activeProjects = jobsRes.count ?? 0;
-          
+
           const paymentsRows = paymentsRes.data as PaymentRow[] || [];
           const monthlyRevenue = paymentsRows.reduce((sum: number, r) => sum + Number(r.amount || 0), 0);
           const txCount = paymentsRows.length;
           const platformFees = monthlyRevenue * 0.10;
           const processingCosts = monthlyRevenue * 0.029 + txCount * 0.30;
           const netProfit = Math.max(0, monthlyRevenue - platformFees - processingCosts);
-          
+
           setFinancial({ revenue: monthlyRevenue, fees: platformFees, processing: processingCosts, net: netProfit });
           setPlatformStats([
             { label: 'Total Users', value: totalUsers },
@@ -152,7 +152,7 @@ const AdminStats = () => {
         // Process activity
         if (activityRes.status === 'fulfilled') {
           const [profilesRes, jobsRes, applicationsRes, paymentsRes, waitlistRes] = activityRes.value;
-          
+
           const events: { action: string; user: string; time: string }[] = [];
           const push = (action: string, user: string, ts: string | Date) => {
             events.push({ action, user, time: new Date(ts).toLocaleString() });
@@ -168,7 +168,7 @@ const AdminStats = () => {
             (jobsRes.value.data as JobActivityRow[] || []).forEach((j) => push('Job posted', `${j.title}${j.company ? ' @ ' + j.company : ''}`, j.posted_at));
           }
           if (applicationsRes.status === 'fulfilled' && !applicationsRes.value.error) {
-            (applicationsRes.value.data as any[] || []).forEach((a) => push('Application submitted', `Application #${a.id}`, a.created_at));
+            (applicationsRes.value.data as { id: string; created_at: string }[] || []).forEach((a) => push('Application submitted', `Application #${a.id}`, a.created_at));
           }
           if (paymentsRes.status === 'fulfilled' && !paymentsRes.value.error) {
             (paymentsRes.value.data as PaymentActivityRow[] || []).forEach((pay) => {
@@ -184,13 +184,13 @@ const AdminStats = () => {
               push('Joined waitlist', `${name}${details.length ? ` (${details.join(', ')})` : ''}`, w.created_at);
             });
           }
-          
+
           setRecentActivity(events.slice(0, 10));
         } else {
           // Keep empty if no activity data available
           setRecentActivity([]);
         }
-        
+
       } catch (e) {
         console.error('Error loading admin stats', e);
         // No mock fallback; keep empty/nulls
@@ -216,14 +216,16 @@ const AdminStats = () => {
         arr.push({ t: Date.now(), ok });
         while (arr.length > 100) arr.shift();
         localStorage.setItem(PINGS_KEY, JSON.stringify(arr));
-      } catch {}
+      } catch {
+        // Ignore storage error
+      }
     };
     const computeUptime = (): number | null => {
       try {
         const raw = localStorage.getItem(PINGS_KEY);
         const arr = Array.isArray(raw ? JSON.parse(raw) : []) ? JSON.parse(raw as string) : [];
         if (!arr.length) return null;
-        const ok = arr.filter((p: any) => p?.ok).length;
+        const ok = arr.filter((p: { ok: boolean }) => p?.ok).length;
         return Math.round(((ok / arr.length) * 100) * 10) / 10;
       } catch { return null; }
     };
@@ -254,7 +256,7 @@ const AdminStats = () => {
       if (paymentsRecentRes.status === 'fulfilled' && !paymentsRecentRes.value.error) activeEvents += paymentsRecentRes.value.data?.length || 0;
       let errorRatePct: number | null = null;
       if (paymentsDayRes.status === 'fulfilled' && !paymentsDayRes.value.error) {
-        const rows = (paymentsDayRes.value.data as any[]) || [];
+        const rows = (paymentsDayRes.value.data as { status: string }[]) || [];
         const total = rows.length;
         const failed = rows.filter((r) => r.status && String(r.status).toLowerCase() !== 'completed').length;
         errorRatePct = total > 0 ? (failed / total) * 100 : 0;

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -233,7 +234,7 @@ const Auth: React.FC = () => {
     try {
       // Check if all required fields are filled
       const missingFields = [];
-      
+
       if (!waitlistData.firstName.trim()) missingFields.push("First name");
       if (!waitlistData.lastName.trim()) missingFields.push("Last name");
       if (!waitlistData.email.trim()) missingFields.push("Email");

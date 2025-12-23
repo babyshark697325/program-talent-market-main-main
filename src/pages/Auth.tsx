@@ -13,7 +13,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 
 type Role = "student" | "client" | "admin";
-const normalizeRole = (v: any): Role =>
+const normalizeRole = (v: unknown): Role =>
 	v === "student" || v === "client" || v === "admin" ? v : "client";
 
 const Auth: React.FC = () => {
@@ -25,7 +25,7 @@ const Auth: React.FC = () => {
 	// Derive initial tab from location on first mount to avoid flicker
 	const initialTab = React.useMemo<"signin" | "signup" | "waitlist">(() => {
 		try {
-			const st = location.state as any;
+			const st = location.state as { signup?: boolean; tab?: string } | null;
 			const params = new URLSearchParams(location.search);
 			const wantsSignup = Boolean(
 				st?.signup ||
@@ -68,7 +68,7 @@ const Auth: React.FC = () => {
 
 	// If redirected from a restricted guest action, switch to signup tab
 	React.useEffect(() => {
-		const st = location.state as any;
+		const st = location.state as { signup?: boolean; tab?: string } | null;
 		const params = new URLSearchParams(location.search);
 		const wantsSignup = Boolean(
 			st?.signup ||
@@ -117,8 +117,8 @@ const Auth: React.FC = () => {
 			} else {
 				toast({ title: "Confirmation sent", description: "Check your inbox for the confirmation link." });
 			}
-		} catch (e: any) {
-			toast({ title: "Couldn't resend confirmation", description: e?.message ?? String(e), variant: "destructive" });
+		} catch (e: unknown) {
+			toast({ title: "Couldn't resend confirmation", description: (e as Error)?.message ?? String(e), variant: "destructive" });
 		} finally {
 			setSubmitting(null);
 		}
@@ -145,7 +145,7 @@ const Auth: React.FC = () => {
 				},
 			});
 
-			const identitiesLen = (data?.user as any)?.identities?.length ?? undefined;
+			const identitiesLen = (data?.user?.identities)?.length ?? undefined;
 			const msg = (error?.message || "").toLowerCase();
 			const alreadyRegistered =
 				error?.status === 422 ||
@@ -320,7 +320,7 @@ const Auth: React.FC = () => {
 					<p className="text-sm text-muted-foreground">Sign in or create an account to continue</p>
 				</CardHeader>
 				<CardContent className="pt-0">
-					<Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
+					<Tabs value={tab} onValueChange={(v) => setTab(v as "signin" | "signup" | "waitlist")} className="w-full">
 						<TabsList className="grid grid-cols-3 w-full">
 							<TabsTrigger value="signin">Sign In</TabsTrigger>
 							<TabsTrigger value="signup">Sign Up</TabsTrigger>

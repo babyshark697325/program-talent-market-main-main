@@ -17,10 +17,22 @@ import FeaturedStudent from "@/components/FeaturedStudent";
 import { StudentService } from "@/types/student";
 import { supabase } from "@/integrations/supabase/client";
 
-const LS_QUOTE_KEY = "spotlight.quote";
-const LS_STUDENT_ID_KEY = "spotlight.studentId";
-const LS_SHOWCASE_IMAGE_KEY = "spotlight.showcaseImage";
-const LS_REVIEW_KEY = "spotlight.review";
+interface ReviewData {
+  id: string;
+  reviewer_name: string;
+  reviewer_company: string | null;
+  review_text: string;
+  rating: number;
+}
+
+// Database config table interface
+interface SpotlightConfig {
+  id: string;
+  student_id: string | null;
+  quote: string | null;
+  showcase_image: string | null;
+  review_data: ReviewData | null;
+}
 
 // Transform database profile to StudentService format (same as in Index.tsx)
 interface DatabaseProfile {
@@ -46,25 +58,26 @@ interface DatabaseReview {
   created_at: string;
 }
 
-const transformProfileToStudent = (profile: DatabaseProfile): StudentService => {
-  const displayName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 
-    profile.display_name || 
-    profile.email.split('@')[0];
-  
+// Transform prelaunch signup to StudentService format
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const transformSignupToStudent = (signup: any): StudentService => {
+  const displayName = signup.display_name || signup.name || [signup.first_name, signup.last_name].filter(Boolean).join(' ') || signup.email?.split('@')[0] || 'Unnamed Student';
+
   return {
-    id: parseInt(profile.id.slice(-8), 16),
+    id: signup.id || (typeof signup.id === 'string' ? parseInt(signup.id.slice(-8), 16) : 0),
+    cic_id: signup.cic_id || signup.id,
     name: displayName,
-    title: profile.bio || "Student",
-    description: profile.bio || "",
-    avatarUrl: profile.avatar_url || "",
-    skills: [],
-    price: "$0/hr",
-    affiliation: "student" as const,
-    aboutMe: profile.bio || "",
-    contact: {
-      email: profile.email
+    title: signup.title || "Student",
+    description: signup.description || "",
+    avatarUrl: signup.avatar_url || "",
+    skills: Array.isArray(signup.skills) ? signup.skills : [],
+    price: signup.price || "$0/hr",
+    affiliation: (signup.affiliation === "alumni" || signup.role === "alumni") ? "alumni" : "student",
+    aboutMe: signup.aboutMe || "",
+    contact: signup.contact || {
+      email: signup.email
     },
-    portfolio: []
+    portfolio: Array.isArray(signup.portfolio) ? signup.portfolio : []
   };
 };
 
@@ -75,7 +88,7 @@ const getInitials = (name: string) => {
 function AdminSpotlightSuccess() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   // State for student selection and data
   const [quote, setQuote] = useState("");
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
@@ -83,24 +96,25 @@ function AdminSpotlightSuccess() {
   const [students, setStudents] = useState<StudentService[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<StudentService | null>(null);
-  
+
   // State for reviews
   const [reviews, setReviews] = useState<DatabaseReview[]>([]);
   const [selectedReviewId, setSelectedReviewId] = useState<string>("");
   const [loadingReviews, setLoadingReviews] = useState(false);
 
   // Fetch students from Supabase
-  const fetchStudents = async () => {
+  const fetchStudents = React.useCallback(async () => {
     setLoadingStudents(true);
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('prelaunch_signups')
         .select('*')
-        .order('display_name', { ascending: true });
+        .eq('role', 'student') // Filter by student role
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      const transformedStudents = (data || []).map(transformProfileToStudent);
+      const transformedStudents = (data || []).map(transformSignupToStudent);
       setStudents(transformedStudents);
     } catch (error) {
       console.error('Error fetching students:', error);
@@ -112,7 +126,7 @@ function AdminSpotlightSuccess() {
     } finally {
       setLoadingStudents(false);
     }
-  };
+  }, [toast]);
 
   // Fetch reviews for selected student
   const fetchStudentReviews = async (studentId: string) => {
@@ -144,20 +158,35 @@ function AdminSpotlightSuccess() {
     }
   };
 
-  // Load existing data from localStorage
-  useEffect(() => {
-    const savedQuote = localStorage.getItem(LS_QUOTE_KEY);
-    const savedStudentId = localStorage.getItem(LS_STUDENT_ID_KEY);
-    const savedImage = localStorage.getItem(LS_SHOWCASE_IMAGE_KEY);
-    const savedReviewId = localStorage.getItem(LS_REVIEW_KEY);
+  // Fetch spotlight config from Supabase
+  const fetchSpotlightConfig = React.useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('spotlight_config')
+        .select('*')
+        .maybeSingle();
 
-    if (savedQuote) setQuote(savedQuote);
-    if (savedStudentId) setSelectedStudentId(savedStudentId);
-    if (savedImage) setShowcaseImage(savedImage);
-    if (savedReviewId) setSelectedReviewId(savedReviewId);
+      if (error) throw error;
 
-    fetchStudents();
+      if (data) {
+        setQuote(data.quote || "");
+        setSelectedStudentId(data.student_id ? data.student_id : "");
+        setShowcaseImage(data.showcase_image || "");
+
+        if (data.review_data && typeof data.review_data === 'object' && 'id' in data.review_data) {
+          setSelectedReviewId((data.review_data as unknown as ReviewData).id || "");
+        }
+      }
+    } catch (error) {
+      console.error('Error loading spotlight config:', error);
+      // Fallback to local storage if DB fails (optional, or just log error)
+    }
   }, []);
+
+  useEffect(() => {
+    fetchStudents();
+    fetchSpotlightConfig();
+  }, [fetchStudents, fetchSpotlightConfig]);
 
   // Update selected student when studentId changes
   useEffect(() => {
@@ -211,35 +240,90 @@ function AdminSpotlightSuccess() {
       return;
     }
 
-    // Save spotlight data including selected review
-    localStorage.setItem(LS_STUDENT_ID_KEY, selectedStudentId);
-    localStorage.setItem(LS_QUOTE_KEY, quote.trim());
-    localStorage.setItem(LS_SHOWCASE_IMAGE_KEY, showcaseImage || "");
-    localStorage.setItem(LS_REVIEW_KEY, selectedReviewId || "");
+    // Find the full review object to save
+    const reviewToSave = reviews.find(r => r.id === selectedReviewId) || null;
 
-    toast({
-      title: "Success",
-      description: "Spotlight settings saved successfully!",
-    });
+    // Save to Supabase
+    const saveToDb = async () => {
+      try {
+        // First check if a row exists
+        const { data: existingData } = await supabase
+          .from('spotlight_config')
+          .select('id')
+          .maybeSingle();
+
+        const payload = {
+          student_id: selectedStudentId,
+          quote: quote.trim(),
+          showcase_image: showcaseImage || null,
+          review_data: reviewToSave
+        };
+
+        let error;
+        if (existingData) {
+          const { error: updateError } = await supabase
+            .from('spotlight_config')
+            .update(payload)
+            .eq('id', existingData.id);
+          error = updateError;
+        } else {
+          const { error: insertError } = await supabase
+            .from('spotlight_config')
+            .insert([payload]);
+          error = insertError;
+        }
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Spotlight settings saved successfully!",
+        });
+      } catch (err) {
+        console.error('Error saving spotlight settings:', err);
+        toast({
+          title: "Error",
+          description: "Failed to save settings to database.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    saveToDb();
   };
 
   const reset = () => {
+    // Reset local state
     setQuote("");
     setSelectedStudentId("");
     setShowcaseImage("");
     setSelectedReviewId("");
     setSelectedStudent(null);
     setReviews([]);
-    
-    localStorage.removeItem(LS_QUOTE_KEY);
-    localStorage.removeItem(LS_STUDENT_ID_KEY);
-    localStorage.removeItem(LS_SHOWCASE_IMAGE_KEY);
-    localStorage.removeItem(LS_REVIEW_KEY);
 
-    toast({
-      title: "Success",
-      description: "Spotlight settings reset successfully!",
-    });
+    // Clear from DB (optional: or just clear columns)
+    const clearDb = async () => {
+      try {
+        const { error } = await supabase
+          .from('spotlight_config')
+          .delete()
+          .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
+
+        if (error) throw error;
+        toast({
+          title: "Success",
+          description: "Spotlight settings cleared successfully!",
+        });
+      } catch (err) {
+        console.error('Error clearing spotlight:', err);
+        toast({
+          title: "Error",
+          description: "Failed to clear settings from database.",
+          variant: "destructive",
+        });
+      }
+    };
+    clearDb();
   };
 
   const selectedReview = reviews.find(r => r.id === selectedReviewId);
@@ -255,131 +339,131 @@ function AdminSpotlightSuccess() {
 
       {/* Top: 2x2 grid of settings cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Student Selection</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="student-select">Select Student</Label>
-                {loadingStudents ? (
-                    <div className="flex items-center space-x-2 mt-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      <span className="text-sm text-muted-foreground">Loading students...</span>
-                    </div>
-                  ) : students.length === 0 ? (
-                  <p className="text-sm text-red-600 mt-2">No students found. Please check your database connection.</p>
-                ) : (
-                  <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
-                    <SelectTrigger className="mt-2">
-                      <SelectValue placeholder="Choose a student to feature" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {students.map((student) => (
-                        <SelectItem key={student.id} value={student.id.toString()}>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-medium">{student.name}</span>
-                            <span className="text-sm text-muted-foreground">• {student.title}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Student Selection</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="student-select">Select Student</Label>
+              {loadingStudents ? (
+                <div className="flex items-center space-x-2 mt-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="text-sm text-muted-foreground">Loading students...</span>
+                </div>
+              ) : students.length === 0 ? (
+                <p className="text-sm text-red-600 mt-2">No students found. Please check your database connection.</p>
+              ) : (
+                <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Choose a student to feature" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {students.map((student) => (
+                      <SelectItem key={student.id} value={student.id.toString()}>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium">{student.name}</span>
+                          <span className="text-sm text-muted-foreground">• {student.title}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Quote/Personal Statement</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label htmlFor="quote">Student Quote</Label>
-                <Textarea
-                  id="quote"
-                  placeholder="Enter an inspiring quote or personal statement from the student..."
-                  value={quote}
-                  onChange={(e) => setQuote(e.target.value)}
-                  rows={4}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quote/Personal Statement</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="quote">Student Quote</Label>
+              <Textarea
+                id="quote"
+                placeholder="Enter an inspiring quote or personal statement from the student..."
+                value={quote}
+                onChange={(e) => setQuote(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Showcase Image</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="image-upload">Upload Showcase Image</Label>
+                <Input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="mt-2"
                 />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Showcase Image</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="image-upload">Upload Showcase Image</Label>
-                  <Input
-                    id="image-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="mt-2"
+              {showcaseImage && (
+                <div className="mt-4">
+                  <img
+                    src={showcaseImage}
+                    alt="Showcase preview"
+                    className="w-full h-48 object-cover rounded-lg border"
                   />
                 </div>
-                {showcaseImage && (
-                  <div className="mt-4">
-                    <img
-                      src={showcaseImage}
-                      alt="Showcase preview"
-                      className="w-full h-48 object-cover rounded-lg border"
-                    />
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Review Selection - always show the card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Client Review</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Label htmlFor="review-select">Select Client Review (Optional)</Label>
-                {!selectedStudentId ? (
-                  <p className="text-sm text-muted-foreground">Select a student to view their reviews.</p>
-                ) : loadingReviews ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                    <span className="text-sm text-muted-foreground">Loading reviews...</span>
-                  </div>
-                ) : reviews.length > 0 ? (
-                  <Select value={selectedReviewId} onValueChange={setSelectedReviewId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a review to feature" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">No review selected</SelectItem>
-                      {reviews.map((review) => (
-                        <SelectItem key={review.id} value={review.id}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {review.reviewer_name}
-                              {review.reviewer_company && ` - ${review.reviewer_company}`}
-                            </span>
-                            <span className="text-sm text-muted-foreground truncate max-w-xs">
-                              {"★".repeat(review.rating)} {review.review_text.substring(0, 60)}...
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No reviews found for this student.</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Review Selection - always show the card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Client Review</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Label htmlFor="review-select">Select Client Review (Optional)</Label>
+              {!selectedStudentId ? (
+                <p className="text-sm text-muted-foreground">Select a student to view their reviews.</p>
+              ) : loadingReviews ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="text-sm text-muted-foreground">Loading reviews...</span>
+                </div>
+              ) : reviews.length > 0 ? (
+                <Select value={selectedReviewId} onValueChange={setSelectedReviewId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a review to feature" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No review selected</SelectItem>
+                    {reviews.map((review) => (
+                      <SelectItem key={review.id} value={review.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+                            {review.reviewer_name}
+                            {review.reviewer_company && ` - ${review.reviewer_company}`}
+                          </span>
+                          <span className="text-sm text-muted-foreground truncate max-w-xs">
+                            {"★".repeat(review.rating)} {review.review_text.substring(0, 60)}...
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-sm text-muted-foreground">No reviews found for this student.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Actions */}
@@ -403,12 +487,12 @@ function AdminSpotlightSuccess() {
               showcaseImage: showcaseImage || undefined,
               clientReview: selectedReview
                 ? {
-                    text: selectedReview.review_text,
-                    clientName: selectedReview.reviewer_company
-                      ? `${selectedReview.reviewer_name}, ${selectedReview.reviewer_company}`
-                      : selectedReview.reviewer_name,
-                    rating: selectedReview.rating,
-                  }
+                  text: selectedReview.review_text,
+                  clientName: selectedReview.reviewer_company
+                    ? `${selectedReview.reviewer_name}, ${selectedReview.reviewer_company}`
+                    : selectedReview.reviewer_name,
+                  rating: selectedReview.rating,
+                }
                 : { text: '', clientName: '', rating: 0 },
             }}
             onViewProfile={() => navigate(`/view-student/${selectedStudent.id}`)}

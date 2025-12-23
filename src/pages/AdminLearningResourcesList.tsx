@@ -31,7 +31,9 @@ function loadResources(): LearningResource[] {
       const parsed = JSON.parse(raw) as LearningResource[];
       if (Array.isArray(parsed)) return parsed;
     }
-  } catch {}
+  } catch {
+    // Ignore error
+  }
   // No default seed; start empty until you add your own
   return [];
 }
@@ -50,10 +52,10 @@ const AdminLearningResourcesList: React.FC = () => {
   // Filter resources based on search and filters
   const filteredResources = resources.filter((resource) => {
     const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         resource.description.toLowerCase().includes(searchTerm.toLowerCase());
+      resource.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = typeFilter === "all" || resource.type === typeFilter;
     const matchesStatus = statusFilter === "all" || resource.status === statusFilter;
-    
+
     return matchesSearch && matchesType && matchesStatus;
   });
 
@@ -156,8 +158,8 @@ const AdminLearningResourcesList: React.FC = () => {
                 </Select>
               </div>
               <div className="flex items-end">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => {
                     setSearchTerm("");
                     setTypeFilter("all");
@@ -185,8 +187,8 @@ const AdminLearningResourcesList: React.FC = () => {
             <CardContent>
               <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <p className="text-muted-foreground">
-                {resources.length === 0 
-                  ? "No resources found. Add some resources to get started." 
+                {resources.length === 0
+                  ? "No resources found. Add some resources to get started."
                   : "No resources match your current filters. Try adjusting your search criteria."}
               </p>
             </CardContent>
@@ -203,30 +205,30 @@ const AdminLearningResourcesList: React.FC = () => {
                         {getTypeIcon(resource.type)}
                       </div>
                     </div>
-                    
+
                     {/* Title and Description */}
                     <div className="lg:col-span-4">
                       <h3 className="font-semibold text-lg mb-1">{resource.title}</h3>
                       <p className="text-sm text-muted-foreground line-clamp-2">{resource.description}</p>
                     </div>
-                    
+
                     {/* Type */}
                     <div className="lg:col-span-2">
                       <Badge variant="outline" className="capitalize">
                         {resource.type}
                       </Badge>
                     </div>
-                    
+
                     {/* Duration */}
                     <div className="lg:col-span-2">
                       <span className="text-sm text-muted-foreground">{resource.duration}</span>
                     </div>
-                    
+
                     {/* Status */}
                     <div className="lg:col-span-2">
                       {getStatusBadge(resource.status)}
                     </div>
-                    
+
                     {/* Actions */}
                     <div className="lg:col-span-1">
                       <div className="flex gap-2">

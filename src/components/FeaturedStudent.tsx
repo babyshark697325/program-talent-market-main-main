@@ -4,10 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, Quote, Sparkles, User } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { GradientAvatarFallback } from "@/components/GradientAvatarFallback";
 
 interface FeaturedStudentProps {
   student: {
-    id: number;
+    id: number | string;
     name: string;
     title: string;
     avatarUrl: string;
@@ -58,13 +59,12 @@ const FeaturedStudent: React.FC<FeaturedStudentProps> = ({ student, onViewProfil
             <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-6 mb-4 md:mb-6">
               <div className="relative group">
                 <Avatar className="relative w-20 md:w-24 h-20 md:h-24 border-4 border-[#C7A836] shadow-xl group-hover:scale-105 transition-transform duration-300">
-                  {student.avatarUrl ? (
+                  {student.avatarUrl && (
                     <AvatarImage src={student.avatarUrl} alt={`${student.name} profile`} />
-                  ) : (
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center">
-                      <User className="w-7 h-7" />
-                    </AvatarFallback>
                   )}
+                  <GradientAvatarFallback>
+                    <User className="w-7 h-7" />
+                  </GradientAvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 md:-bottom-2 -right-1 md:-right-2 bg-primary text-primary-foreground rounded-full p-1.5 md:p-2 shadow-lg animate-pulse">
                   <Star size={12} className="md:w-[14px] md:h-[14px] fill-current" />
@@ -141,8 +141,8 @@ const FeaturedStudent: React.FC<FeaturedStudentProps> = ({ student, onViewProfil
                     key={i}
                     size={18}
                     className={`transition-all duration-300 ${i < student.clientReview.rating
-                        ? "text-primary fill-current animate-pulse"
-                        : "text-muted-foreground"
+                      ? "text-primary fill-current animate-pulse"
+                      : "text-muted-foreground"
                       }`}
                     style={{ animationDelay: `${i * 0.1}s` }}
                   />

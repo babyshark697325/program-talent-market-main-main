@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "../integrations/supabase/client";
@@ -152,7 +153,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
         setUserRole(dev ? 'developer' : prelimRole);
 
         // Run profile sync + role ensure + DB fetch in background without blocking UI
-        ;(async () => {
+        ; (async () => {
           try {
             await Promise.all([ensureProfile(u), ensureUserRoleRow(u)]);
             const dbRole = await fetchUserRole(u.id);
@@ -260,14 +261,14 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
 
   const signIn = async (email: string, password: string) => {
     const normalized = email.trim().toLowerCase();
-    
+
     // Handle demo login specially
     if (normalized === 'demo@talent.com' && password === 'demo123') {
       // Create a mock user object for demo
       const mockUser = {
         id: 'demo-user-id',
         email: 'demo@talent.com',
-        user_metadata: { 
+        user_metadata: {
           firstName: 'Demo',
           lastName: 'User',
           role: 'developer'
@@ -297,7 +298,7 @@ export const AuthProvider: React.FC<Props> = ({ children }) => {
 
       return { error: null };
     }
-    
+
     // Regular Supabase authentication for other users
     const { error } = await supabase.auth.signInWithPassword({
       email: normalized,

@@ -21,7 +21,7 @@ const JobDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isClientRole = userRole === 'client';
-  const isClientContext = isClientRole || Boolean((location.state as any)?.clientView);
+  const isClientContext = isClientRole || Boolean((location.state as { clientView?: boolean })?.clientView);
 
   const handleClientEdit = () => {
     if (job) navigate('/manage-jobs', { state: { editId: job.id } });

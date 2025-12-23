@@ -199,10 +199,10 @@ const BrowseStudents = () => {
             ].map((sort) => (
               <button
                 key={sort.value}
-                onClick={() => setSortBy(sort.value as any)}
+                onClick={() => setSortBy(sort.value as 'name' | 'price' | 'rating')}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${sortBy === sort.value
-                    ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25'
-                    : 'bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5'
+                  ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25'
+                  : 'bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5'
                   }`}
               >
                 {sort.label}
@@ -219,8 +219,8 @@ const BrowseStudents = () => {
             <button
               onClick={() => setSelectedSkills([])}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${selectedSkills.length === 0
-                  ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25'
-                  : 'bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5'
+                ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25'
+                : 'bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5'
                 }`}
             >
               All Skills
@@ -236,8 +236,8 @@ const BrowseStudents = () => {
                   }
                 }}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${selectedSkills.includes(skill)
-                    ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25'
-                    : 'bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5'
+                  ? 'bg-gradient-to-r from-primary to-primary/80 text-white shadow-primary/25'
+                  : 'bg-secondary/60 text-primary border border-primary/20 hover:bg-primary/5'
                   }`}
               >
                 {skill}

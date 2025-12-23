@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Save, Trash2, BookOpen } from "lucide-react";
 
 // Types
@@ -36,7 +37,9 @@ function loadResources(): LearningResource[] {
       const parsed = JSON.parse(raw) as LearningResource[];
       if (Array.isArray(parsed)) return parsed;
     }
-  } catch {}
+  } catch {
+    // Ignore error
+  }
   return [];
 }
 
@@ -444,7 +447,7 @@ const AdminLearningResourceEdit: React.FC = () => {
               </CardContent>
             </Card>
 
-                      </div>
+          </div>
         </div>
       </div>
     </div>

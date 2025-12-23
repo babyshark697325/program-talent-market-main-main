@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, MapPin, ExternalLink, Briefcase, GraduationCap, User } from "lucide-react";
 import { StudentService } from "@/types/student";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { GradientAvatarFallback } from "@/components/GradientAvatarFallback";
 
 interface StudentServiceCardProps {
   student: StudentService;
@@ -21,13 +22,12 @@ const StudentServiceCard: React.FC<StudentServiceCardProps> = ({ student, onView
         <div className="flex items-start gap-3 mb-6">
           <div className="relative">
             <Avatar className={`w-14 h-14 border-2 flex-shrink-0 ${student.affiliation === 'alumni' ? 'border-[#D4AF37]' : 'border-primary'}`}>
-              {student.avatarUrl ? (
+              {student.avatarUrl && (
                 <AvatarImage src={student.avatarUrl} alt={`${student.name} profile`} />
-              ) : (
-                <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center">
-                  <User className="w-6 h-6" />
-                </AvatarFallback>
               )}
+              <GradientAvatarFallback>
+                <User className="w-6 h-6" />
+              </GradientAvatarFallback>
             </Avatar>
 
             {student.affiliation && (
@@ -50,14 +50,14 @@ const StudentServiceCard: React.FC<StudentServiceCardProps> = ({ student, onView
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star
                   key={i}
-                  className={`w-3.5 h-3.5 ${i < Math.floor(student.rating || 0)
-                      ? 'text-yellow-500 fill-yellow-500'
-                      : 'text-muted-foreground/30'
+                  className={`w-3.5 h-3.5 ${i < Math.floor(student.rating ?? 5)
+                    ? 'text-[#D4AF37] fill-[#D4AF37]'
+                    : 'text-muted-foreground/30'
                     }`}
                 />
               ))}
               <span className="text-xs text-muted-foreground ml-1">
-                ({(student.rating || 0).toFixed(1)})
+                ({(student.rating ?? 5).toFixed(1)})
               </span>
             </div>
           </div>

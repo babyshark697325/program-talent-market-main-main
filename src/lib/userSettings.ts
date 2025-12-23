@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type SettingType = "client_settings" | "admin_settings" | "student_profile" | "student_settings";
 
 export interface UserSettingsData {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface UserSettingsRow {
@@ -31,7 +31,7 @@ export async function loadUserSettings(settingType: SettingType): Promise<UserSe
       .select("settings_data")
       .eq("user_id", userData.user.id)
       .eq("setting_type", settingType)
-      .maybeSingle() as { data: Pick<UserSettingsRow, "settings_data"> | null; error: any };
+      .maybeSingle() as { data: Pick<UserSettingsRow, "settings_data"> | null; error: unknown };
 
     if (error) {
       console.error("Error loading user settings:", error);

@@ -13,7 +13,15 @@ import { JobPosting } from "@/data/mockJobs";
 import { Job } from "@/integrations/supabase/types/jobs";
 
 
-
+interface JobFormData {
+  title: string;
+  company?: string;
+  description: string;
+  skills?: string;
+  budget: string;
+  duration?: string;
+  contactEmail?: string;
+}
 const ManageJobs = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -26,7 +34,7 @@ const ManageJobs = () => {
 
 
   // Fetch jobs from Supabase
-  const fetchJobs = async () => {
+  const fetchJobs = React.useCallback(async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -87,18 +95,18 @@ const ManageJobs = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   // Load jobs on component mount
   useEffect(() => {
     fetchJobs();
-  }, [user]);
+  }, [fetchJobs]);
 
   const handleJobView = (id: string | number) => {
     navigate(`/job/${id}`, { state: { clientView: true } });
   };
 
-  const handlePostJob = async (formData: any) => {
+  const handlePostJob = async (formData: JobFormData) => {
     if (!user) {
       setError("Please log in to post a job");
       return;

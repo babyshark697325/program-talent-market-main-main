@@ -30,11 +30,7 @@ const AdminWaitlist = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchWaitlist();
-  }, []);
-
-  const fetchWaitlist = async () => {
+  const fetchWaitlist = React.useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('waitlist')
@@ -42,7 +38,7 @@ const AdminWaitlist = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      
+
       setWaitlistEntries(data || []);
       setFilteredEntries(data || []);
     } catch (error) {
@@ -55,7 +51,11 @@ const AdminWaitlist = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchWaitlist();
+  }, [fetchWaitlist]);
 
   useEffect(() => {
     let filtered = waitlistEntries;
@@ -90,8 +90,8 @@ const AdminWaitlist = () => {
       if (error) throw error;
 
       // Update local state
-      setWaitlistEntries(prev => 
-        prev.map(entry => 
+      setWaitlistEntries(prev =>
+        prev.map(entry =>
           entry.id === id ? { ...entry, status } : entry
         )
       );
@@ -227,8 +227,8 @@ const AdminWaitlist = () => {
                   </div>
                   <div>
                     <p className="font-medium">
-                      {entry.first_name && entry.last_name 
-                        ? `${entry.first_name} ${entry.last_name}` 
+                      {entry.first_name && entry.last_name
+                        ? `${entry.first_name} ${entry.last_name}`
                         : entry.email.split('@')[0]
                       }
                     </p>
@@ -249,8 +249,8 @@ const AdminWaitlist = () => {
                 </div>
                 <div className="flex items-center gap-2 md:gap-3 flex-wrap">
                   <Badge variant={
-                    entry.status === 'pending' ? 'secondary' : 
-                    entry.status === 'approved' ? 'default' : 'destructive'
+                    entry.status === 'pending' ? 'secondary' :
+                      entry.status === 'approved' ? 'default' : 'destructive'
                   }>
                     {entry.status}
                   </Badge>

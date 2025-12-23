@@ -47,7 +47,7 @@ const AdminUsersList = () => {
           return;
         }
 
-        const userIds = (profileRows || []).map((r: any) => r.user_id);
+        const userIds = (profileRows || []).map((r: { user_id: string }) => r.user_id);
         let roleMap = new Map<string, string>();
         if (userIds.length) {
           const { data: roleRows, error: roleError } = await supabase
@@ -58,11 +58,11 @@ const AdminUsersList = () => {
           if (roleError) {
             console.warn('Could not fetch roles, defaulting to client', roleError);
           } else {
-            roleMap = new Map(roleRows.map((r: any) => [r.user_id, r.role]));
+            roleMap = new Map(roleRows.map((r: { user_id: string; role: string }) => [r.user_id, r.role]));
           }
         }
 
-        const mapped: User[] = (profileRows || []).map((row: any) => {
+        const mapped: User[] = (profileRows || []).map((row: { user_id: string; first_name?: string; last_name?: string; display_name?: string; email?: string; created_at?: string }) => {
           const name =
             [row.first_name, row.last_name].filter(Boolean).join(' ') ||
             row.display_name ||
@@ -212,7 +212,7 @@ const AdminUsersList = () => {
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-                {filteredUsers.slice((page-1)*pageSize, page*pageSize).map((user) => (
+                {filteredUsers.slice((page - 1) * pageSize, page * pageSize).map((user) => (
                   <div key={user.id} className="rounded-2xl border bg-white border-black/10 dark:bg-[#040b17] dark:border-white/5 p-4 flex flex-col">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
@@ -230,8 +230,8 @@ const AdminUsersList = () => {
                       <Badge
                         variant={
                           user.status === 'active' ? 'default' :
-                          user.status === 'pending' ? 'secondary' :
-                          user.status === 'inactive' ? 'destructive' : 'secondary'
+                            user.status === 'pending' ? 'secondary' :
+                              user.status === 'inactive' ? 'destructive' : 'secondary'
                         }
                         className="capitalize"
                       >
@@ -255,11 +255,11 @@ const AdminUsersList = () => {
               {/* Pagination */}
               <div className="flex items-center justify-between mt-6">
                 <div className="text-sm text-muted-foreground">
-                  Showing {(page-1)*pageSize + 1}-{Math.min(page*pageSize, filteredUsers.length)} of {filteredUsers.length}
+                  Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, filteredUsers.length)} of {filteredUsers.length}
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p-1))}>Previous</Button>
-                  <Button variant="outline" size="sm" disabled={page*pageSize >= filteredUsers.length} onClick={() => setPage((p) => p+1)}>Next</Button>
+                  <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Previous</Button>
+                  <Button variant="outline" size="sm" disabled={page * pageSize >= filteredUsers.length} onClick={() => setPage((p) => p + 1)}>Next</Button>
                 </div>
               </div>
             </>

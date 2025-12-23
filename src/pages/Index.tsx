@@ -16,6 +16,31 @@ import { Job } from "@/integrations/supabase/types/jobs";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useRole } from "@/contexts/RoleContext";
 import { supabase } from "@/integrations/supabase/client";
+
+interface ReviewData {
+  id: string;
+  reviewer_name: string;
+  reviewer_company: string | null;
+  review_text: string;
+  rating: number;
+}
+
+interface FeaturedData {
+  student: {
+    id: number | string;
+    name: string;
+    title: string;
+    avatarUrl: string;
+    skills: string[];
+  };
+  quote: string;
+  showcaseImage?: string;
+  clientReview: {
+    text: string;
+    clientName: string;
+    rating: number;
+  };
+}
 const Index: React.FC = () => {
   const [search, setSearch] = useState("");
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
@@ -24,7 +49,7 @@ const Index: React.FC = () => {
   const [students, setStudents] = useState<StudentService[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [featured, setFeatured] = useState<any>(null);
+  const [featured, setFeatured] = useState<FeaturedData | null>(null);
 
   // Stats
   const [totalStudents, setTotalStudents] = useState(0);
@@ -51,6 +76,7 @@ const Index: React.FC = () => {
         } else {
           setTotalStudents(data.length);
 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const mappedStudents = data.map((dbStudent: any) => {
             const displayName = dbStudent.display_name || dbStudent.name || [dbStudent.first_name, dbStudent.last_name].filter(Boolean).join(' ') || dbStudent.email?.split('@')[0] || 'Unnamed Student';
             let affiliation: "student" | "alumni" = "student";
@@ -81,24 +107,96 @@ const Index: React.FC = () => {
           });
           setStudents(mappedStudents);
 
-          // Pick a random featured student
-          if (mappedStudents.length > 0) {
-            const randomStudent = mappedStudents[Math.floor(Math.random() * mappedStudents.length)];
-            setFeatured({
-              student: {
-                id: randomStudent.id,
-                name: randomStudent.name,
-                title: randomStudent.title,
-                avatarUrl: randomStudent.avatarUrl,
-                skills: randomStudent.skills || [],
-              },
-              quote: randomStudent.aboutMe ? randomStudent.aboutMe.substring(0, 150) + "..." : "I'm passionate about creating exciting projects and delivering high-quality work for my clients.",
-              clientReview: {
-                text: "Fantastic work! Delivered on time and exceeded expectations.",
-                clientName: "Verified Client",
-                rating: 5
+          // Try to load featured student from DB config
+          try {
+            const { data: configData } = await supabase
+              .from('spotlight_config')
+              .select('*')
+              .maybeSingle();
+
+            if (configData && configData.student_id) {
+              const featuredStudent = mappedStudents.find(s => s.id === parseInt(configData.student_id as string));
+              if (featuredStudent) {
+                const reviewData = configData.review_data as unknown as ReviewData | null;
+                setFeatured({
+                  student: {
+                    id: featuredStudent.id,
+                    name: featuredStudent.name,
+                    title: featuredStudent.title,
+                    avatarUrl: featuredStudent.avatarUrl,
+                    skills: featuredStudent.skills || [],
+                  },
+                  quote: configData.quote || featuredStudent.aboutMe || "",
+                  showcaseImage: configData.showcase_image || undefined,
+                  clientReview: reviewData ? {
+                    text: reviewData.review_text,
+                    clientName: reviewData.reviewer_company || reviewData.reviewer_name,
+                    rating: reviewData.rating
+                  } : {
+                    text: "Fantastic work! Delivered on time and exceeded expectations.",
+                    clientName: "Verified Client",
+                    rating: 5
+                  }
+                });
+              } else {
+                // Configured student not found in current list (maybe hidden?), fallback to random
+                const randomStudent = mappedStudents[Math.floor(Math.random() * mappedStudents.length)];
+                setFeatured({
+                  student: {
+                    id: randomStudent.id,
+                    name: randomStudent.name,
+                    title: randomStudent.title,
+                    avatarUrl: randomStudent.avatarUrl,
+                    skills: randomStudent.skills || [],
+                  },
+                  quote: randomStudent.aboutMe ? randomStudent.aboutMe.substring(0, 150) + "..." : "I'm passionate about creating exciting projects and delivering high-quality work for my clients.",
+                  clientReview: {
+                    text: "Fantastic work! Delivered on time and exceeded expectations.",
+                    clientName: "Verified Client",
+                    rating: 5
+                  }
+                });
               }
-            });
+            } else if (mappedStudents.length > 0) {
+              // No config, use random
+              const randomStudent = mappedStudents[Math.floor(Math.random() * mappedStudents.length)];
+              setFeatured({
+                student: {
+                  id: randomStudent.id,
+                  name: randomStudent.name,
+                  title: randomStudent.title,
+                  avatarUrl: randomStudent.avatarUrl,
+                  skills: randomStudent.skills || [],
+                },
+                quote: randomStudent.aboutMe ? randomStudent.aboutMe.substring(0, 150) + "..." : "I'm passionate about creating exciting projects and delivering high-quality work for my clients.",
+                clientReview: {
+                  text: "Fantastic work! Delivered on time and exceeded expectations.",
+                  clientName: "Verified Client",
+                  rating: 5
+                }
+              });
+            }
+          } catch (e) {
+            console.error("Error loading spotlight config in Index:", e);
+            // Fallback to random
+            if (mappedStudents.length > 0) {
+              const randomStudent = mappedStudents[Math.floor(Math.random() * mappedStudents.length)];
+              setFeatured({
+                student: {
+                  id: randomStudent.id,
+                  name: randomStudent.name,
+                  title: randomStudent.title,
+                  avatarUrl: randomStudent.avatarUrl,
+                  skills: randomStudent.skills || [],
+                },
+                quote: randomStudent.aboutMe ? randomStudent.aboutMe.substring(0, 150) + "..." : "I'm passionate about creating exciting projects and delivering high-quality work for my clients.",
+                clientReview: {
+                  text: "Fantastic work! Delivered on time and exceeded expectations.",
+                  clientName: "Verified Client",
+                  rating: 5
+                }
+              });
+            }
           }
         }
       } catch (err) {
@@ -200,10 +298,11 @@ const Index: React.FC = () => {
       switch (sortBy) {
         case "name":
           return a.name.localeCompare(b.name);
-        case "price":
+        case "price": {
           const priceA = parseInt(a.price.replace(/[^\d]/g, ''));
           const priceB = parseInt(b.price.replace(/[^\d]/g, ''));
           return priceA - priceB;
+        }
         case "rating":
           return 0; // Could be implemented with actual rating data
         default:

@@ -1,4 +1,5 @@
 
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 
@@ -25,7 +26,7 @@ interface RoleProviderProps {
 
 export const RoleProvider: React.FC<RoleProviderProps> = ({ children }) => {
   const { user, userRole, isGuest } = useAuth();
-  
+
   // Initialize role from localStorage with fallback
   const [role, setRoleState] = useState<UserRole>(() => {
     const stored = localStorage.getItem('selectedRole') as UserRole;
@@ -40,7 +41,7 @@ export const RoleProvider: React.FC<RoleProviderProps> = ({ children }) => {
       localStorage.setItem('selectedRole', r);
       return;
     }
-    
+
     // For admin/developer, always allow role switching  
     if (userRole === 'admin' || userRole === 'developer') {
       setRoleState(r);

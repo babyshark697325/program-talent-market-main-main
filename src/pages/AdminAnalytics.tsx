@@ -45,7 +45,7 @@ const AdminAnalytics = () => {
             months.push({ label, key });
           }
           const counts = new Map(months.map((m) => [m.key, 0] as [string, number]));
-          (profiles || []).forEach((p: any) => {
+          (profiles || []).forEach((p: { created_at: string }) => {
             const d = new Date(p.created_at);
             const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
             if (counts.has(k)) counts.set(k, (counts.get(k) || 0) + 1);
@@ -63,7 +63,7 @@ const AdminAnalytics = () => {
 
         if (!rolesError) {
           const counts: Record<string, number> = { student: 0, client: 0, admin: 0 };
-          (rolesRows || []).forEach((r: any) => {
+          (rolesRows || []).forEach((r: { role: string }) => {
             if (r.role === 'student' || r.role === 'client' || r.role === 'admin') {
               counts[r.role] = (counts[r.role] || 0) + 1;
             }
@@ -100,7 +100,7 @@ const AdminAnalytics = () => {
             monthsJ.push({ label, key });
           }
           const countsJ = new Map(monthsJ.map((m) => [m.key, 0] as [string, number]));
-          (jobsRows || []).forEach((r: any) => {
+          (jobsRows || []).forEach((r: { posted_at: string }) => {
             const d = new Date(r.posted_at);
             const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
             if (countsJ.has(k)) countsJ.set(k, (countsJ.get(k) || 0) + 1);
@@ -123,8 +123,8 @@ const AdminAnalytics = () => {
           .from('jobs')
           .select('status');
         if (statusRows && statusRows.length) {
-          const totalCompleted = statusRows.filter((r: any) => r.status === 'completed').length;
-          const relevant = statusRows.filter((r: any) => r.status === 'completed' || r.status === 'active').length;
+          const totalCompleted = statusRows.filter((r: { status: string }) => r.status === 'completed').length;
+          const relevant = statusRows.filter((r: { status: string }) => r.status === 'completed' || r.status === 'active').length;
           completionRate = relevant > 0 ? (totalCompleted / relevant) * 100 : null;
         }
 
@@ -140,9 +140,11 @@ const AdminAnalytics = () => {
             .gte('created_at', firstOfMonth.toISOString())
             .eq('status', 'completed');
           if (!paymentsError) {
-            revenue = (paymentsRows || []).reduce((sum: number, r: any) => sum + Number(r.amount || 0), 0);
+            revenue = (paymentsRows || []).reduce((sum: number, r: { amount: number }) => sum + Number(r.amount || 0), 0);
           }
-        } catch {}
+        } catch {
+          // Ignore error
+        }
 
         setMetrics((m) => ({
           ...m,
@@ -171,14 +173,16 @@ const AdminAnalytics = () => {
         arr.push({ t: Date.now(), ok });
         while (arr.length > 100) arr.shift();
         localStorage.setItem(PINGS_KEY, JSON.stringify(arr));
-      } catch {}
+      } catch {
+        // Ignore storage error
+      }
     };
     const computeUptime = (): number | null => {
       try {
         const raw = localStorage.getItem(PINGS_KEY);
         const arr = Array.isArray(raw ? JSON.parse(raw) : []) ? JSON.parse(raw as string) : [];
         if (!arr.length) return null;
-        const ok = arr.filter((p: any) => p?.ok).length;
+        const ok = arr.filter((p: { ok: boolean }) => p?.ok).length;
         return Math.round(((ok / arr.length) * 100) * 10) / 10; // one decimal
       } catch { return null; }
     };
@@ -214,7 +218,7 @@ const AdminAnalytics = () => {
 
       let errorRatePct: number | null = null;
       if (paymentsDayRes.status === 'fulfilled' && !paymentsDayRes.value.error) {
-        const rows = (paymentsDayRes.value.data as any[]) || [];
+        const rows = (paymentsDayRes.value.data as { status: string }[]) || [];
         const total = rows.length;
         const failed = rows.filter((r) => r.status && String(r.status).toLowerCase() !== 'completed').length;
         errorRatePct = total > 0 ? (failed / total) * 100 : 0;
@@ -243,9 +247,9 @@ const AdminAnalytics = () => {
     run();
   }, []);
 
-  
-  
-  const GrowthTooltip = ({ active, payload, label }: any) => {
+
+
+  const GrowthTooltip = ({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) => {
     if (active && payload && payload.length) {
       const value = payload[0].value;
       return (
@@ -258,7 +262,7 @@ const AdminAnalytics = () => {
     return null;
   };
 
-  const JobPostingTooltip = ({ active, payload, label }: any) => {
+  const JobPostingTooltip = ({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) => {
     if (active && payload && payload.length) {
       const value = payload[0].value;
       return (
@@ -271,7 +275,7 @@ const AdminAnalytics = () => {
     return null;
   };
 
-  const UserTypeTooltip = ({ active, payload, total }: any) => {
+  const UserTypeTooltip = ({ active, payload, total }: { active?: boolean; payload?: { name: string; value: number; payload: { name: string } }[]; total: number }) => {
     if (active && payload && payload.length) {
       const p = payload[0];
       const name = p.name || p.payload?.name;
@@ -431,8 +435,8 @@ const AdminAnalytics = () => {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip 
-                    content={<UserTypeTooltip total={userTypeData.reduce((sum, d) => sum + d.value, 0)} />} 
+                  <Tooltip
+                    content={<UserTypeTooltip total={userTypeData.reduce((sum, d) => sum + d.value, 0)} />}
                     wrapperStyle={{ outline: 'none' }}
                   />
                 </PieChart>

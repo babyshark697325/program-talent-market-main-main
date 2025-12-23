@@ -33,7 +33,8 @@ export interface StudentService {
   contact?: StudentContact;
 }
 
-export const mockStudents: StudentService[] = [
+// Separate the raw data definition to avoid circular dependencies if we were to import this elsewhere
+const rawStudents: Omit<StudentService, 'rating'>[] = [
   {
     id: 1,
     cic_id: "cic-0001",
@@ -46,7 +47,6 @@ export const mockStudents: StudentService[] = [
       "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80",
     skills: ["Web Development", "Programming", "UI/UX Design"],
     price: "$25/hr",
-    rating: 4.9,
     affiliation: "student",
     aboutMe: "I'm passionate about creating beautiful, functional web experiences. With expertise in modern web technologies, I help businesses establish their online presence. In my spare time, I enjoy gaming and exploring new coding frameworks.",
     contact: {
@@ -85,7 +85,6 @@ export const mockStudents: StudentService[] = [
       "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80",
     skills: ["Logo Design", "Graphic Design", "Animation"],
     price: "$25/hr",
-    rating: 5.0,
     affiliation: "alumni",
     aboutMe: "I specialize in creating visual identities that tell your brand's story. From concept to final design, I ensure every element works harmoniously. When I'm not designing, you'll find me sketching in cafes or exploring art galleries.",
     contact: {
@@ -118,7 +117,6 @@ export const mockStudents: StudentService[] = [
       "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80",
     skills: ["3D Modeling", "Blender", "Animation"],
     price: "$25/hr",
-    rating: 4.7,
     affiliation: "student",
     aboutMe: "I create stunning 3D visuals and animations for games, movies, and marketing. Every project is an opportunity to push creative boundaries and tell compelling stories through visual art. Outside work, I love gaming and attending animation festivals.",
     contact: {
@@ -151,7 +149,6 @@ export const mockStudents: StudentService[] = [
       "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80",
     skills: ["Game Design", "Programming", "Animation"],
     price: "$25/hr",
-    rating: 4.8,
     affiliation: "student",
     aboutMe: "Games are my passion! I design and develop engaging experiences that captivate players. From mechanics to storytelling, I handle every aspect of game creation. When not coding, I'm analyzing the latest games or speedrunning classics.",
     contact: {
@@ -184,7 +181,6 @@ export const mockStudents: StudentService[] = [
       "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80",
     skills: ["Graphic Design", "Logo Design", "Animation"],
     price: "$25/hr",
-    rating: 4.9,
     affiliation: "alumni",
     aboutMe: "I bring creativity to every project, whether it's a business card or a full marketing campaign. My style blends modern aesthetics with timeless design principles. In my free time, I enjoy digital painting and collecting vintage design books.",
     contact: {
@@ -206,3 +202,13 @@ export const mockStudents: StudentService[] = [
     ]
   }
 ];
+
+import { mockReviews } from './mockReviews';
+import { calculateAverageRating } from '@/utils/ratingUtils';
+
+export const mockStudents: StudentService[] = rawStudents.map(student => ({
+  ...student,
+  rating: calculateAverageRating(mockReviews.filter(r =>
+    r.targetId === student.id && r.targetType === 'student'
+  ))
+}));

@@ -8,6 +8,7 @@ import { ArrowLeft, Star, Clock, User, Mail, Phone, ExternalLink, Briefcase, Mes
 import { supabase } from '@/integrations/supabase/client';
 import { mockReviews } from '@/data/mockReviews';
 import { StudentService } from '@/types/student';
+import { GradientAvatarFallback } from "@/components/GradientAvatarFallback";
 
 function getIconForProjectType(type: string) {
   switch (type) {
@@ -135,19 +136,18 @@ const StudentView: React.FC = () => {
             {/* Student Avatar and Status */}
             <div className="relative">
               <Avatar className={`w-20 h-20 border-4 ${student.affiliation === 'alumni' ? 'border-green-500' : 'border-primary'}`}>
-                {student.avatarUrl ? (
+                {student.avatarUrl && (
                   <AvatarImage src={student.avatarUrl} alt={`${student.name} profile`} />
-                ) : (
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-xl">
-                    <User className="w-8 h-8" />
-                  </AvatarFallback>
                 )}
+                <GradientAvatarFallback className="text-xl">
+                  <User className="w-8 h-8" />
+                </GradientAvatarFallback>
               </Avatar>
               {/* Status Badge */}
               <Badge
                 className={`absolute -top-2 -right-2 ${student.affiliation === 'alumni'
-                    ? 'bg-green-500 text-white hover:bg-green-600'
-                    : 'bg-primary text-primary-foreground'
+                  ? 'bg-green-500 text-white hover:bg-green-600'
+                  : 'bg-primary text-primary-foreground'
                   }`}
               >
                 Available
