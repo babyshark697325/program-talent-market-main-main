@@ -8,102 +8,126 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Save, Trash2, BookOpen } from "lucide-react";
-
-// Types
-export type ResourceStatus = "available" | "coming-soon";
-export type ResourceType = "workshop" | "video" | "guide" | "networking";
-
-export interface LearningResource {
-  id: number;
-  title: string;
-  description: string;
-  type: ResourceType;
-  duration: string;
-  status: ResourceStatus;
-  videoUrl?: string;
-  guideUrl?: string;
-  eventDate?: string;
-  location?: string;
-  registrationUrl?: string;
-  joinUrl?: string;
-}
-
-const LS_KEY = "student.resources";
-
-function loadResources(): LearningResource[] {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as LearningResource[];
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch {
-    // Ignore error
-  }
-  return [];
-}
-
-function saveResources(r: LearningResource[]) {
-  localStorage.setItem(LS_KEY, JSON.stringify(r));
-  window.dispatchEvent(new Event("resources:updated"));
-}
+import { supabase } from "@/integrations/supabase/client";
+import { LearningResource, ResourceType, ResourceStatus } from "@/types/learning-resource";
+import { useToast } from "@/components/ui/use-toast";
 
 const AdminLearningResourceEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [resources, setResources] = React.useState<LearningResource[]>(loadResources());
+  const { toast } = useToast();
+
   const [resource, setResource] = React.useState<LearningResource | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
-    if (id === 'new') {
-      setResource({
-        id: Math.max(0, ...resources.map(r => r.id)) + 1,
-        title: '',
-        description: '',
-        type: 'workshop',
-        duration: '1 hour',
-        status: 'available',
-        videoUrl: '',
-        guideUrl: '',
-        eventDate: '',
-        location: '',
-        registrationUrl: '',
-        joinUrl: '',
-      });
-      setLoading(false);
-      return;
-    }
+    const fetchResource = async () => {
+      if (id === 'new') {
+        const dummyId = Math.floor(Math.random() * 1000000); // temporary ID for UI, not used in insert if handled correctly
+        setResource({
+          id: dummyId,
+          title: '',
+          description: '',
+          type: 'workshop',
+          duration: '',
+          status: 'available',
+        });
+        setLoading(false);
+        return;
+      }
 
-    const resourceId = parseInt(id || "0");
-    const foundResource = resources.find(r => r.id === resourceId);
+      try {
+        const resourceId = parseInt(id || "0");
+        if (!resourceId) throw new Error("Invalid ID");
 
-    if (foundResource) {
-      setResource(foundResource);
-      setLoading(false);
-    } else {
-      navigate("/admin/learning-resources");
-    }
-  }, [id, resources, navigate]);
+        const { data, error } = await supabase
+          .from('learning_resources')
+          .select('*')
+          .eq('id', resourceId)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const mapped: LearningResource = {
+            id: data.id,
+            title: data.title,
+            description: data.description,
+            type: data.type,
+            duration: data.duration,
+            status: data.status,
+            videoUrl: data.video_url,
+            guideUrl: data.guide_url,
+            eventDate: data.event_date,
+            location: data.location,
+            registrationUrl: data.registration_url,
+            joinUrl: data.join_url,
+            created_at: data.created_at
+          };
+          setResource(mapped);
+        }
+      } catch (error) {
+        console.error("Error fetching resource:", error);
+        navigate("/admin/learning-resources");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchResource();
+  }, [id, navigate]);
 
   const handleSave = async () => {
     if (!resource) return;
 
     setSaving(true);
     try {
-      let updatedResources: LearningResource[];
-      const exists = resources.some(r => r.id === resource.id);
-      if (exists) {
-        updatedResources = resources.map(r => r.id === resource.id ? resource : r);
+      const isNew = id === 'new';
+
+      const dbPayload = {
+        title: resource.title,
+        description: resource.description,
+        type: resource.type,
+        duration: resource.duration,
+        status: resource.status,
+        video_url: resource.videoUrl || null,
+        guide_url: resource.guideUrl || null,
+        event_date: resource.eventDate || null,
+        location: resource.location || null,
+        registration_url: resource.registrationUrl || null,
+        join_url: resource.joinUrl || null
+      };
+
+      let error;
+      if (isNew) {
+        const { error: insertError } = await supabase
+          .from('learning_resources')
+          .insert([dbPayload]);
+        error = insertError;
       } else {
-        updatedResources = [...resources, resource];
+        const { error: updateError } = await supabase
+          .from('learning_resources')
+          .update(dbPayload)
+          .eq('id', resource.id);
+        error = updateError;
       }
-      setResources(updatedResources);
-      saveResources(updatedResources);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: isNew ? "Resource created successfully." : "Resource updated successfully.",
+      });
       navigate("/admin/learning-resources");
     } catch (error) {
       console.error("Error saving resource:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save resource. Ensure the 'learning_resources' table exists.",
+        variant: "destructive"
+      });
     } finally {
       setSaving(false);
     }
@@ -112,10 +136,27 @@ const AdminLearningResourceEdit: React.FC = () => {
   const handleDelete = async () => {
     if (!resource) return;
     if (window.confirm("Are you sure you want to delete this resource? This action cannot be undone.")) {
-      const updatedResources = resources.filter(r => r.id !== resource.id);
-      setResources(updatedResources);
-      saveResources(updatedResources);
-      navigate("/admin/learning-resources");
+      try {
+        const { error } = await supabase
+          .from('learning_resources')
+          .delete()
+          .eq('id', resource.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Resource deleted successfully.",
+        });
+        navigate("/admin/learning-resources");
+      } catch (error) {
+        console.error("Error deleting resource:", error);
+        toast({
+          title: "Error",
+          description: "Failed to delete resource.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -230,10 +271,10 @@ const AdminLearningResourceEdit: React.FC = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Duration *</Label>
+                    <Label>Duration</Label>
                     <Input
-                      placeholder="e.g., 1 hour"
-                      value={resource.duration}
+                      placeholder="e.g., 1 hour (Optional)"
+                      value={resource.duration || ''}
                       onChange={(e) => setResource({ ...resource, duration: e.target.value })}
                     />
                   </div>
@@ -305,11 +346,11 @@ const AdminLearningResourceEdit: React.FC = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Workshop Details</CardTitle>
-                  <CardDescription>Scheduling and location information</CardDescription>
+                  <CardDescription>Scheduling and location information (Optional)</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="eventDate">Date & Time *</Label>
+                    <Label htmlFor="eventDate">Date & Time</Label>
                     <Input
                       id="eventDate"
                       type="datetime-local"
@@ -318,7 +359,7 @@ const AdminLearningResourceEdit: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="location">Location *</Label>
+                    <Label htmlFor="location">Location</Label>
                     <Input
                       id="location"
                       placeholder="e.g., Room 101 or Zoom"
@@ -344,11 +385,11 @@ const AdminLearningResourceEdit: React.FC = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Networking Details</CardTitle>
-                  <CardDescription>Event information and how to join</CardDescription>
+                  <CardDescription>Event information and how to join (Optional)</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="eventDate">Date & Time *</Label>
+                    <Label htmlFor="eventDate">Date & Time</Label>
                     <Input
                       id="eventDate"
                       type="datetime-local"
@@ -357,7 +398,7 @@ const AdminLearningResourceEdit: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="location">Location / Platform *</Label>
+                    <Label htmlFor="location">Location / Platform</Label>
                     <Input
                       id="location"
                       placeholder="e.g., Auditorium or Google Meet"

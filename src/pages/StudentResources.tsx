@@ -3,9 +3,9 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Award, Video, FileText, Users, Clock, ArrowLeft } from 'lucide-react';
-
-const LS_KEY = "student.resources";
+import { BookOpen, Award, Video, FileText, Users, Clock } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { LearningResource } from '@/types/learning-resource';
 
 function getIconForType(type: string) {
   switch (type) {
@@ -25,51 +25,52 @@ function getStatusColor(status: string) {
   }
 }
 
-function loadResources() {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {
-    // Ignore error
-  }
-
-  // Default resources with proper structure
-  return [
-    {
-      id: 1,
-      title: "Setting Your Rates",
-      description: "How to price your services fairly while building experience as a student.",
-      type: "guide",
-      duration: "20 min",
-      status: "available"
-    },
-    {
-      id: 2,
-      title: "Client Communication",
-      description: "Essential skills for professional communication with clients and building lasting relationships.",
-      type: "video",
-      duration: "35 min",
-      status: "available"
-    },
-    {
-      id: 3,
-      title: "Portfolio Building Workshop",
-      description: "Learn how to create a compelling portfolio that showcases your best work and attracts clients.",
-      type: "workshop",
-      duration: "2 hours",
-      status: "coming-soon"
-    }
-  ];
-}
-
 const StudentResources = () => {
-  const [resources, setResources] = React.useState(loadResources());
+  const [resources, setResources] = React.useState<LearningResource[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [stats, setStats] = React.useState({ completed: 0, hours: 0, certs: 0 });
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'available' | 'coming-soon' | 'completed'>('all');
   const [completedSet, setCompletedSet] = React.useState<Set<number>>(new Set());
   const navigate = useNavigate();
 
   React.useEffect(() => {
+    const loadResources = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('learning_resources')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error("Error fetching resources:", error);
+          setResources([]);
+        } else if (data) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const mapped: LearningResource[] = data.map((r: any) => ({
+            id: r.id,
+            title: r.title,
+            description: r.description,
+            type: r.type,
+            duration: r.duration,
+            status: r.status,
+            videoUrl: r.video_url,
+            guideUrl: r.guide_url,
+            eventDate: r.event_date,
+            location: r.location,
+            registrationUrl: r.registration_url,
+            joinUrl: r.join_url,
+            created_at: r.created_at
+          }));
+          setResources(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to load resources:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     const loadStats = () => {
       const completed = Number(localStorage.getItem('completedResourcesCount') || '0');
       const hours = Number(localStorage.getItem('hoursLearned') || '0');
@@ -77,10 +78,9 @@ const StudentResources = () => {
       setStats({ completed: isNaN(completed) ? 0 : completed, hours: isNaN(hours) ? 0 : hours, certs: isNaN(certs) ? 0 : certs });
     };
 
-    const handler = () => setResources(loadResources());
-    const storageHandler = () => { loadStats(); loadCompleted(); };
-
+    loadResources();
     loadStats();
+
     const loadCompleted = () => {
       try {
         const raw = localStorage.getItem('completedResourceIds');
@@ -93,14 +93,6 @@ const StudentResources = () => {
       }
     };
     loadCompleted();
-    window.addEventListener('resources:updated', handler);
-    window.addEventListener('storage', storageHandler);
-    window.addEventListener('progress:updated', storageHandler);
-    return () => {
-      window.removeEventListener('resources:updated', handler);
-      window.removeEventListener('storage', storageHandler);
-      window.removeEventListener('progress:updated', storageHandler);
-    };
   }, []);
 
   const filtered = React.useMemo(() => {
@@ -165,8 +157,8 @@ const StudentResources = () => {
             type="button"
             onClick={() => setStatusFilter(key)}
             className={`cursor-pointer px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 hover:scale-[1.02] shadow-sm border ${statusFilter === key
-                ? 'bg-primary text-primary-foreground border-transparent'
-                : 'bg-secondary/60 text-foreground border-border'
+              ? 'bg-primary text-primary-foreground border-transparent'
+              : 'bg-secondary/60 text-foreground border-border'
               }`}
           >
             {label}
@@ -180,45 +172,51 @@ const StudentResources = () => {
           <CardDescription>Choose from our collection of learning materials</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
-            {filtered.map((resource) => {
-              const IconComponent = getIconForType(resource.type);
-              return (
-                <Card key={resource.id} className="flex flex-col relative">
-                  <CardHeader className="flex-1 pt-3 pb-2">
-                    <div className="absolute top-3 right-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(resource.status)}`}>
-                        {resource.status === 'coming-soon' ? 'Soon' : 'Available'}
-                      </span>
-                    </div>
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                        <IconComponent className="text-primary opacity-80" size={16} />
+          {loading ? (
+            <div className="text-center py-12 text-muted-foreground">Loading resources...</div>
+          ) : resources.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">No resources available at the moment.</div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
+              {filtered.map((resource) => {
+                const IconComponent = getIconForType(resource.type);
+                return (
+                  <Card key={resource.id} className="flex flex-col relative">
+                    <CardHeader className="flex-1 pt-3 pb-2">
+                      <div className="absolute top-3 right-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(resource.status)}`}>
+                          {resource.status === 'coming-soon' ? 'Soon' : 'Available'}
+                        </span>
                       </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-lg mb-2 leading-tight font-semibold">{resource.title}</CardTitle>
-                        <CardDescription className="text-xs leading-snug line-clamp-3 mb-2">{resource.description}</CardDescription>
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                          <IconComponent className="text-primary opacity-80" size={16} />
+                        </div>
+                        <div className="flex-1">
+                          <CardTitle className="text-lg mb-2 leading-tight font-semibold">{resource.title}</CardTitle>
+                          <CardDescription className="text-xs leading-snug line-clamp-3 mb-2">{resource.description}</CardDescription>
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="mt-auto pt-2">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock size={12} />
-                        {resource.duration}
+                    </CardHeader>
+                    <CardContent className="mt-auto pt-2">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock size={12} />
+                          {resource.duration}
+                        </div>
                       </div>
-                    </div>
-                    <Button
-                      className="w-full h-8 text-xs"
-                      disabled={resource.status === 'coming-soon'}
-                    >
-                      {resource.status === 'coming-soon' ? 'Notify Me' : 'Start Learning'}
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                      <Button
+                        className="w-full h-8 text-xs"
+                        disabled={resource.status === 'coming-soon'}
+                      >
+                        {resource.status === 'coming-soon' ? 'Notify Me' : 'Start Learning'}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

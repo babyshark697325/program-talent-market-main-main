@@ -6,28 +6,19 @@ import AdminDashboard from "@/components/AdminDashboard";
 import StudentDashboard from "@/components/StudentDashboard";
 
 // Existing data
-import { mockJobs } from "@/data/mockJobs";
+// import { mockJobs } from "@/data/mockJobs"; 
 
 // Existing client functionality we can reuse for now
 import ManageJobs from "@/pages/ManageJobs";
 
 // Admin Dashboard Page wrapper
 export const AdminDashboardPage: React.FC = () => {
-  return <AdminDashboard jobs={mockJobs} />;
+  return <AdminDashboard jobs={[]} />;
 };
 
 // Student Dashboard Page wrapper
 export const StudentDashboardPage: React.FC = () => {
-  const navigate = useNavigate();
-
-  // StudentDashboard expects setActiveTab to switch between sections in Index.
-  // In a dedicated page context, send users to the relevant pages.
-  const handleSetActiveTab = (tab: "students" | "jobs") => {
-    if (tab === "jobs") navigate("/browse-jobs");
-    else navigate("/");
-  };
-
-  return <StudentDashboard setActiveTab={handleSetActiveTab} />;
+  return <StudentDashboard />;
 };
 
 // Client Dashboard Page wrapper

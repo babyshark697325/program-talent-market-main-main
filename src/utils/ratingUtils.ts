@@ -1,4 +1,4 @@
-import { Review } from "@/data/mockReviews";
+import { Review } from "@/integrations/supabase/types/reviews";
 
 /**
  * Calculates the average rating from a list of reviews.

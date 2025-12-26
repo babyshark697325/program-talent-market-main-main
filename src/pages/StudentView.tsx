@@ -6,9 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ArrowLeft, Star, Clock, User, Mail, Phone, ExternalLink, Briefcase, MessageCircle, FileText, Video, Code } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { mockReviews } from '@/data/mockReviews';
 import { StudentService } from '@/types/student';
 import { GradientAvatarFallback } from "@/components/GradientAvatarFallback";
+import { Review } from '@/integrations/supabase/types/reviews';
 
 function getIconForProjectType(type: string) {
   switch (type) {
@@ -33,38 +33,53 @@ const StudentView: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [student, setStudent] = useState<StudentService | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStudent = async () => {
+    const fetchStudentAndReviews = async () => {
+      setLoading(true);
       if (id) {
-        const { data, error } = await supabase
+        // Fetch Student
+        const { data: studentData, error: studentError } = await supabase
           .from('prelaunch_signups')
           .select('*')
           .eq('cic_id', id)
           .single();
-        if (error || !data) {
+
+        if (studentError || !studentData) {
           setStudent(null);
         } else {
           setStudent({
-            id: data.id,
-            cic_id: data.cic_id,
-            name: data.display_name || data.name || '',
-            title: data.title || 'Student Developer',
-            description: data.description || '',
-            avatarUrl: data.avatar_url || '',
-            skills: data.skills || [],
-            price: data.price || '',
-            affiliation: data.affiliation,
-            aboutMe: data.aboutMe || '',
-            contact: data.contact || {},
-            portfolio: data.portfolio || [],
+            id: studentData.id,
+            cic_id: studentData.cic_id,
+            name: studentData.display_name || studentData.name || '',
+            title: studentData.title || 'Student Developer',
+            description: studentData.description || '',
+            avatarUrl: studentData.avatar_url || '',
+            skills: studentData.skills || [],
+            price: studentData.price || '',
+            affiliation: studentData.affiliation,
+            aboutMe: studentData.aboutMe || '',
+            contact: studentData.contact || {},
+            portfolio: studentData.portfolio || [],
           });
+
+          // Fetch Reviews for this student
+          const { data: reviewsData } = await supabase
+            .from('reviews')
+            .select('*')
+            .eq('target_id', String(studentData.id))
+            .eq('target_type', 'student');
+
+          if (reviewsData) {
+            setReviews(reviewsData as unknown as Review[]);
+          }
         }
       }
       setLoading(false);
     };
-    fetchStudent();
+    fetchStudentAndReviews();
   }, [id]);
 
   if (loading) {
@@ -94,16 +109,8 @@ const StudentView: React.FC = () => {
   }
 
   // Calculate average rating
-  // FIX: Fallback to all student reviews if strict ID match returns nothing (due to UUID vs int mismatch)
-  let studentReviews = mockReviews.filter(r => r.targetId === student.id && r.targetType === 'student');
-
-  if (studentReviews.length === 0) {
-    // Fallback: Just show random reviews for demo purposes so the section appears
-    studentReviews = mockReviews.filter(r => r.targetType === 'student').slice(0, 3);
-  }
-
-  const averageRating = studentReviews.length > 0
-    ? studentReviews.reduce((sum, review) => sum + review.rating, 0) / studentReviews.length
+  const averageRating = reviews.length > 0
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
     : 0;
 
   const handleHireStudent = () => {
@@ -193,7 +200,7 @@ const StudentView: React.FC = () => {
                     ))}
                   </div>
                   <span className="text-sm font-medium">{averageRating.toFixed(1)}</span>
-                  <span className="text-sm text-muted-foreground">({studentReviews.length} reviews)</span>
+                  <span className="text-sm text-muted-foreground">({reviews.length} reviews)</span>
                 </div>
               )}
             </div>
@@ -295,22 +302,24 @@ const StudentView: React.FC = () => {
           )}
 
           {/* Reviews Section */}
-          {studentReviews.length > 0 && (
+          {reviews.length > 0 && (
             <div>
               <h3 className="font-semibold mb-3">Client Reviews</h3>
               <div className="space-y-4">
-                {studentReviews.slice(0, 2).map((review) => (
+                {reviews.slice(0, 2).map((review) => (
                   <Card key={review.id} className="p-4">
                     <div className="flex items-start gap-3">
                       <Avatar className="w-10 h-10">
-                        <AvatarImage src={review.reviewerAvatar} alt={review.reviewerName} />
+                        {review.reviewer_avatar && (
+                          <AvatarImage src={review.reviewer_avatar} alt={review.reviewer_name} />
+                        )}
                         <AvatarFallback>
-                          {review.reviewerName.charAt(0)}
+                          {review.reviewer_name.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium">{review.reviewerName}</span>
+                          <span className="font-medium">{review.reviewer_name}</span>
                           <div className="flex items-center gap-1">
                             {[1, 2, 3, 4, 5].map((star) => (
                               <Star
@@ -322,8 +331,8 @@ const StudentView: React.FC = () => {
                           </div>
                         </div>
                         <p className="text-sm text-muted-foreground mb-2">"{review.comment}"</p>
-                        {review.projectTitle && (
-                          <p className="text-xs text-muted-foreground">Project: {review.projectTitle}</p>
+                        {review.project_title && (
+                          <p className="text-xs text-muted-foreground">Project: {review.project_title}</p>
                         )}
                       </div>
                     </div>

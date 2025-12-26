@@ -3,7 +3,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { JobPosting } from "@/data/mockJobs";
+import { JobPosting } from "@/types/job";
 import { Building, Calendar, Mail, DollarSign } from "lucide-react";
 import BookmarkButton from "./BookmarkButton";
 import { useAuth } from "@/contexts/AuthContext";
@@ -47,12 +47,12 @@ const JobCard: React.FC<JobCardProps> = ({ job, onView, hideBookmark = false }) 
           )}
         </div>
       </CardHeader>
-      
+
       <CardContent className="flex-1 px-4 py-0 flex flex-col">
         <p className="text-sm text-muted-foreground leading-relaxed break-words mb-4 flex-1">
           {job.description}
         </p>
-        
+
         <div className="space-y-2 text-sm mt-auto">
           <div className="flex items-center gap-2">
             <DollarSign size={14} className="text-primary flex-shrink-0" />
@@ -64,7 +64,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onView, hideBookmark = false }) 
           </div>
         </div>
       </CardContent>
-      
+
       <CardFooter className="p-4 pt-3 flex items-center">
         <Button asChild variant="default" className="w-full !bg-[#2E7D32] !text-white shadow-none hover:brightness-95 text-center">
           <Link to={`/job/${job.id}`} onClick={onView}>

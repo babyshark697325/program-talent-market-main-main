@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { JobPosting } from "@/data/mockJobs";
+import { JobPosting } from "@/types/job";
 import StudentServiceCard from "./StudentServiceCard";
 import JobCard from "./JobCard";
 import { Users, Briefcase } from "lucide-react";
@@ -25,13 +25,13 @@ const ContentGrid: React.FC<ContentGridProps> = ({
   onClearFilters
 }) => {
   const [hasAnimated, setHasAnimated] = useState(false);
-  
+
   useEffect(() => {
     // Mark as animated after a short delay to prevent re-animations on tab switches
     const timer = setTimeout(() => {
       setHasAnimated(true);
     }, 1000); // Allow time for initial animations to complete
-    
+
     return () => clearTimeout(timer);
   }, []);
   const renderEmptyState = (type: "students" | "jobs") => (
@@ -48,10 +48,10 @@ const ContentGrid: React.FC<ContentGridProps> = ({
           No {type === "students" ? "Students" : "Jobs"} Found
         </h3>
         <p className="text-muted-foreground mb-6">
-          We couldn't find any {type === "students" ? "students" : "job postings"} matching your criteria. 
+          We couldn't find any {type === "students" ? "students" : "job postings"} matching your criteria.
           Try adjusting your search or filters.
         </p>
-        <Button 
+        <Button
           onClick={onClearFilters}
           className="bg-gradient-to-r from-primary to-primary/80"
         >
@@ -67,12 +67,12 @@ const ContentGrid: React.FC<ContentGridProps> = ({
         filteredStudents.length ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             {filteredStudents.map((student, index) => (
-              <div 
-                key={student.id} 
+              <div
+                key={student.id}
                 className="hover:scale-[1.02] transition-transform duration-200"
-                style={hasAnimated ? 
-                  { opacity: 1 } : 
-                  { 
+                style={hasAnimated ?
+                  { opacity: 1 } :
+                  {
                     animation: `fadeIn 0.5s ease-out forwards`,
                     animationDelay: `${Math.min(0.1 * index, 0.8)}s`,
                     opacity: 0
@@ -93,12 +93,12 @@ const ContentGrid: React.FC<ContentGridProps> = ({
         filteredJobs.length ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
             {filteredJobs.map((job, index) => (
-              <div 
-                key={job.id} 
+              <div
+                key={job.id}
                 className="hover:scale-[1.02] transition-transform duration-200"
-                style={hasAnimated ? 
-                  { opacity: 1 } : 
-                  { 
+                style={hasAnimated ?
+                  { opacity: 1 } :
+                  {
                     animation: `fadeIn 0.5s ease-out forwards`,
                     animationDelay: `${Math.min(0.1 * index, 0.8)}s`,
                     opacity: 0

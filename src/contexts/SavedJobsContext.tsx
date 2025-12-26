@@ -1,6 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { mockSavedJobs } from '@/data/mockSavedJobs';
 
 interface SavedJobsContextType {
   savedJobIds: number[];
@@ -14,17 +13,19 @@ const SavedJobsContext = createContext<SavedJobsContextType | undefined>(undefin
 
 export const SavedJobsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [savedJobIds, setSavedJobIds] = useState<number[]>(() => {
-    // Always use mock saved jobs data for demo - ignore localStorage
-    return mockSavedJobs.slice(0, 6).map(savedJob => savedJob.jobId);
+    try {
+      const stored = localStorage.getItem('savedJobIds');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
   });
 
   useEffect(() => {
-    // Disable localStorage for demo - keep state only in memory
-    // try {
-    //   localStorage.setItem('savedJobIds', JSON.stringify(savedJobIds));
-    //   window.dispatchEvent(new Event('savedjobs:updated'));
-    // } catch {}
-    window.dispatchEvent(new Event('savedjobs:updated'));
+    try {
+      localStorage.setItem('savedJobIds', JSON.stringify(savedJobIds));
+      window.dispatchEvent(new Event('savedjobs:updated'));
+    } catch { }
   }, [savedJobIds]);
 
   const addSavedJob = useCallback((jobId: number) => {

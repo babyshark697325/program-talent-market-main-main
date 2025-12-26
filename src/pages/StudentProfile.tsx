@@ -8,7 +8,7 @@ import { GradientAvatarFallback } from "@/components/GradientAvatarFallback";
 import { Mail, Phone, MapPin, Eye, Edit, Image, User, X, Plus, Trash2, ExternalLink, Linkedin, Github, Briefcase, MessageCircle, Star, FolderOpen, CheckCircle, Clock, Globe, Shield, Heart } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
-import { mockStudents } from '@/data/mockStudents';
+
 
 import { Review } from "@/integrations/supabase/types/reviews";
 
@@ -109,40 +109,26 @@ const StudentProfile = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const canEdit = !id || (currentUserId && id === currentUserId);
   const [isEditing, setIsEditing] = useState(false);
-  const fallbackStudent = useMemo(() => {
-    if (id) {
-      return (
-        mockStudents.find(
-          (s) => s.cic_id === id || String(s.id) === String(id),
-        ) || mockStudents[0]
-      );
-    }
-    return mockStudents[0];
-  }, [id]);
+
+  const fallbackStudent = null;
   const defaultRate = '$25/hr';
   const initialStudent: StudentState = useMemo(() => ({
-    name: fallbackStudent?.name || 'Alex Rivera',
-    email: fallbackStudent?.contact?.email || 'alex@example.com',
-    phone: fallbackStudent?.contact?.phone || '(555) 123-4567',
-    avatarUrl: fallbackStudent?.avatarUrl || '',
+    name: 'Student Name',
+    email: '',
+    phone: '',
+    avatarUrl: '',
     location: 'San Francisco, CA',
-    title: fallbackStudent?.title || 'Student Developer',
+    title: 'Student Developer',
     price: defaultRate,
-    bio: fallbackStudent?.aboutMe || fallbackStudent?.description || 'Tell clients what you do best and what kind of work excites you.',
-    skills: fallbackStudent?.skills || ['React', 'TypeScript', 'Node.js'],
+    bio: '',
+    skills: [],
     experience: [] as ExperienceItem[],
-    portfolio: fallbackStudent?.portfolio?.map((p) => ({
-      id: p.id,
-      title: p.title,
-      description: p.description,
-      link: p.link,
-      imageUrl: p.imageUrl,
-    })) || [],
+    portfolio: [],
     platformLinks: {
-      linkedin: fallbackStudent?.contact?.linkedinUrl || '',
-      github: fallbackStudent?.contact?.githubUrl || '',
-      upwork: fallbackStudent?.contact?.upworkUrl || '',
-      fiverr: fallbackStudent?.contact?.fiverrUrl || '',
+      linkedin: '',
+      github: '',
+      upwork: '',
+      fiverr: '',
     },
     payments: {
       method: '' as PaymentMethod,
@@ -154,7 +140,7 @@ const StudentProfile = () => {
       history: [],
     },
     status: 'Available',
-  }), [fallbackStudent, defaultRate]);
+  }), [defaultRate]);
   const [student, setStudent] = useState<StudentState>(initialStudent);
   const [edited, setEdited] = useState<StudentState>(initialStudent);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -280,47 +266,9 @@ const StudentProfile = () => {
             }
           }
 
+
           if (!studentData) {
-            const mockStudent = mockStudents.find(
-              (s) => s.cic_id === id || String(s.id) === String(id),
-            );
-            if (mockStudent) {
-              studentData = {
-                name: mockStudent.name,
-                email: mockStudent.contact?.email || '',
-                phone: mockStudent.contact?.phone || '',
-                avatarUrl: mockStudent.avatarUrl || '',
-                location: mockStudent.location || 'San Francisco, CA',
-                title: mockStudent.title || '',
-                price: mockStudent.price || '',
-                bio: mockStudent.aboutMe || mockStudent.description,
-                skills: mockStudent.skills || [],
-                experience: [],
-                portfolio: mockStudent.portfolio?.map(p => ({
-                  id: p.id,
-                  title: p.title,
-                  description: p.description,
-                  link: p.link,
-                  imageUrl: p.imageUrl
-                })) || [],
-                platformLinks: {
-                  linkedin: mockStudent.contact?.linkedinUrl || '',
-                  github: mockStudent.contact?.githubUrl || '',
-                  upwork: mockStudent.contact?.upworkUrl || '',
-                  fiverr: mockStudent.contact?.fiverrUrl || ''
-                },
-                payments: {
-                  method: '' as PaymentMethod,
-                  paypalEmail: '',
-                  venmo: '',
-                  cashapp: '',
-                  bankLast4: '',
-                  taxW9Submitted: false,
-                  history: [],
-                },
-                status: 'Available',
-              };
-            }
+            // Student not found in DB
           }
 
           if (studentData) {

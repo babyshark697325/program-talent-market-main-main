@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader as UIDialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search, Eye, Flag, FlagOff, Trash2, Building2, Calendar, DollarSign } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { mockJobs, JobPosting } from "@/data/mockJobs";
+import { JobPosting } from "@/types/job";
+import { Job } from "@/integrations/supabase/types/jobs";
 
 // Convert JobPosting to match admin interface
 type AdminJob = JobPosting & {
@@ -16,6 +17,11 @@ type AdminJob = JobPosting & {
   posted_at: string;
   user_id: string;
 };
+
+// Extend Supabase Job type to include status if missing from generated types
+interface SupabaseJobWithStatus extends Job {
+  status?: string;
+}
 
 const AdminReviewJobs: React.FC = () => {
   const navigate = useNavigate();
@@ -30,18 +36,44 @@ const AdminReviewJobs: React.FC = () => {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      // Convert mock jobs to admin format
-      const adminJobs: AdminJob[] = mockJobs.map(job => ({
-        ...job,
-        status: Math.random() > 0.8 ? 'flagged' : 'active' as 'active' | 'flagged' | 'removed' | 'completed',
-        posted_at: job.postedDate,
-        user_id: `user-${job.id}`
-      }));
-      
-      setJobs(adminJobs);
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*');
+
+      if (error) throw error;
+
+      if (data) {
+        // Map data
+        const adminJobs: AdminJob[] = (data as unknown as SupabaseJobWithStatus[]).map(job => ({
+          id: job.id,
+          title: job.title,
+          company: job.company || "Unknown",
+          description: job.description || "",
+          skills: job.skills || [],
+          budget: job.budget || "Not specified",
+          duration: job.duration || "Not specified",
+          postedDate: job.created_at || new Date().toISOString(), // JobPosting field
+          contactEmail: job.contact_email,
+          location: job.location || "Remote",
+          experienceLevel: job.experience_level || "Any",
+          applicantsCount: 0,
+          isNew: false,
+
+          // AdminJob specific
+          status: (job.status as 'active' | 'flagged' | 'removed' | 'completed') || 'active',
+          posted_at: job.created_at || new Date().toISOString(),
+          user_id: job.user_id || `user-${job.id}`
+        }));
+        setJobs(adminJobs);
+      }
     } catch (error) {
       console.error('Error loading jobs:', error);
       setJobs([]);
+      toast({
+        title: "Error",
+        description: "Failed to load jobs",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -69,10 +101,22 @@ const AdminReviewJobs: React.FC = () => {
 
   const flagJob = async (id: string | number) => {
     try {
+      // Update local state optimistic
       setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, status: 'flagged' as const } : j)));
+
+      // Update DB
+      const { error } = await supabase
+        .from('jobs')
+        .update({ status: 'flagged' })
+        .eq('id', id);
+
+      if (error) throw error;
+
       toast({ title: "Job flagged", description: `Job was flagged for review.` });
     } catch (error) {
       console.error('Error flagging job:', error);
+      // Revert local state
+      fetchJobs();
       toast({
         title: "Error",
         description: "Failed to flag job",
@@ -84,9 +128,18 @@ const AdminReviewJobs: React.FC = () => {
   const unflagJob = async (id: string | number) => {
     try {
       setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, status: 'active' as const } : j)));
+
+      const { error } = await supabase
+        .from('jobs')
+        .update({ status: 'active' })
+        .eq('id', id);
+
+      if (error) throw error;
+
       toast({ title: "Job unflagged", description: `Job was restored to active.` });
     } catch (error) {
       console.error('Error unflagging job:', error);
+      fetchJobs();
       toast({
         title: "Error",
         description: "Failed to unflag job",
@@ -98,12 +151,21 @@ const AdminReviewJobs: React.FC = () => {
   const removeJob = async (id: string | number) => {
     try {
       setJobs((prev) => prev.filter((j) => j.id !== id));
-      toast({ title: "Job removed", description: `Job was removed.` });
       setConfirmId(null);
+
+      const { error } = await supabase
+        .from('jobs')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({ title: "Job removed", description: `Job was removed.` });
     } catch (error) {
       console.error('Error removing job:', error);
+      fetchJobs();
       toast({
-        title: "Error", 
+        title: "Error",
         description: "Failed to remove job",
         variant: "destructive",
       });

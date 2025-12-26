@@ -2,19 +2,19 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { 
-  Users, 
-  Briefcase, 
-  TrendingUp, 
-  DollarSign, 
-  Shield, 
+import {
+  Users,
+  Briefcase,
+  TrendingUp,
+  DollarSign,
+  Shield,
   Settings,
   BarChart3,
   AlertTriangle,
   CheckCircle,
   BookOpen
 } from "lucide-react";
-import { JobPosting } from "@/data/mockJobs";
+import { JobPosting } from "@/types/job";
 import { Link } from "react-router-dom";
 import RecentActivity from "./RecentActivity";
 import { supabase } from "../integrations/supabase/client";
@@ -159,10 +159,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
               message: `New user registered: ${name}`,
               timestamp: new Date(p.created_at),
               status: ActivityStatus.SUCCESS,
-              data: { 
+              data: {
                 message: `User account created`,
-                userName: name, 
-                userId: p.user_id 
+                userName: name,
+                userId: p.user_id
               },
             });
           }
@@ -177,11 +177,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
               message: `Job posted: ${j.title}${j.company ? ` at ${j.company}` : ''}`,
               timestamp: new Date(j.posted_at),
               status: ActivityStatus.SUCCESS,
-              data: { 
+              data: {
                 message: `Job posting created`,
-                job_id: j.id, 
-                title: j.title, 
-                company: j.company 
+                job_id: j.id,
+                title: j.title,
+                company: j.company
               },
             });
           }
@@ -197,10 +197,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
                 message: `Payment processed: ${Number(pay.amount || 0).toLocaleString()}`,
                 timestamp: new Date(pay.created_at),
                 status: ActivityStatus.SUCCESS,
-                data: { 
+                data: {
                   message: `Payment transaction completed`,
-                  payment_id: pay.id, 
-                  amount: pay.amount 
+                  payment_id: pay.id,
+                  amount: pay.amount
                 },
               });
             }
@@ -221,11 +221,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
               message: `Joined waitlist: ${name}${suffix}`,
               timestamp: new Date(w.created_at),
               status: ActivityStatus.INFO,
-              data: { 
+              data: {
                 message: `Waitlist registration completed`,
-                id: w.id, 
-                email: w.email, 
-                status: w.status 
+                id: w.id,
+                email: w.email,
+                status: w.status
               },
             });
           }
@@ -234,18 +234,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
         // Sort newest first and limit
         events.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
         const limited = events.slice(0, 50);
-        
+
         // Filter out any undefined or invalid activities
-        const validActivities = limited.filter(activity => 
-          activity && 
-          typeof activity.id === 'number' && 
-          activity.type && 
-          activity.message && 
-          activity.timestamp && 
-          activity.status && 
+        const validActivities = limited.filter(activity =>
+          activity &&
+          typeof activity.id === 'number' &&
+          activity.type &&
+          activity.message &&
+          activity.timestamp &&
+          activity.status &&
           activity.data
         );
-        
+
         if (!cancelled) setActivities(validActivities);
       } catch (e) {
         console.error('Error loading activities:', e);
@@ -385,7 +385,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs }) => {
             </div>
           </Card>
 
-          <RecentActivity 
+          <RecentActivity
             activities={activities}
             onActivityClick={handleActivityClick}
             maxItems={8}

@@ -9,7 +9,7 @@ import PostJobForm from "@/components/PostJobForm";
 import { Plus, Edit, Trash2, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { JobPosting } from "@/data/mockJobs";
+import { JobPosting } from "@/types/job";
 import { Job } from "@/integrations/supabase/types/jobs";
 
 

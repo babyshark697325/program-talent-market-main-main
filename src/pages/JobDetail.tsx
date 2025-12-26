@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Building, MapPin, Clock, DollarSign, Calendar, Users, Mail, Bookmark } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { Job } from "@/integrations/supabase/types/jobs";
-import { JobPosting } from "@/data/mockJobs";
+import { JobPosting } from "@/types/job";
 // import { mockJobs } from '@/data/mockJobs'; // Removed to avoid usage
 import { useAuth } from "@/contexts/AuthContext";
 

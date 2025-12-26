@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,59 +6,86 @@ import { BookOpen, Eye, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
-
-// Types
-export type ResourceStatus = "available" | "coming-soon";
-export type ResourceType = "workshop" | "video" | "guide" | "networking";
-
-export interface LearningResource {
-  id: number;
-  title: string;
-  description: string;
-  type: ResourceType;
-  duration: string;
-  status: ResourceStatus;
-}
-
-const LS_KEY = "student.resources";
-
-function loadResources(): LearningResource[] {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as LearningResource[];
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch {
-    // Ignore error
-  }
-  // No default seed; start empty until you add your own
-  return [];
-}
-
-function saveResources(r: LearningResource[]) {
-  localStorage.setItem(LS_KEY, JSON.stringify(r));
-  // Let the student resources view know
-  window.dispatchEvent(new Event("resources:updated"));
-}
+import { supabase } from "@/integrations/supabase/client";
+import { LearningResource } from "@/types/learning-resource";
+import { useToast } from "@/components/ui/use-toast";
 
 const AdminLearningResources: React.FC = () => {
-  const [resources, setResources] = React.useState<LearningResource[]>(loadResources());
+  const [resources, setResources] = React.useState<LearningResource[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const { toast } = useToast();
 
-  const updateResource = (id: number, updates: Partial<LearningResource>) => {
-    const next = resources.map(r => r.id === id ? { ...r, ...updates } : r);
-    setResources(next);
-    saveResources(next);
+  const fetchResources = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('learning_resources')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mapped: LearningResource[] = data.map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          description: r.description,
+          type: r.type,
+          duration: r.duration,
+          status: r.status,
+          videoUrl: r.video_url,
+          guideUrl: r.guide_url,
+          eventDate: r.event_date,
+          location: r.location,
+          registrationUrl: r.registration_url,
+          joinUrl: r.join_url,
+          created_at: r.created_at
+        }));
+        setResources(mapped);
+      }
+    } catch (error) {
+      console.error("Error fetching resources:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load learning resources.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const removeResource = (id: number) => {
-    const next = resources.filter(r => r.id !== id);
-    setResources(next);
-    saveResources(next);
-  };
+  React.useEffect(() => {
+    fetchResources();
+  }, []);
 
-  const saveAll = () => {
-    saveResources(resources);
+  const removeResource = async (id: number) => {
+    if (!window.confirm("Are you sure you want to delete this resource?")) return;
+
+    try {
+      const { error } = await supabase
+        .from('learning_resources')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setResources(resources.filter(r => r.id !== id));
+      toast({
+        title: "Success",
+        description: "Resource deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Error deleting resource:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete resource.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -72,7 +100,6 @@ const AdminLearningResources: React.FC = () => {
             Add New Resource
           </Link>
         </Button>
-        <Button variant="outline" onClick={saveAll}>Save Changes</Button>
       </PageHeader>
 
       {/* Resources Grid */}
@@ -88,12 +115,11 @@ const AdminLearningResources: React.FC = () => {
             </Button>
           </div>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={saveAll}>Save All Changes</Button>
-        </div>
       </div>
 
-      {resources.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-12">Loading...</div>
+      ) : resources.length === 0 ? (
         <Card className="text-center py-12">
           <CardContent>
             <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { JobPosting } from "@/data/mockJobs";
+import { JobPosting } from "@/types/job";
 import { supabase } from "@/integrations/supabase/client";
 import { Job } from "@/integrations/supabase/types/jobs";
 import JobCard from "@/components/JobCard";

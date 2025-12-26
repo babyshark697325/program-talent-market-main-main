@@ -11,7 +11,7 @@ import SearchFilters from "@/components/SearchFilters";
 import ContentGrid from "@/components/ContentGrid";
 import { StudentService } from "@/types/student";
 
-import { JobPosting } from "@/data/mockJobs"; // Type only, no mock data import
+import { JobPosting } from "@/types/job";
 import { Job } from "@/integrations/supabase/types/jobs";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useRole } from "@/contexts/RoleContext";
@@ -381,23 +381,22 @@ const Index: React.FC = () => {
           <WhyHireStudents />
 
           {/* Featured Student Section - Always show with mock data */}
-          <FeaturedStudent
-            student={{
-              id: featured?.student?.id || 1,
-              name: featured?.student?.name || "Alex Rivera",
-              title: featured?.student?.title || "Full-Stack Web Developer",
-              avatarUrl: featured?.student?.avatarUrl || "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=facearea&w=256&h=256&facepad=2&q=80",
-              skills: featured?.student?.skills || ["Web Development", "Programming", "UI/UX Design"],
-              quote: featured?.quote || "I'm passionate about creating beautiful, functional web experiences that help businesses establish their online presence and connect with their customers.",
-              showcaseImage: featured?.showcaseImage || "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=800&h=500&q=80",
-              clientReview: featured?.clientReview || {
-                text: "Alex delivered an exceptional e-commerce website that exceeded our expectations. Professional communication, clean code, and delivered on time!",
-                clientName: "Maria Santos, Boutique Owner",
-                rating: 5
-              }
-            }}
-            onViewProfile={() => navigate(`/view-student/${featured?.student?.id || 1}`)}
-          />
+
+          {featured && (
+            <FeaturedStudent
+              student={{
+                id: featured.student.id,
+                name: featured.student.name,
+                title: featured.student.title,
+                avatarUrl: featured.student.avatarUrl,
+                skills: featured.student.skills,
+                quote: featured.quote,
+                showcaseImage: featured.showcaseImage,
+                clientReview: featured.clientReview
+              }}
+              onViewProfile={() => navigate(`/view-student/${featured.student.id}`)}
+            />
+          )}
 
           {/* Browse Students/Jobs Hero Section */}
           <StatsGrid

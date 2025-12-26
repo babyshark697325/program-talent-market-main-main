@@ -3,8 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { BookOpen, Video, FileText, Users, Award, Clock, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-const LS_KEY = "student.resources";
+import { supabase } from '@/integrations/supabase/client';
+import { LearningResource } from '@/types/learning-resource';
 
 function getIconForType(type: string) {
   switch (type) {
@@ -16,25 +16,51 @@ function getIconForType(type: string) {
   }
 }
 
-function loadResources() {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {
-    // Ignore error
-  }
-  return [];
-}
-
 const AllResources = () => {
-  const [resources, setResources] = React.useState(loadResources());
+  const [resources, setResources] = React.useState<LearningResource[]>([]);
   const [filter, setFilter] = React.useState('all');
+  const [loading, setLoading] = React.useState(true);
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    const handler = () => setResources(loadResources());
-    window.addEventListener('resources:updated', handler);
-    return () => window.removeEventListener('resources:updated', handler);
+    const loadResources = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('learning_resources')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error("Error fetching resources:", error);
+          setResources([]);
+        } else if (data) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const mapped: LearningResource[] = data.map((r: any) => ({
+            id: r.id,
+            title: r.title,
+            description: r.description,
+            type: r.type,
+            duration: r.duration,
+            status: r.status,
+            videoUrl: r.video_url,
+            guideUrl: r.guide_url,
+            eventDate: r.event_date,
+            location: r.location,
+            registrationUrl: r.registration_url,
+            joinUrl: r.join_url,
+            created_at: r.created_at
+          }));
+          setResources(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to load resources:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadResources();
   }, []);
 
   const getStatusColor = (status: string) => {

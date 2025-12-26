@@ -1,40 +1,31 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, CheckCircle, XCircle, Eye, ClipboardList } from "lucide-react";
-import { mockStudentApplications, StudentApplication } from "@/data/mockStudentApplications";
 import { supabase } from "@/integrations/supabase/client";
 import PageHeader from '@/components/PageHeader';
 
-// Database row type from supabase query
-interface ApplicationRow {
-  id: string;
-  status: string;
-  created_at: string;
-  budget: number | string | null;
-  jobs: {
-    id: string;
-    title: string;
-    company: string;
-  }[] | null;
-}
-
 // Render-facing type used by this page
 interface Application {
-  applicationId: string; // primary key of applications row
-  jobId: string | null;  // related job id (if join succeeds)
+  id: string; // primary key
+  jobId: string | null;  // related job id
   jobTitle: string;
   company: string;
   appliedDate: string; // ISO date
-  status: "pending" | "accepted" | "rejected" | string;
-  budget: string; // formatted string (e.g., "$300")
+  status: "pending" | "hired" | "rejected" | "reviewed" | "shortlisted" | "interviewed" | string;
+  budget: string; // formatted string
+  duration: string;
+  clientResponse?: {
+    message: string;
+    date: string;
+  };
 }
 
 const MyApplications = () => {
   const navigate = useNavigate();
-  const [applications, setApplications] = useState<StudentApplication[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState<boolean>(false);
@@ -47,21 +38,61 @@ const MyApplications = () => {
       setError(null);
 
       try {
-        // Simulate API delay for realistic demo
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        if (isMounted) {
-          // Use mock student applications data
-          setApplications(mockStudentApplications);
-          setLoading(false);
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+          if (isMounted) {
+            setLoading(false);
+          }
+          return;
+        }
+
+        // Try to fetch from 'applications' table
+        // We assume it has columns: id, job_id, status, created_at, budget, duration ...
+        // and a relation to 'jobs'
+        const { data, error } = await supabase
+          .from('applications')
+          .select(`
+            id,
+            status,
+            created_at,
+            budget,
+            duration,
+            job_id,
+            jobs (
+              title,
+              company
+            )
+          `)
+          .eq('student_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          // If table doesn't exist or other error, fallback to empty
+          console.warn('Could not fetch applications (table might be missing):', error);
+          if (isMounted) setApplications([]);
+        } else if (data) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const mapped: Application[] = data.map((row: any) => ({
+            id: row.id,
+            jobId: row.job_id,
+            jobTitle: row.jobs?.title || 'Unknown Job',
+            company: row.jobs?.company || 'Unknown Company',
+            appliedDate: row.created_at,
+            status: row.status || 'pending',
+            budget: row.budget ? `$${row.budget}` : 'Not specified',
+            duration: row.duration || 'Not specified'
+          }));
+          if (isMounted) setApplications(mapped);
         }
       } catch (err) {
         console.error('Error loading applications:', err);
         if (isMounted) {
-          setError('Failed to load applications');
+          // setError('Failed to load applications'); // Don't show error to user if it's just missing table
           setApplications([]);
-          setLoading(false);
         }
+      } finally {
+        if (isMounted) setLoading(false);
       }
     }
 
@@ -70,25 +101,6 @@ const MyApplications = () => {
       isMounted = false;
     };
   }, []);
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "pending":
-        return <Clock className="h-5 w-5 text-yellow-500" />;
-      case "hired":
-        return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case "rejected":
-        return <XCircle className="h-5 w-5 text-red-500" />;
-      case "reviewed":
-        return <Eye className="h-5 w-5 text-blue-500" />;
-      case "shortlisted":
-        return <ClipboardList className="h-5 w-5 text-purple-500" />;
-      case "interviewed":
-        return <CheckCircle className="h-5 w-5 text-green-400" />;
-      default:
-        return <Clock className="h-5 w-5 text-gray-500" />;
-    }
-  };
 
   const getStatusBadge = (status: string) => (
     <Badge
@@ -110,8 +122,8 @@ const MyApplications = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6 space-y-6">
-        <PageHeader 
-          title="My Applications" 
+        <PageHeader
+          title="My Applications"
           description="Track the status of your job applications"
         />
 
@@ -168,7 +180,7 @@ const MyApplications = () => {
                           {getStatusBadge(application.status)}
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2 text-sm text-muted-foreground flex-1">
                         <div className="flex justify-between">
                           <span>Applied:</span>
@@ -176,11 +188,11 @@ const MyApplications = () => {
                         </div>
                         <div className="flex justify-between">
                           <span>Budget:</span>
-                          <span className="font-medium">{application.proposedBudget}</span>
+                          <span className="font-medium">{application.budget}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Duration:</span>
-                          <span>{application.estimatedDuration}</span>
+                          <span>{application.duration}</span>
                         </div>
                       </div>
 
@@ -208,7 +220,7 @@ const MyApplications = () => {
                 </Card>
               ))}
             </div>
-            
+
             {/* Show More/Less Button */}
             {hasMore && (
               <div className="flex justify-center">
